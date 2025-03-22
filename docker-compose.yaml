@@ -1,0 +1,9 @@
+services:
+  frontend:
+    container_name: frontend
+    build: ./frontend
+    tty: true
+    volumes:
+      - ./frontend:/frontend
+    ports:
+      - 5173:5173
