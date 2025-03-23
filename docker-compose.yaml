@@ -7,3 +7,11 @@ services:
       - ./frontend:/frontend
     ports:
       - 5173:5173
+  bff:
+    container_name: bff
+    build: ./bff
+    tty: true
+    volumes:
+      - ./bff:/bff
+    ports:
+      - 3000:3000
