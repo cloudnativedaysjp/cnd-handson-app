@@ -1,14 +1,14 @@
-FROM node:22-alpine AS build
+FROM node:22-alpine
 
-
-WORKDIR /frontend
+WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-COPY package.json pnpm-lock.yaml ./
+ENV PNPM_STORE_PATH=/app/.pnpm-store
 
-RUN pnpm install --frozen-lockfile
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install
 
 COPY . .
 
-CMD ["/bin/sh"]
+CMD ["pnpm", "dev"]
