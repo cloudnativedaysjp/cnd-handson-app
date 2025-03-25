@@ -11,7 +11,9 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Board />} />
-          <Route path="/tasks/:id" element={<TaskModal />} />
+          <Route path="/tasks/:id" element={<TaskModal open={false} task={null} onClose={function (): void {
+            throw new Error('Function not implemented.');
+          } } />} />
         </Routes>
       </Router>
     </Provider>
