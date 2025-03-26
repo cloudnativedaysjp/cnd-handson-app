@@ -13,69 +13,27 @@ const initialState: TasksState = {
     tasks: [
       {
         id: generateId(),
-        title: "サンプルタスク1",
-        description: "これはサンプルタスクの説明です。",
-        status: "To Do",
+        title: 'サンプルタスク1',
+        description: '説明1',
+        status: 'open',
+        columnId: 'column-1',
         startTimeAt: undefined,
         endTimeAt: undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        assigneeId: "user-1",
+        assigneeId: 'user-1',
       },
       {
         id: generateId(),
-        title: "サンプルタスク1",
-        description: "これはサンプルタスクの説明です。",
-        status: "To Do",
+        title: 'サンプルタスク2',
+        description: '説明2',
+        status: 'in-progress',
+        columnId: 'column-2',
         startTimeAt: undefined,
         endTimeAt: undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        assigneeId: "user-1",
-      },
-      {
-        id: generateId(),
-        title: "サンプルタスク1",
-        description: "これはサンプルタスクの説明です。",
-        status: "To Do",
-        startTimeAt: undefined,
-        endTimeAt: undefined,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        assigneeId: "user-1",
-      },
-      {
-        id: generateId(),
-        title: "サンプルタスク1",
-        description: "これはサンプルタスクの説明です。",
-        status: "To Do",
-        startTimeAt: undefined,
-        endTimeAt: undefined,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        assigneeId: "user-1",
-      },
-      {
-        id: generateId(),
-        title: "サンプルタスク1",
-        description: "これはサンプルタスクの説明です。",
-        status: "To Do",
-        startTimeAt: undefined,
-        endTimeAt: undefined,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        assigneeId: "user-1",
-      },
-      {
-        id: generateId(),
-        title: "サンプルタスク2",
-        description: "別のサンプルタスクです。",
-        status: "In Progress",
-        startTimeAt: undefined,
-        endTimeAt: undefined,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        assigneeId: "user-2",
+        assigneeId: 'user-2',
       },
     ],
   };
@@ -91,6 +49,7 @@ const tasksSlice = createSlice({
       prepare(
         title: string,
         status: string,
+        columnId: string,
         assigneeId: string,
         description: string = '',
         startTimeAt?: string,
@@ -107,14 +66,23 @@ const tasksSlice = createSlice({
             endTimeAt,
             createdAt: timestamp,
             updatedAt: timestamp,
+            columnId,
             assigneeId,
           },
         };
       },
     },
-
+    updateTaskColumn(state, action: PayloadAction<{ taskId: string; columnId: string }>) {
+      const { taskId, columnId } = action.payload;
+      const task = state.tasks.find((task) => task.id === taskId);
+      if (task) {
+        task.columnId = columnId;
+        task.updatedAt = new Date().toISOString();
+      }
+    },
   },
 });
 
 export const { addTask } = tasksSlice.actions;
+export const { updateTaskColumn } = tasksSlice.actions;
 export default tasksSlice.reducer;

@@ -9,19 +9,19 @@ interface ColumnsState {
 const initialState: ColumnsState = {
     columns: [
         {
-            id: uuidv4(),
+            id: 'column-1',
             name: 'To Do',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         },
         {
-            id: uuidv4(),
+            id: 'column-2',
             name: 'In Progress',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         },
         {
-            id: uuidv4(),
+            id: 'column-3',
             name: 'Done',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),

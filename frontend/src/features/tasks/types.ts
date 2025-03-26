@@ -7,5 +7,6 @@ export type Task = {
     endTimeAt?: string;
     createdAt: string;
     updatedAt: string;
+    columnId: string;
     assigneeId: string;
 };
