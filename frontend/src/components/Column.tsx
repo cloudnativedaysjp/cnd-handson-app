@@ -1,6 +1,6 @@
 // src/components/Column.tsx
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Typography, Paper } from '@mui/material';
 import { Column as ColumnType } from '../features/columns/types';
 import { useDroppable } from '@dnd-kit/core';
 import { Task } from '../features/tasks/types';
@@ -18,15 +18,17 @@ const Column: React.FC<ColumnProps> = ({ column, tasks }) => {
   });
 
   const style = {
-    border: isOver ? '2px dashed #333' : '1px solid #ccc',
-    borderRadius: 2,
-    padding: '16px',
-    minWidth: '250px',
-    backgroundColor: '#fafafa',
+    border: isOver ? '2px dashed #4CAF50' : '1px solid #ccc',
+    borderRadius: 16,
+    padding: '24px',
+    minWidth: '300px',
+    backgroundColor: isOver ? '#f0fff0' : '#ffffff',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
   };
 
   return (
-    <Box
+    <Paper
       ref={setNodeRef}
       sx={{
         style,
@@ -38,7 +40,7 @@ const Column: React.FC<ColumnProps> = ({ column, tasks }) => {
       {tasks.map((task) => (
         <TaskCard key={task.id} task={task} />
       ))}
-    </Box>
+    </Paper>
   );
 };
 
