@@ -1,0 +1,45 @@
+name: Test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  frontend-test:
+    name: Frontend Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js and PNPM
+        uses: ./.github/actions/setup-node
+      
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: pnpm install
+      
+      # Uncomment when test script is available
+      # - name: Test
+      #   working-directory: ./frontend
+      #   run: pnpm test
+
+  bff-test:
+    name: BFF Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js and PNPM
+        uses: ./.github/actions/setup-node
+      
+      - name: Install dependencies
+        working-directory: ./bff
+        run: pnpm install
+      
+      - name: Test
+        working-directory: ./bff
+        run: pnpm test

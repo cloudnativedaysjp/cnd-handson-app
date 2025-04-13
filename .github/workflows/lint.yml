@@ -1,0 +1,52 @@
+name: Lint
+
+on:
+  push:
+    branches-ignore: [ main ]
+
+jobs:
+  frontend-lint:
+    name: Frontend Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js and PNPM
+        uses: ./.github/actions/setup-node
+      
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: pnpm install
+      
+      - name: Lint
+        working-directory: ./frontend
+        run: pnpm lint
+
+      - name: Format check
+        working-directory: ./frontend
+        run: pnpm format
+
+  bff-lint:
+    name: BFF Lint and Format
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js and PNPM
+        uses: ./.github/actions/setup-node
+      
+      - name: Install dependencies
+        working-directory: ./bff
+        run: pnpm install
+      
+      - name: Lint
+        working-directory: ./bff
+        run: pnpm lint
+      
+      - name: Format check
+        working-directory: ./bff
+        run: pnpm format

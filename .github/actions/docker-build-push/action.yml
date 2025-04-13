@@ -1,0 +1,33 @@
+name: 'Docker Build and Push'
+description: 'Builds and pushes a Docker image to GitHub Container Registry'
+
+inputs:
+  context:
+    description: 'Docker build context'
+    required: true
+  image-name:
+    description: 'Name of the Docker image'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository }}/${{ inputs.image-name }}
+        tags: |
+          type=sha,format=long
+          type=ref,event=branch
+          latest
+    
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      with:
+        context: ${{ inputs.context }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
