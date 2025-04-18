@@ -20,3 +20,12 @@ services:
       - ./bff:/bff
     ports:
       - 3000:3000
+  tag:
+    container_name: tag
+    build: ./backend/tag
+    tty: true
+    volumes:
+      - ./backend/tag:/tag
+    ports:
+      - 4567:4567
+  

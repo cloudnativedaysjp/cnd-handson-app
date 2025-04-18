@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+message Tag {
+  string id = 1;
+  string name = 2;
+  string text_color = 3;
+  string bg_color = 4;
+}
+
+message TagRequest {
+  string id = 1;
+}
+
+message TagResponse {
+  bool error = 1;
+  string message = 2;
+  Tag tag = 3;
+}
+
+service TagService {
+  rpc GetTag(TagRequest) returns (TagResponse);
+  rpc CreateTag(Tag) returns (TagResponse);
+  rpc UpdateTag(Tag) returns (TagResponse);
+  rpc DeleteTag(TagRequest) returns (TagResponse);
+}
