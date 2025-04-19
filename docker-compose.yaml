@@ -1,1 +1,106 @@
 services:
+    user-migrate:
+      build:
+        context: ./backend/user
+        dockerfile: Dockerfile
+        target: bin
+        platforms:
+          - linux/amd64
+      image: user:latest
+      container_name: user-migrate
+      env_file:
+        - .env
+      environment:
+        DB_HOST: db
+        DB_PORT: 5432
+        DB_USER: ${DB_USER}
+        DB_PASSWORD: ${DB_PASSWORD}
+        DB_DB: ${DB_DB}
+      entrypoint: ["/user-service", "migrate"]
+      platform: linux/amd64
+      depends_on:
+        - "db"
+    user-service:
+      build:
+        context: ./backend/user
+        dockerfile: Dockerfile
+        target: bin
+        platforms:
+          - linux/amd64
+      image: user:latest
+      container_name: user-service
+      ports:
+        - "50051:50051"
+      env_file:
+        - .env
+      environment:
+        DB_HOST: db
+        DB_PORT: 5432
+        DB_USER: ${DB_USER}
+        DB_PASSWORD: ${DB_PASSWORD}
+        DB_DB: ${DB_DB}
+      entrypoint: ["/user-service", "server"]
+      platform: linux/amd64
+      depends_on:
+        - "user-migrate"
+        - "db"
+    session-migrate:
+      build:
+        context: ./backend/session
+        dockerfile: Dockerfile
+        target: bin
+        platforms:
+          - linux/amd64
+      image: session:latest
+      container_name: session-migrate
+      env_file:
+        - .env
+      environment:
+        DB_HOST: db
+        DB_PORT: 5432
+        DB_USER: ${DB_USER}
+        DB_PASSWORD: ${DB_PASSWORD}
+        DB_DB: ${DB_DB}
+      entrypoint: ["/session-service", "migrate"]      
+      platform: linux/amd64
+      depends_on:
+        - "db"
+    session-service:
+      build:
+        context: ./backend/session
+        dockerfile: Dockerfile
+        target: bin
+        platforms:
+          - linux/amd64
+      image: session:latest
+      container_name: session-service
+      ports:
+        - "50052:50051"
+      env_file:
+        - .env
+      environment:
+        DB_HOST: db
+        DB_PORT: 5432
+        DB_USER: ${DB_USER}
+        DB_PASSWORD: ${DB_PASSWORD}
+        DB_DB: ${DB_DB}
+      entrypoint: ["/session-service", "server"]      
+      platform: linux/amd64
+      depends_on:
+        - "session-migrate"
+        - "db"
+    db:
+      image: postgres:latest
+      restart: unless-stopped
+      volumes:
+        - postgres-data:/var/lib/postgresql/data
+      env_file:
+        # Ensure that the variables in .env match the same variables in devcontainer.json
+        - .env
+      environment:
+        POSTGRES_USER: ${DB_USER}
+        POSTGRES_PASSWORD: ${DB_PASSWORD}
+        POSTGRES_DB: ${DB_DB}
+volumes:
+  postgres-data:
+    

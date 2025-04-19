@@ -1,4 +1,4 @@
-all: bin/user
+all: bin/user-service
 test: lint unit-test
 IMAGE_NAME=user-service
 TAG=latest
@@ -9,6 +9,12 @@ bin/user-service:
 	@docker build . --target bin -t $(IMAGE_NAME):$(TAG) \
 	--output bin/ \
 	--platform ${PLATFORM}
+
+.PHONY: bin/user-client
+bin/user-client:
+	@docker build . --target client -t $(IMAGE_NAME):$(TAG) \
+	--output bin/ \
+	--platform ${PLATFORM} --no-cache
 
 .PHONY: unit-test
 unit-test:

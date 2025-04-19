@@ -1,12 +1,18 @@
-all: bin/user
+all: bin/session-service
 test: lint unit-test
-IMAGE_NAME=user-service
+IMAGE_NAME=session-service
 TAG=latest
 PLATFORM?=linux/amd64
 
-.PHONY: bin/user-service
-bin/user-service:
+.PHONY: bin/session-service
+bin/session-service:
 	@docker build . --target bin -t $(IMAGE_NAME):$(TAG) \
+	--output bin/ \
+	--platform ${PLATFORM}
+
+.PHONY: bin/session-client
+bin/session-client:
+	@docker build . --target client -t $(IMAGE_NAME):$(TAG) \
 	--output bin/ \
 	--platform ${PLATFORM}
 

@@ -1,4 +1,4 @@
-# User Service
+# Session Service
 
 CloudNative Days Handson用のsessionサービスのサンプルアプリケーションです。
 
@@ -6,9 +6,12 @@ CloudNative Days Handson用のsessionサービスのサンプルアプリケー�
 
 ## Features
 
-- ユーザー登録
 - ユーザーログイン
+- アクセストークンの発行
 - アクセストークンの検証
+- リフレッシュトークンの発行
+- リフレッシュトークンの検証
+- リフレッシュトークンの無効化（logout）
 - リフレッシュトークンを使用したアクセストークンの更新
 
 ---
@@ -25,7 +28,7 @@ CloudNative Days Handson用のsessionサービスのサンプルアプリケー�
 ### 1. リポジトリをクローン
 ```bash
 git clone https://github.com/cloudnativedaysjp/cnd-handson-app/
-cd user-service
+cd session-service
 ```
 
 ### 2. devContainerの環境変数を設定
@@ -59,43 +62,8 @@ go run cmd/server/main.go serve
 ```bash
 make
 ```
-binにuser-serviceバイナリが作成されます。
+binにsession-serviceバイナリが作成されます。
 ## Quick Start
-
-### ユーザーログイン
-```bash
-curl -X POST http://localhost:8080/auth/login \
-     -H "Content-Type: application/json" \
-     -d '{
-           "email": "test@example.com",
-           "password": "securepassword"
-         }'
-```
-### ユーザーログアウト
-```bash
-curl -X POST http://localhost:8080/auth/logout \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <your_access_token>" \
-     -d '{
-           "refresh_token": "<your_refresh_token>"
-         }'
-```
-
-### アクセストークンの検証
-```bash
-curl -X GET http://localhost:8080/auth/validate \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <your_access_token>"
-```
-
-### リフレッシュトークンを使用してアクセストークンを更新
-```bash
-curl -X POST http://localhost:8080/auth/refresh \
-     -H "Content-Type: application/json" \
-     -d '{
-           "refresh_token": "<your_refresh_token>"
-         }'
-```
 
 ---
 
@@ -121,7 +89,7 @@ make run
 │   └── server/
 │       └── main.go     # メインアプリケーション
 ├── internal/           # 内部ロジック
-│   ├── user/           # ユーザー関連
+│   ├── session/           # ユーザー関連
 │   └── refresh/        # リフレッシュトークン関連
 ├── pkg/                # 再利用可能なパッケージ
 │   ├── auth/           # 認証関連

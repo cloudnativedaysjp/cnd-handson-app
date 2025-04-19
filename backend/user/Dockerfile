@@ -11,10 +11,16 @@ FROM base AS build
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /src
+RUN echo "Building for ${TARGETOS} ${TARGETARCH}"
 RUN --mount=target=. \
     --mount=type=cache,target=/go/pkg/mod,sharing=locked \
     --mount=type=cache,target=/root/.cache/go-build,sharing=locked \
     GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /out/user-service ./cmd/server/main.go
+RUN --mount=target=. \
+    --mount=type=cache,target=/go/pkg/mod,sharing=locked \
+    --mount=type=cache,target=/root/.cache/go-build,sharing=locked \
+    GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /out/user-client ./cmd/client/main.go
+
 
 FROM base AS unit-test
 WORKDIR /src
@@ -38,3 +44,6 @@ COPY --from=unit-test /out/cover.out /cover.out
 
 FROM scratch AS bin
 COPY --from=build /out/user-service /
+
+FROM scratch AS client
+COPY --from=build /out/user-client /

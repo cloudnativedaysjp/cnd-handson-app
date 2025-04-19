@@ -7,6 +7,7 @@ option go_package = "github.com/cloudnativedaysjp/cnd-handson-app/backend/sessio
 // ================================
 // サービス定義
 // ================================
+
 service AccessTokenService {
   // アクセストークンの生成（ログイン後・リフレッシュ時）
   rpc GenerateAccessToken(GenerateAccessTokenRequest) returns (AccessTokenResponse);

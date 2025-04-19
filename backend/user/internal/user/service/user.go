@@ -7,6 +7,8 @@ import (
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/user/internal/user/repository"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/user/pkg/auth"
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func CreateUser(Email string, Password string, Name string, RoleID uuid.UUID) (*model.User, error) {
@@ -30,10 +32,10 @@ func CreateUser(Email string, Password string, Name string, RoleID uuid.UUID) (*
 func GetUserByID(userID uuid.UUID) (*model.User, error) {
 	user, err := repository.GetUserByID(userID)
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.NotFound, "user not found")
 	}
 	if user == nil {
-		return nil, nil
+		return nil, status.Errorf(codes.Internal, "failed to get user: %v", err)
 	}
 	return user, nil
 }
