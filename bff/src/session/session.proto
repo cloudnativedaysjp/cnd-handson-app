@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package session;
+
+option go_package = "github.com/cloudnativedaysjp/cnd-handson-app/backend/session/proto;sessionpb";
+
+// ================================
+// サービス定義
+// ================================
+
+service AccessTokenService {
+  // アクセストークンの生成（ログイン後・リフレッシュ時）
+  rpc GenerateAccessToken(GenerateAccessTokenRequest) returns (AccessTokenResponse);
+
+  // アクセストークンの検証
+  rpc ValidateAccessToken(ValidateAccessTokenRequest) returns (ValidateAccessTokenResponse);
+}
+
+service RefreshTokenService {
+  // リフレッシュトークンの生成（ログイン時）
+  rpc GenerateRefreshToken(GenerateRefreshTokenRequest) returns (RefreshTokenResponse);
+
+  // リフレッシュトークンの無効化（ログアウト時など）
+  rpc RevokeRefreshToken(RevokeRefreshTokenRequest) returns (RevokeRefreshTokenResponse);
+
+  // リフレッシュトークンの検証
+  rpc ValidateRefreshToken(ValidateRefreshTokenRequest) returns (ValidateRefreshTokenResponse);
+}
+
+// ================================
+// リクエスト / レスポンスメッセージ
+// ================================
+
+// --- GenerateAccessToken ---
+message GenerateAccessTokenRequest {
+  string user_id = 1;
+}
+
+message AccessTokenResponse {
+  string access_token = 1;
+  int64 expires_at = 2;
+}
+
+// --- ValidateAccessToken ---
+message ValidateAccessTokenRequest {
+  string access_token = 1;
+}
+
+message ValidateAccessTokenResponse {
+  bool valid = 1;
+  string user_id = 2;
+  string error = 3;
+}
+
+// --- GenerateRefreshToken ---
+message GenerateRefreshTokenRequest {
+  string user_id = 1;
+}
+
+message RefreshTokenResponse {
+  string refresh_token = 1;
+  int64 expires_at = 2;
+  string user_id = 3;
+}
+
+// --- RevokeRefreshToken ---
+message RevokeRefreshTokenRequest {
+  string refresh_token = 1;
+  string user_id = 2;
+}
+
+message RevokeRefreshTokenResponse {
+  bool success = 1;
+}
+
+// --- ValidateRefreshToken ---
+message ValidateRefreshTokenRequest {
+  string refresh_token = 1;
+  string user_id = 2;
+}
+
+message ValidateRefreshTokenResponse {
+  bool valid = 1;
+}

@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from "@nestjs/common";
+import { ClientGrpc } from "@nestjs/microservices";
+import { Observable, lastValueFrom } from "rxjs";
+import { adjustRpcResponse } from "./utils/convertObservableToPromise";
 
 @Injectable()
-export class AppService {
-  getHello(): string {
-    return 'Hello World!';
-  }
+export class AppService implements OnModuleInit {
+
 }
