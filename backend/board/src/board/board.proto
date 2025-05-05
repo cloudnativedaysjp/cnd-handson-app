@@ -1,0 +1,52 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+package board;
+
+message Board {
+    string id = 1;
+    string name = 2;
+    string project_id = 3;
+    google.protobuf.Timestamp created_at = 4;
+    google.protobuf.Timestamp updated_at = 5;
+}
+
+service BoardService {
+    rpc CreateBoard(BoardCreateRequest) returns (BoardCreateResponse);
+    rpc UpdateBoard(BoardUpdateRequest) returns (BoardUpdateResponse);
+    rpc DeleteBoard(BoardDeleteRequest) returns (BoardDeleteResponse);
+    rpc ListBoards(BoardListRequest) returns (BoardListResponse);
+    rpc GetBoard(BoardGetRequest) returns (BoardGetResponse);
+}
+
+message BoardListRequest {
+    repeated Board boards = 1;
+}
+message BoardCreateRequest {
+    string name = 1;
+    string project_id = 2;
+}
+message BoardUpdateRequest {
+    string id = 1;
+    string name = 2;
+}
+message BoardDeleteRequest {
+    string id = 1;
+}
+message BoardGetRequest {
+    string id = 1;
+}
+message BoardListResponse {
+    repeated Board boards = 1;
+}
+message BoardCreateResponse {
+    Board board = 1;
+}
+message BoardUpdateResponse {
+    Board board = 1;
+}
+message BoardDeleteResponse {
+    string id = 1;
+}
+message BoardGetResponse {
+    Board board = 1;
+}

@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-message Board {
-    string id = 1;
-    string name = 2;
-    string project_id = 3;
-}
