@@ -1,4 +1,5 @@
 services:
+  
     user-migrate:
       build:
         context: ./backend/user
@@ -89,6 +90,18 @@ services:
       depends_on:
         - "session-migrate"
         - "db"
+    frontend:
+      container_name: frontend
+      build: ./frontend
+      tty: true
+      volumes:
+        - ./frontend:/app
+        - /app/node_modules
+        - ./frontend/.pnpm-store/:/app/.pnpm-store/
+      ports:
+        - 5173:5173
+      environment:
+        - PNPM_STORE_PATH=/app/.pnpm-store
     db:
       image: postgres:latest
       restart: unless-stopped
