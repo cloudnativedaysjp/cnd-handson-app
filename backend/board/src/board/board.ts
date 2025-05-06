@@ -7,7 +7,7 @@
 /* eslint-disable */
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
-import { Timestamp } from "../google/protobuf/timestamp";
+import { Timestamp } from "./protobuf/timestamp";
 
 export const protobufPackage = "board";
 
