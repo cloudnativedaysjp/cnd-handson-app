@@ -19,9 +19,8 @@ runs:
         # images: ghcr.io/${{ github.repository }}/${{ inputs.image-name }}
         images: ghcr.io/mongamae-nioh/cnd-handson-app/${{ inputs.image-name }}
         tags: |
-          type=raw,value=latest,priority=1000
-          type=sha,format=long,priority=100
-          type=ref,event=branch,priority=500
+          type=raw,value=latest
+          type=sha,prefix=,suffix=,format=short
     
     - name: Build and push
       uses: docker/build-push-action@v6
