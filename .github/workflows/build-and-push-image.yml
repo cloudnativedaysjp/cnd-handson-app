@@ -27,8 +27,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          # username: ${{ github.repository_owner }}
-          username: mongamae-nioh
+          username: ${{ github.repository_owner }}
+          # username: mongamae-nioh
           password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Build and push ${{ matrix.service.name }} Docker image
