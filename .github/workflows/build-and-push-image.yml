@@ -11,15 +11,31 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service:
-          - name: project
+        service: [frontend, bff, project, user, session, board, task, column, role]
+        include:
+          - service: frontend
+            context: ./frontend
+          - service: bff
+            context: ./bff
+          - service: project
             context: ./backend/project
+          - service: user
+            context: ./backend/user
+          - service: session
+            context: ./backend/session
+          - service: board
+            context: ./backend/board
+          - service: task
+            context: ./backend/task
+          - service: column
+            context: ./backend/column
+          - service: role
+            context: ./backend/role
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      # TODO: configure all services
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
@@ -30,8 +46,8 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Build and push ${{ matrix.service.name }} Docker image
+      - name: Build and push ${{ matrix.service }} Docker image
         uses: ./.github/actions/docker-build-push
         with:
-          context: ${{ matrix.service.context }}
-          image-name: ${{ matrix.service.name }}
+          context: ${{ matrix.context }}
+          image-name: ${{ matrix.service }}
