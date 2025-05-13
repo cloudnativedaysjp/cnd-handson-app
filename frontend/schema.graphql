@@ -1,0 +1,104 @@
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+type User {
+  id: ID!
+  name: String!
+  email: String!
+  role: Role!
+  projects: [Project!]!
+  sessions: [Session!]!
+}
+
+type Role {
+  id: ID!
+  name: String!
+  description: String
+}
+
+type Project {
+  id: ID!
+  name: String!
+  description: String
+  owner: User!
+  boards: [Board!]!
+}
+
+type Board {
+  id: ID!
+  name: String!
+  project: Project!
+  columns: [Column!]!
+}
+
+type Column {
+  id: ID!
+  name: String!
+  board: Board!
+  tasks: [Task!]!
+}
+
+type Task {
+  id: ID!
+  title: String!
+  description: String
+  status: TaskStatus!
+  startTime: String
+  endTime: String
+  column: Column!
+  assignee: User
+}
+
+type Session {
+  id: ID!
+  user: User!
+  token: String!
+  expiresAt: String!
+  createdAt: String!
+}
+
+
+input CreateTaskInput {
+  title: String!
+  description: String
+  status: TaskStatus = TODO
+  startTime: String
+  endTime: String
+  columnId: ID!
+  assigneeId: ID
+}
+
+input CreateProjectInput {
+  name: String!
+  description: String
+  ownerId: ID!
+}
+
+type Query {
+  users: [User!]!
+  user(id: ID!): User
+
+  projects: [Project!]!
+  project(id: ID!): Project
+
+  boards(projectId: ID!): [Board!]!
+  board(id: ID!): Board
+
+  columns(boardId: ID!): [Column!]!
+  column(id: ID!): Column
+
+  tasks(columnId: ID): [Task!]!
+  task(id: ID!): Task
+}
+
+
+type Mutation {
+  createTask(input: CreateTaskInput!): Task!
+  createProject(input: CreateProjectInput!): Project!
+  deleteTask(id: ID!): Boolean!
+  assignTaskTags(taskId: ID!, tagIds: [ID!]!): Task!
+}
