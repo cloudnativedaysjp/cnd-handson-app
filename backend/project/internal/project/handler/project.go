@@ -16,18 +16,15 @@ type ProjectServiceServer struct {
 	projectpb.UnimplementedProjectServiceServer
 }
 
-// 未使用の変数を追加
-var unusedVariable  =  "this will cause lint error"
-
 // modelからprotoへの変換ヘルパー関数
 func convertToProtoProject(project *model.Project) *projectpb.Project {
 	return &projectpb.Project{
 		Id:          project.ID.String(),
 		Name:        project.Name,
-		Description: project.Description,
+	Description: project.Description,
 		OwnerId:     project.OwnerID.String(),
 		CreatedAt:   timestamppb.New(project.CreatedAt),
-		UpdatedAt:   timestamppb.New(project.UpdatedAt),
+	UpdatedAt:   timestamppb.New(project.UpdatedAt),
 	}
 }
 
