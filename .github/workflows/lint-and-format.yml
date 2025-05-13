@@ -10,51 +10,52 @@ env:
   PYTHON_VERSION: 3.12
 
 jobs:
-  typescript-lint-format:
-    name: TypeScript lint and format
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [frontend, bff]
+  # typescript-lint-format:
+  #   name: TypeScript lint and format
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       service: [frontend, bff]
     
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
       
-      - name: Setup Node.js and PNPM
-        uses: ./.github/actions/setup-node
+  #     - name: Setup Node.js and PNPM
+  #       uses: ./.github/actions/setup-node
       
-      - name: Install dependencies
-        run: |
-          # Install root dependencies for Biome
-          pnpm install
-          # Install service dependencies
-          cd ./${{ matrix.service }}
-          pnpm install
+  #     - name: Install dependencies
+  #       run: |
+  #         # Install root dependencies for Biome
+  #         pnpm install
+  #         # Install service dependencies
+  #         cd ./${{ matrix.service }}
+  #         pnpm install
       
-      - name: Lint with Biome
-        run: npx @biomejs/biome lint ./${{ matrix.service }}/src/
+  #     - name: Lint with Biome
+  #       run: npx @biomejs/biome lint ./${{ matrix.service }}/src/
       
-      - name: Format check with Biome
-        run: npx @biomejs/biome format ./${{ matrix.service }}/src/ --write=false --verbose
+  #     - name: Format check with Biome
+  #       run: npx @biomejs/biome format ./${{ matrix.service }}/src/ --write=false --verbose
   
   go-lint-format:
     name: Go lint and format
     runs-on: ubuntu-latest
     strategy:
       matrix:
-          service: [project, user, session, board, task]
+          # service: [project, user, session, board, task]
+          service: [project]
           include:
             - service: project
               path: backend/project
-            - service: user
-              path: backend/user
-            - service: session
-              path: backend/session
-            - service: board
-              path: backend/board
-            - service: task
-              path: backend/task
+            # - service: user
+            #   path: backend/user
+            # - service: session
+            #   path: backend/session
+            # - service: board
+            #   path: backend/board
+            # - service: task
+            #   path: backend/task
   
     steps:
       - name: Checkout code
@@ -81,37 +82,37 @@ jobs:
             exit 1
           fi
 
-  python-lint-format:
-      name: Python lint and format
-      runs-on: ubuntu-latest
-      strategy:
-        matrix:
-            service: [column, role]
-            include:
-              - service: column
-                path: backend/column
-              - service: role
-                path: backend/role
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v4
+  # python-lint-format:
+  #     name: Python lint and format
+  #     runs-on: ubuntu-latest
+  #     strategy:
+  #       matrix:
+  #           service: [column, role]
+  #           include:
+  #             - service: column
+  #               path: backend/column
+  #             - service: role
+  #               path: backend/role
+  #     steps:
+  #       - name: Checkout code
+  #         uses: actions/checkout@v4
         
-        - name: Setup Python
-          uses: actions/setup-python@v5
-          with:
-            python-version: ${{ env.PYTHON_VERSION }}
-            cache: 'pip'
+  #       - name: Setup Python
+  #         uses: actions/setup-python@v5
+  #         with:
+  #           python-version: ${{ env.PYTHON_VERSION }}
+  #           cache: 'pip'
         
-        - name: Install dependencies
-          working-directory: ./${{ matrix.path }}
-          run: |
-            pip install -r requirements.txt
-            pip install flake8 black
+  #       - name: Install dependencies
+  #         working-directory: ./${{ matrix.path }}
+  #         run: |
+  #           pip install -r requirements.txt
+  #           pip install flake8 black
         
-        - name: Lint with Flake8
-          working-directory: ./${{ matrix.path }}
-          run: flake8 .
+  #       - name: Lint with Flake8
+  #         working-directory: ./${{ matrix.path }}
+  #         run: flake8 .
         
-        - name: Format check with Black
-          working-directory: ./${{ matrix.path }}
-          run: black --check .
+  #       - name: Format check with Black
+  #         working-directory: ./${{ matrix.path }}
+  #         run: black --check .
