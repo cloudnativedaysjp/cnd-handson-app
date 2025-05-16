@@ -33,7 +33,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <AppBar position="static">
+    <AppBar position="static" sx={{ backgroundColor: '#111111' }}>
       <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <Box
           sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
