@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strings"
 	"time"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/model"
@@ -36,7 +37,7 @@ func (s *projectService) CreateProject(name string, description string, ownerID 
 	// プロジェクトオブジェクト作成
 	project := model.Project{
 		ID:          uuid.New(), // 新規UUIDを生成
-		Name:        name,
+		Name:        strings.ToLower(name), // bug: 大文字を小文字に変換
 		Description: description,
 		OwnerID:     ownerID,
 		CreatedAt:   time.Now(),
