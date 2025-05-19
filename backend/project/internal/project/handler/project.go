@@ -24,10 +24,10 @@ func convertToProtoProject(project *model.Project) *projectpb.Project {
 	return &projectpb.Project{
 		Id:          project.ID.String(),
 		Name:        project.Name,
-	Description: project.Description,
+		Description: project.Description,
 		OwnerId:     project.OwnerID.String(),
 		CreatedAt:   timestamppb.New(project.CreatedAt),
-	UpdatedAt:   timestamppb.New(project.UpdatedAt),
+		UpdatedAt:   timestamppb.New(project.UpdatedAt),
 	}
 }
 
