@@ -5,10 +5,10 @@ COPY . /app
 
 # black をインストール
 RUN pip install --no-cache-dir black
-RUN black . --exclude=venv,proto
+RUN black . --exclude=venv,proto,gen
 # flake8 をインストール
 RUN pip install --no-cache-dir flake8
-RUN flake8 . --exclude=venv,proto --ignore=E501
+RUN flake8 . --exclude=venv,proto,gen --ignore=E501
 
 FROM python:3.12-slim AS runtime
 
@@ -19,6 +19,6 @@ COPY . /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/app/gen
 
 CMD ["python", "./cmd/server/main.py", "server"]

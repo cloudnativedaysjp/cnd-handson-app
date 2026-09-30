@@ -2,7 +2,7 @@ import grpc
 import argparse  # argparseをインポート
 from typing import Any
 
-from proto import role_pb2_grpc, role_pb2
+from role import role_pb2_grpc, role_pb2
 
 
 def create_Request(

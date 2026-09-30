@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package board;
+
 message Board {
     string id = 1;
     string name = 2;

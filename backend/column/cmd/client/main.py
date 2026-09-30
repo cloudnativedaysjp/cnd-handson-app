@@ -2,7 +2,7 @@ import grpc
 import argparse  # argparseをインポート
 from typing import Any
 
-from proto import column_pb2_grpc, column_pb2
+from column import column_pb2_grpc, column_pb2
 
 
 def create_Request(
