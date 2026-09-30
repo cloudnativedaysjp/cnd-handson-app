@@ -1,0 +1,16 @@
+# Spec, CI and build definitions require review from the owning team.
+/proto/ @cloudnativedaysjp/cnd-handson
+/e2e/ @cloudnativedaysjp/cnd-handson
+/.github/ @cloudnativedaysjp/cnd-handson
+/.claude/ @cloudnativedaysjp/cnd-handson
+/AGENTS.md @cloudnativedaysjp/cnd-handson
+/CLAUDE.md @cloudnativedaysjp/cnd-handson
+/docs/conventions.md @cloudnativedaysjp/cnd-handson
+/mise.toml @cloudnativedaysjp/cnd-handson
+/Makefile @cloudnativedaysjp/cnd-handson
+/docker-compose.yaml @cloudnativedaysjp/cnd-handson
+/.coderabbit.yaml @cloudnativedaysjp/cnd-handson
+**/Dockerfile @cloudnativedaysjp/cnd-handson
+**/pnpm-lock.yaml @cloudnativedaysjp/cnd-handson
+**/go.sum @cloudnativedaysjp/cnd-handson
+**/requirements*.txt @cloudnativedaysjp/cnd-handson
