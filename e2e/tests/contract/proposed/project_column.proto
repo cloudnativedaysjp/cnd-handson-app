@@ -1,0 +1,11 @@
+// PROPOSED (#72/#109): project -> column listing. Adds an RPC to project.ProjectService (wire path
+// /project.ProjectService/ListProjectColumns). Not in proto/ yet; needs human approval.
+syntax = "proto3";
+package project;
+
+service ProjectService {
+  rpc ListProjectColumns(ListProjectColumnsRequest) returns (ListProjectColumnsResponse);
+}
+message ListProjectColumnsRequest { string project_id = 1; }
+message ListProjectColumnsResponse { repeated ProjectColumn columns = 1; }
+message ProjectColumn { string id = 1; string name = 2; }

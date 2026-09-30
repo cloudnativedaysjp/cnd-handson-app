@@ -39,7 +39,9 @@ test.fixme("login returns an RS256 JWT verifiable via JWKS", async () => {
     issuer: cfg.expectedIss,
     audience: cfg.expectedAud,
   });
-  for (const k of ["iss", "aud", "sub", "exp"]) expect(payload).toHaveProperty(k);
+  // `roles` because idp absorbs role (#104/#65)
+  for (const k of ["iss", "aud", "sub", "exp", "roles"]) expect(payload).toHaveProperty(k);
+  expect(Array.isArray(payload.roles)).toBe(true);
 });
 
 // fixme: needs idp.IdpService (proposed/idp.proto), see #104.

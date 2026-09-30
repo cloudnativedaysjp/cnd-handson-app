@@ -5,6 +5,7 @@ export const cfg = {
   idpUrl: env("IDP_URL", "http://localhost:8082"), // HTTP 8080 in the container: discovery + JWKS
   idpGrpc: env("IDP_GRPC_ADDR", "localhost:50051"),
   projectGrpc: env("PROJECT_GRPC_ADDR", "localhost:50053"),
+  columnGrpc: env("COLUMN_GRPC_ADDR", "localhost:50056"),
   taskGrpc: env("TASK_GRPC_ADDR", "localhost:50055"),
   // Seeded/registered by the idp implementation (#104) for the UI test.
   userEmail: env("CONTRACT_USER_EMAIL", "demo@example.com"),
