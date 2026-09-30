@@ -3,5 +3,5 @@ go = "1.24.3"      # go.mod の最大値。これ未満だと toolchain の自�
 python = "3.12.13" # backend/role の Dockerfile は 3.12-slim (パッチ未固定)。3.12 系の具体版
 node = "22.5.1"    # CI に合わせる
 pnpm = "10.6.5"    # frontend の packageManager
-uv = "0.11.14"      # Python の生成（grpcio-tools）を uvx で実行する
+uv = "0.11.33"      # Python の生成（grpcio-tools）を uvx で実行する
 buf = "1.57.0"     # Makefile の gen と合わせる
