@@ -7,6 +7,15 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+    # push のたびの再レビューは待ち時間と通知が多いため、再レビューは @coderabbitai review で依頼する
+    auto_incremental_review: false
+  sequence_diagrams: false
+  related_issues: false
+  related_prs: false
+  suggested_labels: false
+  suggested_reviewers: false
+  estimate_code_review_effort: false
+  in_progress_fortune: false
   # 生成物は proto とロックファイルの差分で確認するため、行単位の指摘は不要
   path_filters:
     - "!backend/*/proto/*.pb.go"
