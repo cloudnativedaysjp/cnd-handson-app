@@ -1,0 +1,10 @@
+version: v2
+# Go code lands in each service module (backend/<svc>/proto) so per-service Docker build contexts stay self-contained.
+# Python (role, column) uses buf.gen.python.yaml, driven by `make gen`.
+plugins:
+  - remote: buf.build/protocolbuffers/go:v1.36.6
+    out: .
+    opt: module=github.com/cloudnativedaysjp/cnd-handson-app
+  - remote: buf.build/grpc/go:v1.5.1
+    out: .
+    opt: module=github.com/cloudnativedaysjp/cnd-handson-app,require_unimplemented_servers=false
