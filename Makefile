@@ -1,11 +1,14 @@
-BUF := go run github.com/bufbuild/buf/cmd/buf@v1.57.0
+BUF_VERSION := 1.57.0
+# 版が違う buf や未設定の mise シムでは生成結果が CI とずれるため、版が一致するときだけ PATH の buf を使う
+BUF ?= $(shell [ "$$(buf --version 2>/dev/null)" = "$(BUF_VERSION)" ] && echo buf || echo go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION))
+UP_BUILD ?= --build
 GO_SERVICES := user session project task
 PY_SERVICES := role column
 PNPM := pnpm
 
 .PHONY: gen lint up down clean e2e
 
-# Requires: go (runs buf via `go run`) and network access (buf remote plugins).
+# Requires: buf on PATH, or go (falls back to `go run`) and network access (buf remote plugins).
 gen:
 	$(BUF) generate $(foreach s,$(GO_SERVICES),--path proto/$(s))
 	@for s in $(PY_SERVICES); do \
@@ -20,14 +23,16 @@ lint:
 	cd backend/project && go vet ./...  # project has no Docker lint target
 	@for s in $(PY_SERVICES); do $(MAKE) -C backend/$$s lint || exit 1; done
 
-up:
-	@test -f .env || cp .env.example .env
-	docker compose up -d --build --wait --wait-timeout 300
+.env:
+	cp .env.example $@
 
-down:
+up: .env
+	docker compose up -d $(UP_BUILD) --wait --wait-timeout 300
+
+down: .env
 	docker compose down
 
-clean:
+clean: .env
 	docker compose down -v
 
 # Requires: node and pnpm (mise locally, corepack in CI) and a running stack (`make up`).
