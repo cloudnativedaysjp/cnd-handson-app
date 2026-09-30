@@ -1,0 +1,11 @@
+// PROPOSED (#72): project -> task listing. Adds an RPC to project.ProjectService (wire path
+// /project.ProjectService/ListProjectTasks). Not in proto/ yet; needs human approval.
+syntax = "proto3";
+package project;
+
+service ProjectService {
+  rpc ListProjectTasks(ListProjectTasksRequest) returns (ListProjectTasksResponse);
+}
+message ListProjectTasksRequest { string project_id = 1; }
+message ListProjectTasksResponse { repeated ProjectTask tasks = 1; }
+message ProjectTask { string id = 1; string title = 2; string project_id = 3; }
