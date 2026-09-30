@@ -30,8 +30,7 @@ $(CLIENT_BIN): $(GO_FILES) | $(BIN_DIR)
 
 # protoファイルからGo言語のコードを生成
 proto:
-	@echo "Generating Go code from proto files..."
-	cd proto && protoc --go_out=../internal --go-grpc_out=../internal project.proto
+	@$(MAKE) -C ../.. gen
 
 # テスト実行
 test:
