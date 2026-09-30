@@ -23,42 +23,14 @@ CloudNative Days Handson用のユーザサービスのサンプルアプリケ�
 
 ## Setup
 
-### 1. リポジトリをクローン
+リポジトリ直下の `.env.example` を `.env` にコピーし、リポジトリ直下で起動します（docker compose を使用）。
+
 ```bash
-git clone https://github.com/cloudnativedaysjp/cnd-handson-app/
-cd user-service
+cp .env.example .env
+make up     # 起動
+make down   # 停止
 ```
 
-### 2. devContainerの環境変数を設定
-`./devcontainr/.env` ファイルを作成し、以下のように設定してください（`.env.dummy` を参考にしてください）。
-
-```env
-DB_HOST=db
-DB_PORT=5432
-DB_DB=your_db_name
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-JWT_SECRET_KEY=your_jwt_secret_key
-```
-
-### 3. devcontainer起動
-```bash
-devcontainer open
-```
-
-### 4. マイグレーションを実行
-```bash
-go run cmd/server/main.go migrate
-```
-もし失敗するorテーブルをリセットしたい場合
-```bash
-go run cmd/server/main.go reset
-```
-
-### 5. アプリケーションを起動
-```bash
-go run cmd/server/main.go server
-```
 ---
 ## AppのBuild
 ```bash
@@ -139,7 +111,6 @@ protoからのコード生成は、リポジトリ直下で `make gen` を実行
 │   ├── auth/           # 認証関連
 │   └── db/             # データベース関連
 ├── proto/              # proto関連
-├── .devcontainer/      # DevContainer設定
 ├── Dockerfile          # Dockerビルド設定
 ├── docker-compose.yml  # Docker Compose設定
 ├── Makefile            # ビルド・テスト用Makefile
