@@ -1,11 +1,12 @@
-BUF := go run github.com/bufbuild/buf/cmd/buf@v1.57.0
+BUF ?= $(shell command -v buf >/dev/null 2>&1 && echo buf || echo go run github.com/bufbuild/buf/cmd/buf@v1.57.0)
+UP_BUILD ?= --build
 GO_SERVICES := user session project task
 PY_SERVICES := role column
 PNPM := pnpm
 
 .PHONY: gen lint up down clean e2e
 
-# Requires: go (runs buf via `go run`) and network access (buf remote plugins).
+# Requires: buf on PATH, or go (falls back to `go run`) and network access (buf remote plugins).
 gen:
 	$(BUF) generate $(foreach s,$(GO_SERVICES),--path proto/$(s))
 	@for s in $(PY_SERVICES); do \
@@ -22,7 +23,7 @@ lint:
 
 up:
 	@test -f .env || cp .env.example .env
-	docker compose up -d --build --wait --wait-timeout 300
+	docker compose up -d $(UP_BUILD) --wait --wait-timeout 300
 
 down:
 	docker compose down
