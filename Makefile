@@ -1,7 +1,7 @@
 BUF := go run github.com/bufbuild/buf/cmd/buf@v1.57.0
 GO_SERVICES := user session project task
 PY_SERVICES := role column
-PNPM := corepack pnpm
+PNPM := pnpm
 
 .PHONY: gen lint up down clean e2e
 
@@ -30,6 +30,6 @@ down:
 clean:
 	docker compose down -v
 
-# Requires: node (corepack provides pnpm) and a running stack (`make up`).
+# Requires: node and pnpm (mise locally, corepack in CI) and a running stack (`make up`).
 e2e:
 	cd e2e && $(PNPM) install --frozen-lockfile && $(PNPM) exec playwright install chromium && $(PNPM) test
