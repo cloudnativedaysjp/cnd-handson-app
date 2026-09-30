@@ -19,3 +19,5 @@ description: Issue 番号を受け取り、着手確認から実装・検証・P
 6. コミット（ファイルを 1 つずつ add）。`git fetch origin && git merge origin/main` で追従し再確認
 7. push は人間の承認後のみ。確認できない環境ではここで止めて報告
 8. `gh pr create` をテンプレートに沿って。ラベル `ai-authored`（無ければ人間に作成を依頼）。未実行の確認は draft PR
+9. CodeRabbit のレビューは PR 作成時に 1 回だけ自動で走る。レビュー中（要約に「Currently processing」）は push しない（レビューが中断される）
+10. 指摘を直して push したら、必要に応じて `@coderabbitai review` で再レビューを依頼する。直さない指摘は理由をスレッドに返信する
