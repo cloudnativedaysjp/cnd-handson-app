@@ -98,7 +98,7 @@ Success: true
 
 ## gRPC Documentation
 
-gRPCの詳細な仕様は、[gRPC仕様書](proto/READEME.md)を参照してください。
+protoからのコード生成は、リポジトリ直下で `make gen` を実行してください。
 
 
 ## Project Structure
