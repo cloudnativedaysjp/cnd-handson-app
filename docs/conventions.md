@@ -27,6 +27,7 @@
 - 設定は環境変数のみ（`PORT`、`DB_*`、`OTEL_*`）。秘密値も env で受ける
 - 新規サービスの gRPC は 50051（ポート名 `grpc`）、HTTP 入口は 8080（ポート名 `http`）
 - gRPC health（`grpc.health.v1`）を実装し SERVING を返す
+- ユーザー ID は gRPC metadata の `x-user-id` で渡す。JWT の検証は入口が行い、下流のサービスは `x-user-id` を使う
 - HTTP 入口は `/healthz`（`/color` をヘルスチェックに流用しない）
 - SIGTERM で GracefulStop / Shutdown
 - マイグレーションは `<svc> migrate` サブコマンドに分離し、server 起動時に実行しない
