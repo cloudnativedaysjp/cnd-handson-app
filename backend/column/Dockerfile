@@ -3,12 +3,9 @@ FROM python:3.12-slim AS lint
 WORKDIR /app
 COPY . /app
 
-# black をインストール
-RUN pip install --no-cache-dir black
+COPY requirements-dev.txt /tmp/requirements-dev.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-dev.txt
 RUN black . --check --exclude="(venv|proto|gen)"
-
-# flake8 をインストール
-RUN pip install --no-cache-dir flake8
 RUN flake8 . --exclude=venv,proto,gen --ignore=E501
 
 FROM python:3.12-slim AS runtime
