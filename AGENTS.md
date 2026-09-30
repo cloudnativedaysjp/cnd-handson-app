@@ -5,7 +5,7 @@ CloudNative Days ハンズオン用カンバンのマイクロサービスデモ
 ## 構成
 - `frontend/`: Vite/React (pnpm)
 - `bff/`: Go。frontend と gRPC サービスの間
-- `backend/{user,session,project,task}`: Go gRPC
+- `backend/{user,session,project,task}`: Go gRPC（ルートの `go.mod` 1 つ、stub は `gen/go/<svc>`）
 - `backend/{role,column}`: Python gRPC
 - `proto/`: 全サービスの proto (buf)。唯一の定義元
 - `e2e/`: Playwright と契約テスト

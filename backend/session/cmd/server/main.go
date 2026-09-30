@@ -9,7 +9,7 @@ import (
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/session/internal/auth/handler"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/session/internal/auth/model"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/session/pkg/db"
-	sessionpb "github.com/cloudnativedaysjp/cnd-handson-app/backend/session/proto"
+	sessionpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/session"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"

@@ -5,7 +5,7 @@ import (
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/model"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/service"
-	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/backend/project/proto"
+	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

@@ -10,7 +10,8 @@ PNPM := pnpm
 
 # Requires: buf on PATH, or go (falls back to `go run`) and network access (buf remote plugins).
 gen:
-	$(BUF) generate $(foreach s,$(GO_SERVICES),--path proto/$(s))
+	rm -rf gen/go
+	$(BUF) generate
 	@for s in $(PY_SERVICES); do \
 		rm -rf backend/$$s/gen; \
 		$(BUF) generate --template buf.gen.python.yaml --path proto/$$s -o backend/$$s/gen || exit 1; \

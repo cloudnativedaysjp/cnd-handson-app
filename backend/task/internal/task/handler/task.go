@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/service"
-	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/backend/task/proto"
+	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

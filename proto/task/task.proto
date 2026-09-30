@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package task;
 
-option go_package = "github.com/cloudnativedaysjp/cnd-handson-app/backend/task/proto;taskpb";
+option go_package = "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task;taskpb";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/field_mask.proto";

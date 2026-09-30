@@ -615,7 +615,7 @@ const file_task_task_proto_rawDesc = "" +
 	"\n" +
 	"UpdateTask\x12\x17.task.UpdateTaskRequest\x1a\x12.task.TaskResponse\x12?\n" +
 	"\n" +
-	"DeleteTask\x12\x17.task.DeleteTaskRequest\x1a\x18.task.DeleteTaskResponseBHZFgithub.com/cloudnativedaysjp/cnd-handson-app/backend/task/proto;taskpbb\x06proto3"
+	"DeleteTask\x12\x17.task.DeleteTaskRequest\x1a\x18.task.DeleteTaskResponseBAZ?github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task;taskpbb\x06proto3"
 
 var (
 	file_task_task_proto_rawDescOnce sync.Once

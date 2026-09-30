@@ -6,7 +6,7 @@ import (
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/model"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/repository"
-	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/backend/task/proto"
+	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )

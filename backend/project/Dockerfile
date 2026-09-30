@@ -1,13 +1,16 @@
+# Build context is the repo root (single Go module): docker build -f backend/project/Dockerfile .
 FROM golang:1.24.3-alpine AS builder
 
 WORKDIR /app
+ENV CGO_ENABLED=0
 
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY . .
+COPY gen/go ./gen/go
+COPY backend/project ./backend/project
 
-RUN CGO_ENABLED=0 go build -a -installsuffix cgo -o project-service ./cmd/server/main.go
+RUN go build -o project-service ./backend/project/cmd/server
 
 FROM alpine:3.21 AS probe
 ARG TARGETARCH

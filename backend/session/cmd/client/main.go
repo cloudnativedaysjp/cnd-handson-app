@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	sessionpb "github.com/cloudnativedaysjp/cnd-handson-app/backend/session/proto"
+	sessionpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/session"
 )
 
 func main() {

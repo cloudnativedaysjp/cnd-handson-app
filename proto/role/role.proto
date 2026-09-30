@@ -1,6 +1,8 @@
 syntax = "proto3";
 package role;
 
+option go_package = "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/role;rolepb";
+
 
 // ================================
 // サービス定義

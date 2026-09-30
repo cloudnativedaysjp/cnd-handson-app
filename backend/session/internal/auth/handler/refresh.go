@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/session/internal/auth/service"
-	sessionpb "github.com/cloudnativedaysjp/cnd-handson-app/backend/session/proto"
+	sessionpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/session"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
