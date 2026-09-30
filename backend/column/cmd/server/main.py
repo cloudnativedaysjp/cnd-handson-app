@@ -13,7 +13,7 @@ from internal.column.model.column import ColumnModel
 from internal.column.repository.column import ColumnRepository
 from internal.column.service.column import ColumnService
 from internal.column.handler.column import ColumnHandler
-from pkg.db.db import Database
+from pkg.db.db import Database, build_db_url
 
 
 def configure_health_server(server: grpc.Server):
@@ -75,10 +75,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     port = os.getenv("PORT", "50051")
-    db_url = os.getenv(
-        "DATABASE_URL",
-        "postgresql+psycopg2://your_db_user:your_db_password@db:5432/your_db_name",
-    )
+    db_url = build_db_url()
 
     # argparseでコマンドライン引数を処理
     parser = argparse.ArgumentParser(description="Manage the gRPC server and database.")

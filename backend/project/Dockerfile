@@ -22,6 +22,6 @@ RUN apk --no-cache add ca-certificates
 COPY --from=builder /app/project-service .
 COPY --from=probe /grpc_health_probe /grpc_health_probe
 
-EXPOSE 50053
+EXPOSE 50051
 
 CMD ["./project-service", "server"]

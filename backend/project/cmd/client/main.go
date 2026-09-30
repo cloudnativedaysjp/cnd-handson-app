@@ -28,14 +28,13 @@ func main() {
 	command := os.Args[1]
 
 	// gRPC接続設定
-	port := os.Getenv("GRPC_PORT")
-	if port == "" {
-		port = "50053" // プロジェクトサービス用のデフォルトポート
+	target := os.Getenv("PROJECT_ADDR")
+	if target == "" {
+		target = "localhost:50051"
 	}
 
 	// gRPCクライアント接続作成
 	ctx := context.Background()
-	target := "localhost:" + port
 	// staticcheckの警告を回避するために@latestアノテーションを使用
 	//nolint:staticcheck // SA1019: grpc.DialContext is still required by this version
 	conn, err := grpc.DialContext(ctx, target, grpc.WithTransportCredentials(insecure.NewCredentials()))

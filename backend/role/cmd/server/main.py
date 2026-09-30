@@ -11,7 +11,7 @@ from internal.role.model.role import RoleModel
 from internal.role.handler.role import RoleHandler
 from internal.role.service.role import RoleService
 from internal.role.repository.role import RoleRepository
-from pkg.db.db import Database
+from pkg.db.db import Database, build_db_url
 from role import role_pb2_grpc
 
 
@@ -72,10 +72,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     port = os.getenv("PORT", "50051")
-    db_url = os.getenv(
-        "DATABASE_URL",
-        "postgresql+psycopg2://your_db_user:your_db_password@db:5432/your_db_name",
-    )
+    db_url = build_db_url()
 
     # argparseでコマンドライン引数を処理
     parser = argparse.ArgumentParser(description="Manage the gRPC server and database.")

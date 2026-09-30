@@ -1,6 +1,6 @@
 #!/bin/bash
-# 環境変数を設定（gRPCポート）
-export GRPC_PORT=50053
+# 接続先（compose の公開ポート）
+export PROJECT_ADDR=localhost:50053
 
 # ランダムなUUID生成（オーナーID用）- macOS/Linuxの場合
 OWNER_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')

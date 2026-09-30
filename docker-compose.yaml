@@ -10,12 +10,6 @@ services:
       image: user:latest
       env_file:
         - .env
-      environment:
-        DB_HOST: db
-        DB_PORT: 5432
-        DB_USER: ${DB_USER}
-        DB_PASSWORD: ${DB_PASSWORD}
-        DB_DB: ${DB_DB}
       entrypoint: ["/user-service", "migrate"]
       platform: linux/amd64
       depends_on:
@@ -33,12 +27,6 @@ services:
         - "50051:50051"
       env_file:
         - .env
-      environment:
-        DB_HOST: db
-        DB_PORT: 5432
-        DB_USER: ${DB_USER}
-        DB_PASSWORD: ${DB_PASSWORD}
-        DB_DB: ${DB_DB}
       entrypoint: ["/user-service", "server"]
       healthcheck:
         test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
@@ -61,12 +49,6 @@ services:
       image: session:latest
       env_file:
         - .env
-      environment:
-        DB_HOST: db
-        DB_PORT: 5432
-        DB_USER: ${DB_USER}
-        DB_PASSWORD: ${DB_PASSWORD}
-        DB_DB: ${DB_DB}
       entrypoint: ["/session-service", "migrate"]      
       platform: linux/amd64
       depends_on:
@@ -84,12 +66,6 @@ services:
         - "50052:50051"
       env_file:
         - .env
-      environment:
-        DB_HOST: db
-        DB_PORT: 5432
-        DB_USER: ${DB_USER}
-        DB_PASSWORD: ${DB_PASSWORD}
-        DB_DB: ${DB_DB}
       entrypoint: ["/session-service", "server"]      
       healthcheck:
         test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
@@ -125,13 +101,6 @@ services:
       image: role:latest
       env_file:
         - .env
-      environment:
-        DB_HOST: db
-        DB_PORT: 5432
-        DB_USER: ${DB_USER}
-        DB_PASSWORD: ${DB_PASSWORD}
-        DB_DB: ${DB_DB}
-        DATABASE_URL: postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_DB}
       entrypoint: ["python3", "./cmd/server/main.py", "migrate"]      
       platform: linux/amd64
       depends_on:
@@ -146,13 +115,6 @@ services:
         - "50054:50051"
       env_file:
         - .env
-      environment:
-        DB_HOST: db
-        DB_PORT: 5432
-        DB_USER: ${DB_USER}
-        DB_PASSWORD: ${DB_PASSWORD}
-        DB_DB: ${DB_DB}
-        DATABASE_URL: postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_DB}
       entrypoint: ["python3", "./cmd/server/main.py", "server"]
       healthcheck:
         test: ["CMD", "python3", "-c", "import socket; socket.create_connection(('127.0.0.1', 50051), 2)"]
@@ -172,12 +134,6 @@ services:
       image: project:latest
       env_file:
         - .env
-      environment:
-        DB_HOST: db
-        DB_PORT: 5432
-        DB_USER: ${DB_USER}
-        DB_PASSWORD: ${DB_PASSWORD}
-        DB_DB: ${DB_DB}
       entrypoint: ["./project-service", "migrate"]      
       platform: linux/amd64
       depends_on:
@@ -189,19 +145,12 @@ services:
         dockerfile: Dockerfile
       image: project:latest
       ports:
-        - "50053:50053"
+        - "50053:50051"
       env_file:
         - .env
-      environment:
-        DB_HOST: db
-        DB_PORT: 5432
-        DB_USER: ${DB_USER}
-        DB_PASSWORD: ${DB_PASSWORD}
-        DB_DB: ${DB_DB}
-        PORT: 50053
       entrypoint: ["./project-service", "server"]      
       healthcheck:
-        test: ["CMD", "/grpc_health_probe", "-addr=:50053"]
+        test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
         interval: 3s
         timeout: 3s
         retries: 20
@@ -216,9 +165,6 @@ services:
       restart: unless-stopped
       volumes:
         - postgres-data:/var/lib/postgresql/data
-      env_file:
-        # Ensure that the variables in .env match the same variables in devcontainer.json
-        - .env
       environment:
         POSTGRES_USER: ${DB_USER}
         POSTGRES_PASSWORD: ${DB_PASSWORD}
