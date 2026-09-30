@@ -87,6 +87,10 @@ jobs:
             frontend.cache-to=type=gha,mode=max,scope=frontend
       - run: make up UP_BUILD=
       - run: make e2e
+      - name: Contract tests for implemented services
+        run: |
+          svcs=$(grep -v '^#' e2e/contract-enabled.txt | xargs)
+          if [ -n "$svcs" ]; then make contract SVC="$svcs"; else echo "No services enabled in e2e/contract-enabled.txt"; fi
       - name: Dump compose logs
         if: failure()
         run: docker compose logs --no-color
