@@ -9,6 +9,9 @@ reviews:
     drafts: false
     # push のたびの再レビューは待ち時間と通知が多いため、再レビューは @coderabbitai review で依頼する
     auto_incremental_review: false
+    # Dependabot の Action 更新は CI で確認する。workflow 変更ルールの誤検知で会話の解決待ちにならないよう対象外にする
+    ignore_usernames:
+      - "dependabot[bot]"
   sequence_diagrams: false
   related_issues: false
   related_prs: false
