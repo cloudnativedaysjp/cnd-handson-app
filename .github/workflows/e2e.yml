@@ -60,6 +60,7 @@ jobs:
       # -migrate services reuse the -service images, so only those are built.
       - uses: docker/bake-action@v6
         with:
+          source: .
           files: docker-compose.yaml
           targets: user-service,session-service,role-service,project-service,frontend
           load: true
