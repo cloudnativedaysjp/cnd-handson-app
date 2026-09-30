@@ -28,8 +28,8 @@ git clone https://github.com/cloudnativedaysjp/cnd-handson-app/
 cd column-service
 ```
 
-### 2. devContainerの環境変数を設定
-`./devcontainr/.env` ファイルを作成し、以下のように設定してください（`.env.dummy` を参考にしてください）。
+### 2. 環境変数を設定
+リポジトリ直下の `.env.example` を `.env` にコピーし、以下のように設定してください。
 
 ```env
 DB_HOST=db
