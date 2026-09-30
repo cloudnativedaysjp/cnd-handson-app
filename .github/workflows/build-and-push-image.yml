@@ -24,18 +24,25 @@ jobs:
         include:
           - service: frontend
             context: frontend
+            file: frontend/Dockerfile
           - service: project
-            context: backend/project
+            context: .
+            file: backend/project/Dockerfile
           - service: user
-            context: backend/user
+            context: .
+            file: backend/user/Dockerfile
           - service: session
-            context: backend/session
+            context: .
+            file: backend/session/Dockerfile
           - service: task
-            context: backend/task
+            context: .
+            file: backend/task/Dockerfile
           - service: column
             context: backend/column
+            file: backend/column/Dockerfile
           - service: role
             context: backend/role
+            file: backend/role/Dockerfile
     
     steps:
       - name: Checkout code
@@ -56,7 +63,8 @@ jobs:
       - name: Build and push ${{ matrix.service }} Docker image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
-          context: ${{ matrix.context}}
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.service }}:latest

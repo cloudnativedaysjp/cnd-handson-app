@@ -6,4 +6,6 @@
   - `cmd/server/main.go`: 起動
   - `internal/<name>/{handler,service,repository,model}`: 層ごとに分離。テストは `service/test/`
   - `pkg/db`: DB 接続とマイグレーション
-  - `Dockerfile`、`go.mod` はサービスごと
+  - `Dockerfile` はサービスごと（ビルドコンテキストはリポジトリルート）
+- Go はルートの `go.mod` 1 つ。gRPC の stub は `gen/go/<svc>`（`make gen` で生成）
+- 他サービスの `internal` は import しない。共有するのは `gen/go/<svc>` の stub だけ

@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+.git
+.claude/worktrees
+**/node_modules
+**/.venv
+**/venv
+**/__pycache__
+e2e/test-results
+e2e/screenshots

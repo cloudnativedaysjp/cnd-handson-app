@@ -2,8 +2,8 @@ services:
   
     user-migrate:
       build:
-        context: ./backend/user
-        dockerfile: Dockerfile
+        context: .
+        dockerfile: backend/user/Dockerfile
         target: bin
         platforms:
           - linux/amd64
@@ -17,8 +17,8 @@ services:
           condition: service_healthy
     user-service:
       build:
-        context: ./backend/user
-        dockerfile: Dockerfile
+        context: .
+        dockerfile: backend/user/Dockerfile
         target: bin
         platforms:
           - linux/amd64
@@ -41,8 +41,8 @@ services:
           condition: service_healthy
     session-migrate:
       build:
-        context: ./backend/session
-        dockerfile: Dockerfile
+        context: .
+        dockerfile: backend/session/Dockerfile
         target: bin
         platforms:
           - linux/amd64
@@ -56,8 +56,8 @@ services:
           condition: service_healthy
     session-service:
       build:
-        context: ./backend/session
-        dockerfile: Dockerfile
+        context: .
+        dockerfile: backend/session/Dockerfile
         target: bin
         platforms:
           - linux/amd64
@@ -129,8 +129,8 @@ services:
           condition: service_healthy
     project-migrate:
       build:
-        context: ./backend/project
-        dockerfile: Dockerfile
+        context: .
+        dockerfile: backend/project/Dockerfile
       image: project:latest
       env_file:
         - .env
@@ -141,8 +141,8 @@ services:
           condition: service_healthy
     project-service:
       build:
-        context: ./backend/project
-        dockerfile: Dockerfile
+        context: .
+        dockerfile: backend/project/Dockerfile
       image: project:latest
       ports:
         - "50053:50051"
