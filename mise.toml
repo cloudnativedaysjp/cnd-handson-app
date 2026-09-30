@@ -1,5 +1,5 @@
 [tools]
-go = "1.24.1"      # backend/*/Dockerfile。bff は 1.24.3 だが 1.24.1 で足りる
+go = "1.24.3"      # go.mod の最大値。これ未満だと toolchain の自動取得が走る
 python = "3.12"    # backend/role,column の Dockerfile
 node = "22"        # frontend/Dockerfile
 pnpm = "10.6.5"    # frontend/package.json の packageManager
