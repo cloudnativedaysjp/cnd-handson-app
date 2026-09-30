@@ -98,28 +98,33 @@ func loadEnvFile() {
 
 // InitPostgresDB はPostgreSQLデータベースに接続する処理（interface.goから参照されるため公開）
 func InitPostgresDB() (*gorm.DB, error) {
-	host := os.Getenv("DB_HOST")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	dbname := os.Getenv("DB_DB")
-	port := os.Getenv("DB_PORT")
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable", host, user, password, dbname, port)
+	dsn, err := buildDSN()
+	if err != nil {
+		return nil, err
+	}
 
 	log.Println("Connecting to PostgreSQL database...")
 	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
 }
 
+// buildDSN は必須の環境変数から接続文字列を組み立てる。未設定ならエラー
+func buildDSN() (string, error) {
+	var v [5]string
+	for i, k := range []string{"DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_DB"} {
+		if v[i] = os.Getenv(k); v[i] == "" {
+			return "", fmt.Errorf("required environment variable %s is not set", k)
+		}
+	}
+	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", v[0], v[1], v[2], v[3], v[4]), nil
+}
+
 // connectDB はデータベースに接続する処理を担当
 func connectDB() {
-	// 環境変数が設定されているか確認し、未設定ならデフォルト値を使う
-	host := getEnvOrDefault("DB_HOST", "localhost")
-	user := getEnvOrDefault("DB_USER", "postgres")
-	password := getEnvOrDefault("DB_PASSWORD", "")
-	dbname := getEnvOrDefault("DB_DB", "postgres")
-	port := getEnvOrDefault("DB_PORT", "5432")
-
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		host, user, password, dbname, port)
+	dsn, err := buildDSN()
+	if err != nil {
+		log.Printf("Invalid database configuration: %v", err)
+		return
+	}
 
 	log.Println("Connecting to PostgreSQL database...")
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -130,14 +135,6 @@ func connectDB() {
 	}
 	log.Println("Successfully connected to database")
 	DB = db
-}
-
-// getEnvOrDefault は環境変数の値を取得し、未設定の場合はデフォルト値を返す
-func getEnvOrDefault(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
 }
 
 // InitDB は接続が必要な場合に再接続を試みる

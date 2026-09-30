@@ -23,8 +23,9 @@ lint:
 	cd backend/project && go vet ./...  # project has no Docker lint target
 	@for s in $(PY_SERVICES); do $(MAKE) -C backend/$$s lint || exit 1; done
 
+# 既知の署名鍵で起動させないため、JWT の鍵は生成する
 .env:
-	cp .env.example $@
+	sed "s/^JWT_SECRET_KEY=$$/JWT_SECRET_KEY=$$(openssl rand -hex 32)/" .env.example > $@
 
 up: .env
 	docker compose up -d $(UP_BUILD) --wait --wait-timeout 300

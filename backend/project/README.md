@@ -67,7 +67,11 @@ cd cnd-handson-app/backend/project
 `.env` ファイルを作成し、必要な環境変数を設定：
 
 ```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
 DB_PASSWORD=postgres
+DB_DB=postgres
 ```
 
 ### 3. データベースマイグレーション

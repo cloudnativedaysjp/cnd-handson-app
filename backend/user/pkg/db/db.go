@@ -19,11 +19,12 @@ func init() {
 
 // connectDB はデータベースに接続する処理を担当
 func connectDB() {
-	host := os.Getenv("DB_HOST")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	dbname := os.Getenv("DB_DB")
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=5432 sslmode=disable", host, user, password, dbname)
+	env, err := requireEnv("DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_DB")
+	if err != nil {
+		log.Fatalf("Invalid database configuration: %v", err)
+	}
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		env["DB_HOST"], env["DB_USER"], env["DB_PASSWORD"], env["DB_DB"], env["DB_PORT"])
 
 	log.Println("Connecting to database...")
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -60,4 +61,17 @@ func isDBConnected() bool {
 		return false
 	}
 	return true
+}
+
+// requireEnv は未設定の環境変数があればエラーを返す
+func requireEnv(keys ...string) (map[string]string, error) {
+	vals := make(map[string]string, len(keys))
+	for _, k := range keys {
+		v := os.Getenv(k)
+		if v == "" {
+			return nil, fmt.Errorf("required environment variable %s is not set", k)
+		}
+		vals[k] = v
+	}
+	return vals, nil
 }

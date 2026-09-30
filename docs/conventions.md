@@ -25,7 +25,7 @@
 
 ## 実行時の約束
 - 設定は環境変数のみ（`PORT`、`DB_*`、`OTEL_*`）。秘密値も env で受ける
-- 新規サービスの gRPC は 50051（ポート名 `grpc`）、HTTP 入口は 8080（ポート名 `http`）。既存サービスの移行は #82 で、サービス設定・compose・ヘルスチェック・e2e を同時に変える
+- 新規サービスの gRPC は 50051（ポート名 `grpc`）、HTTP 入口は 8080（ポート名 `http`）
 - gRPC health（`grpc.health.v1`）を実装し SERVING を返す
 - HTTP 入口は `/healthz`（`/color` をヘルスチェックに流用しない）
 - SIGTERM で GracefulStop / Shutdown

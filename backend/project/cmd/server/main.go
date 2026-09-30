@@ -46,7 +46,7 @@ func runServer() {
 	// gRPCサーバーの設定
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "50053" // プロジェクトサービス用のポート
+		port = "50051"
 	}
 	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {

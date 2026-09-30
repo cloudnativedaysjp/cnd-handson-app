@@ -11,15 +11,8 @@ import (
 
 var secretKey = []byte(os.Getenv("JWT_SECRET_KEY"))
 
-func ensureSecretKey() {
-	if len(secretKey) == 0 {
-		secretKey = []byte("default_secret_key")
-	}
-}
-
 // ユーザーIDからアクセストークンを生成する
 func GenerateAccessToken(userID uuid.UUID) (token string, exp int64, err error) {
-	ensureSecretKey()
 	expiresAt := time.Now().Add(time.Minute * 5).Unix()
 
 	claims := jwt.MapClaims{
@@ -38,7 +31,6 @@ func GenerateAccessToken(userID uuid.UUID) (token string, exp int64, err error) 
 
 // アクセストークンを検証する
 func ValidateAccessToken(tokenString string) (*jwt.Token, error) {
-	ensureSecretKey()
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
