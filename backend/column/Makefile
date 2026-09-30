@@ -13,7 +13,5 @@ lint:
 
 .PHONY: proto
 proto:
-	@python -m grpc_tools.protoc -I. --python_out=./proto --grpc_python_out=./proto ./proto/column.proto
-	@mv ./proto/proto/* ./proto/
-	@rm -rf ./proto/proto
+	@$(MAKE) -C ../.. gen
 

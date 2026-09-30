@@ -43,5 +43,11 @@ COPY --from=unit-test /out/cover.out /cover.out
 FROM scratch AS client
 COPY --from=build /out/session-client /
 
+FROM --platform=${BUILDPLATFORM} alpine:3.21 AS probe
+ARG TARGETARCH
+RUN wget -qO /grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.35/grpc_health_probe-linux-${TARGETARCH} \
+    && chmod +x /grpc_health_probe
+
 FROM scratch AS bin
+COPY --from=probe /grpc_health_probe /
 COPY --from=build /out/session-service /

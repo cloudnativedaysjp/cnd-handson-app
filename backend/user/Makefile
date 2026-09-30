@@ -33,14 +33,5 @@ lint:
 	@docker build . --target lint
 
 .PHONY: proto
-proto: 
-	@protoc --proto_path=./proto --proto_path=./proto \
-	--go_out=./proto --go-grpc_out=./proto proto/user.proto
-	@mv proto/github.com/cloudnativedaysjp/cnd-handson-app/backend/user/proto/* proto/
-	@rm -rf proto/github.com
-	@protoc --proto_path=./proto \
-        --doc_out=./proto --doc_opt=markdown,README.md \
-        proto/user.proto
-	@protoc --proto_path=./proto \
-        --doc_out=./proto --doc_opt=html,index.html \
-        proto/user.proto
+proto:
+	@$(MAKE) -C ../.. gen

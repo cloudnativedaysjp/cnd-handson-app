@@ -133,7 +133,7 @@ make
 
 ## APIドキュメント
 
-gRPC APIの詳細は[proto/README.md](proto/README.md)を参照してください。
+protoからのコード生成は、リポジトリ直下で `make gen` を実行してください。
 
 ### 利用可能なクライアントコマンド
 

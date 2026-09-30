@@ -122,7 +122,7 @@ Response from server: Column with id 09dca8cc-8e84-4e31-a11d-9fbc51fc82b7 delete
 
 ## gRPC Documentation
 
-gRPCの詳細な仕様は、[gRPC仕様書](proto/READEME.md)を参照してください。
+protoからのコード生成は、リポジトリ直下で `make gen` を実行してください。
 
 
 ## Project Structure

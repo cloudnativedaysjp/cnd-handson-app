@@ -1,4 +1,4 @@
-from proto import column_pb2_grpc, column_pb2
+from column import column_pb2_grpc, column_pb2
 import grpc
 
 

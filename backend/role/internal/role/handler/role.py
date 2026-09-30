@@ -1,4 +1,4 @@
-from proto import role_pb2_grpc, role_pb2
+from role import role_pb2_grpc, role_pb2
 import grpc
 
 

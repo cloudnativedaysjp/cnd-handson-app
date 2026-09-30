@@ -1,0 +1,7 @@
+version: v2
+# Run as: buf generate --template buf.gen.python.yaml --path proto/<svc> -o backend/<svc>/gen
+plugins:
+  - remote: buf.build/protocolbuffers/python:v29.3
+    out: .
+  - remote: buf.build/grpc/python:v1.71.0
+    out: .
