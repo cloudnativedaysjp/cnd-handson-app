@@ -29,3 +29,6 @@ dist-ssr
 .env
 backend/*/bin/
 package-lock.json
+.claude/worktrees/
+.claude/settings.local.json
+__pycache__/

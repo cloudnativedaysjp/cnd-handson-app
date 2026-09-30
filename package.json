@@ -2,7 +2,10 @@
   "name": "cnd-handson-app",
   "version": "1.0.0",
   "private": true,
-  "packageManager": "pnpm@10.12.1",
+  "workspaces": [
+    "frontend",
+    "bff"
+  ],
   "scripts": {
     "lint": "biome lint . --write",
     "format": "biome format . --write",

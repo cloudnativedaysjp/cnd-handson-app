@@ -22,37 +22,14 @@ CloudNative Days Handson用のカラムサービスのサンプルアプリケ�
 
 ## Setup
 
-### 1. リポジトリをクローン
+リポジトリ直下の `.env.example` を `.env` にコピーし、リポジトリ直下で起動します（docker compose を使用）。
+
 ```bash
-git clone https://github.com/cloudnativedaysjp/cnd-handson-app/
-cd column-service
+cp .env.example .env
+make up     # 起動
+make down   # 停止
 ```
 
-### 2. 環境変数を設定
-リポジトリ直下の `.env.example` を `.env` にコピーし、以下のように設定してください。
-
-```env
-DB_HOST=db
-DB_PORT=5432
-DB_DB=your_db_name
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-JWT_SECRET_KEY=your_jwt_secret_key
-```
-
-### 3. マイグレーションを実行
-```bash
-PYTHONPATH=/workspaces/column python3 /workspaces/column/cmd/server/main.py migrate
-```
-もし失敗するorテーブルをリセットしたい場合
-```bash
-PYTHONPATH=/workspaces/column python3 /workspaces/column/cmd/server/main.py reset
-```
-
-### 4. アプリケーションを起動
-```bash
-PYTHONPATH=/workspaces/column python3 /workspaces/column/cmd/server/main.py server
-```
 ---
 ## Quick Start
 
