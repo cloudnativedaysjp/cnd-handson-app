@@ -12,7 +12,7 @@ from internal.role.handler.role import RoleHandler
 from internal.role.service.role import RoleService
 from internal.role.repository.role import RoleRepository
 from pkg.db.db import Database
-from proto import role_pb2_grpc
+from role import role_pb2_grpc
 
 
 def configure_health_server(server: grpc.Server):

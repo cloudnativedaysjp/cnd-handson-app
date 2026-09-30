@@ -8,7 +8,7 @@ from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 
 
-from proto import column_pb2_grpc
+from column import column_pb2_grpc
 from internal.column.model.column import ColumnModel
 from internal.column.repository.column import ColumnRepository
 from internal.column.service.column import ColumnService
