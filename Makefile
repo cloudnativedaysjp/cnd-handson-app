@@ -1,4 +1,6 @@
-BUF ?= $(shell command -v buf >/dev/null 2>&1 && echo buf || echo go run github.com/bufbuild/buf/cmd/buf@v1.57.0)
+BUF_VERSION := 1.57.0
+# 版が違う buf や未設定の mise シムでは生成結果が CI とずれるため、版が一致するときだけ PATH の buf を使う
+BUF ?= $(shell [ "$$(buf --version 2>/dev/null)" = "$(BUF_VERSION)" ] && echo buf || echo go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION))
 UP_BUILD ?= --build
 GO_SERVICES := user session project task
 PY_SERVICES := role column
