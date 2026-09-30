@@ -3,18 +3,16 @@ import * as grpc from "@grpc/grpc-js";
 import * as loader from "@grpc/proto-loader";
 
 const protoRoot = path.resolve(import.meta.dirname, "../../../../proto");
-const proposedRoot = path.resolve(import.meta.dirname, "../proposed");
 
-// Loads protos straight from the root proto/ (no codegen). `proposed: true` loads from ./proposed.
+// Loads protos straight from the root proto/ (no codegen).
 export function client<T = Record<string, (...a: any[]) => void>>(
   file: string,
   pkg: string,
   service: string,
   addr: string,
-  proposed = false,
 ) {
   const def = loader.loadSync(file, {
-    includeDirs: [proposed ? proposedRoot : protoRoot],
+    includeDirs: [protoRoot],
     keepCase: true,
     defaults: true,
     longs: String,

@@ -70,6 +70,7 @@ message ListColumnsResponse {
 // エンティティ定義
 // ================================
 
+// board_id には project の ID を入れる（フィールド名は互換のため変更しない）。
 message Column {
   string id = 1;
   string name = 2;

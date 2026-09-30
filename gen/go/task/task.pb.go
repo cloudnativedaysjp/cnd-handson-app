@@ -34,6 +34,7 @@ type Task struct {
 	EndTime       *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	ColumnId      string                 `protobuf:"bytes,7,opt,name=column_id,json=columnId,proto3" json:"column_id,omitempty"`
 	AssigneeId    string                 `protobuf:"bytes,8,opt,name=assignee_id,json=assigneeId,proto3" json:"assignee_id,omitempty"`
+	ProjectId     string                 `protobuf:"bytes,9,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -120,6 +121,13 @@ func (x *Task) GetColumnId() string {
 func (x *Task) GetAssigneeId() string {
 	if x != nil {
 		return x.AssigneeId
+	}
+	return ""
+}
+
+func (x *Task) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
 	}
 	return ""
 }
@@ -340,6 +348,7 @@ type CreateTaskRequest struct {
 	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
 	ColumnId      string                 `protobuf:"bytes,6,opt,name=column_id,json=columnId,proto3" json:"column_id,omitempty"`
 	AssigneeId    string                 `protobuf:"bytes,7,opt,name=assignee_id,json=assigneeId,proto3" json:"assignee_id,omitempty"`
+	ProjectId     string                 `protobuf:"bytes,8,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -405,6 +414,13 @@ func (x *CreateTaskRequest) GetColumnId() string {
 func (x *CreateTaskRequest) GetAssigneeId() string {
 	if x != nil {
 		return x.AssigneeId
+	}
+	return ""
+}
+
+func (x *CreateTaskRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
 	}
 	return ""
 }
@@ -561,7 +577,7 @@ var File_task_task_proto protoreflect.FileDescriptor
 
 const file_task_task_proto_rawDesc = "" +
 	"\n" +
-	"\x0ftask/task.proto\x12\x04task\x1a\x1fgoogle/protobuf/timestamp.proto\x1a google/protobuf/field_mask.proto\"\x96\x02\n" +
+	"\x0ftask/task.proto\x12\x04task\x1a\x1fgoogle/protobuf/timestamp.proto\x1a google/protobuf/field_mask.proto\"\xb5\x02\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -572,7 +588,9 @@ const file_task_task_proto_rawDesc = "" +
 	"\bend_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\aendTime\x12\x1b\n" +
 	"\tcolumn_id\x18\a \x01(\tR\bcolumnId\x12\x1f\n" +
 	"\vassignee_id\x18\b \x01(\tR\n" +
-	"assigneeId\".\n" +
+	"assigneeId\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\t \x01(\tR\tprojectId\".\n" +
 	"\fTaskResponse\x12\x1e\n" +
 	"\x04task\x18\x01 \x01(\v2\n" +
 	".task.TaskR\x04task\"V\n" +
@@ -588,14 +606,16 @@ const file_task_task_proto_rawDesc = "" +
 	"\vassignee_id\x18\x02 \x01(\tR\n" +
 	"assigneeId\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\xc3\x01\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\xe2\x01\n" +
 	"\x11CreateTaskRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x16\n" +
 	"\x06status\x18\x03 \x01(\tR\x06status\x12\x1b\n" +
 	"\tcolumn_id\x18\x06 \x01(\tR\bcolumnId\x12\x1f\n" +
 	"\vassignee_id\x18\a \x01(\tR\n" +
-	"assigneeIdJ\x04\b\x04\x10\x05J\x04\b\x05\x10\x06R\n" +
+	"assigneeId\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\b \x01(\tR\tprojectIdJ\x04\b\x04\x10\x05J\x04\b\x05\x10\x06R\n" +
 	"start_timeR\bend_time\"\x80\x01\n" +
 	"\x11UpdateTaskRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1e\n" +
