@@ -8,7 +8,6 @@ services:
         platforms:
           - linux/amd64
       image: user:latest
-      container_name: user-migrate
       env_file:
         - .env
       environment:
@@ -30,7 +29,6 @@ services:
         platforms:
           - linux/amd64
       image: user:latest
-      container_name: user-service
       ports:
         - "50051:50051"
       env_file:
@@ -42,6 +40,11 @@ services:
         DB_PASSWORD: ${DB_PASSWORD}
         DB_DB: ${DB_DB}
       entrypoint: ["/user-service", "server"]
+      healthcheck:
+        test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
+        interval: 3s
+        timeout: 3s
+        retries: 20
       platform: linux/amd64
       depends_on:
         user-migrate:
@@ -56,7 +59,6 @@ services:
         platforms:
           - linux/amd64
       image: session:latest
-      container_name: session-migrate
       env_file:
         - .env
       environment:
@@ -78,7 +80,6 @@ services:
         platforms:
           - linux/amd64
       image: session:latest
-      container_name: session-service
       ports:
         - "50052:50051"
       env_file:
@@ -90,6 +91,11 @@ services:
         DB_PASSWORD: ${DB_PASSWORD}
         DB_DB: ${DB_DB}
       entrypoint: ["/session-service", "server"]      
+      healthcheck:
+        test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
+        interval: 3s
+        timeout: 3s
+        retries: 20
       platform: linux/amd64
       depends_on:
         session-migrate:
@@ -97,7 +103,6 @@ services:
         db:
           condition: service_healthy
     frontend:
-      container_name: frontend
       build: ./frontend
       tty: true
       volumes:
@@ -118,7 +123,6 @@ services:
         context: ./backend/role
         dockerfile: Dockerfile
       image: role:latest
-      container_name: role-migrate
       env_file:
         - .env
       environment:
@@ -127,7 +131,6 @@ services:
         DB_USER: ${DB_USER}
         DB_PASSWORD: ${DB_PASSWORD}
         DB_DB: ${DB_DB}
-        PYTHON_PATH: /app
       entrypoint: ["python3", "./cmd/server/main.py", "migrate"]      
       platform: linux/amd64
       depends_on:
@@ -138,7 +141,6 @@ services:
         context: ./backend/role
         dockerfile: Dockerfile
       image: role:latest
-      container_name: role-service
       ports:
         - "50054:50051"
       env_file:
@@ -149,7 +151,6 @@ services:
         DB_USER: ${DB_USER}
         DB_PASSWORD: ${DB_PASSWORD}
         DB_DB: ${DB_DB}
-        PYTHON_PATH: /app
       entrypoint: ["python3", "./cmd/server/main.py", "server"]
       healthcheck:
         test: ["CMD", "python3", "-c", "import socket; socket.create_connection(('127.0.0.1', 50051), 2)"]
@@ -167,7 +168,6 @@ services:
         context: ./backend/project
         dockerfile: Dockerfile
       image: project:latest
-      container_name: project-migrate
       env_file:
         - .env
       environment:
@@ -186,7 +186,6 @@ services:
         context: ./backend/project
         dockerfile: Dockerfile
       image: project:latest
-      container_name: project-service
       ports:
         - "50053:50053"
       env_file:
@@ -199,6 +198,11 @@ services:
         DB_DB: ${DB_DB}
         PORT: 50053
       entrypoint: ["./project-service", "server"]      
+      healthcheck:
+        test: ["CMD", "/grpc_health_probe", "-addr=:50053"]
+        interval: 3s
+        timeout: 3s
+        retries: 20
       platform: linux/amd64
       depends_on:
         project-migrate:
@@ -208,8 +212,6 @@ services:
     db:
       image: postgres:17
       restart: unless-stopped
-      ports:
-        - "5432:5432"
       volumes:
         - postgres-data:/var/lib/postgresql/data
       env_file:
