@@ -40,12 +40,7 @@ DB_PASSWORD=your_db_password
 JWT_SECRET_KEY=your_jwt_secret_key
 ```
 
-### 3. devcontainer起動
-```bash
-devcontainer open
-```
-
-### 4. マイグレーションを実行
+### 3. マイグレーションを実行
 ```bash
 PYTHONPATH=/workspaces/role python3 /workspaces/role/cmd/server/main.py migrate
 ```
@@ -54,7 +49,7 @@ PYTHONPATH=/workspaces/role python3 /workspaces/role/cmd/server/main.py migrate
 PYTHONPATH=/workspaces/role python3 /workspaces/role/cmd/server/main.py reset
 ```
 
-### 5. アプリケーションを起動
+### 4. アプリケーションを起動
 ```bash
 PYTHONPATH=/workspaces/role python3 /workspaces/role/cmd/server/main.py server
 ```
@@ -123,7 +118,6 @@ gRPCの詳細な仕様は、[gRPC仕様書](proto/READEME.md)を参照してく�
 ├── pkg/                # 再利用可能なパッケージ
 │   └── db/             # データベース関連
 ├── proto/              # proto関連
-├── .devcontainer/      # DevContainer設定
 ├── Dockerfile          # Dockerビルド設定
 └── README.md           # このファイル
 ```
