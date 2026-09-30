@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package session;
 
-option go_package = "github.com/cloudnativedaysjp/cnd-handson-app/backend/session/proto;sessionpb";
+option go_package = "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/session;sessionpb";
 
 // ================================
 // サービス定義

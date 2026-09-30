@@ -537,7 +537,7 @@ const file_project_project_proto_rawDesc = "" +
 	"\n" +
 	"GetProject\x12\x1a.project.GetProjectRequest\x1a\x18.project.ProjectResponse\x12K\n" +
 	"\fListProjects\x12\x1c.project.ListProjectsRequest\x1a\x1d.project.ListProjectsResponse\x12N\n" +
-	"\rDeleteProject\x12\x1d.project.DeleteProjectRequest\x1a\x1e.project.DeleteProjectResponseBNZLgithub.com/cloudnativedaysjp/cnd-handson-app/backend/project/proto;projectpbb\x06proto3"
+	"\rDeleteProject\x12\x1d.project.DeleteProjectRequest\x1a\x1e.project.DeleteProjectResponseBGZEgithub.com/cloudnativedaysjp/cnd-handson-app/gen/go/project;projectpbb\x06proto3"
 
 var (
 	file_project_project_proto_rawDescOnce sync.Once

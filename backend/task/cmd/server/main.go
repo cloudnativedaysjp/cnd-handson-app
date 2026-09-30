@@ -13,7 +13,7 @@ import (
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/handler"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/model"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/pkg/db"
-	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/backend/task/proto"
+	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 )
 
 func main() {

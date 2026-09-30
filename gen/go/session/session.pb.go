@@ -562,7 +562,7 @@ const file_session_session_proto_rawDesc = "" +
 	"\x13RefreshTokenService\x12[\n" +
 	"\x14GenerateRefreshToken\x12$.session.GenerateRefreshTokenRequest\x1a\x1d.session.RefreshTokenResponse\x12]\n" +
 	"\x12RevokeRefreshToken\x12\".session.RevokeRefreshTokenRequest\x1a#.session.RevokeRefreshTokenResponse\x12c\n" +
-	"\x14ValidateRefreshToken\x12$.session.ValidateRefreshTokenRequest\x1a%.session.ValidateRefreshTokenResponseBNZLgithub.com/cloudnativedaysjp/cnd-handson-app/backend/session/proto;sessionpbb\x06proto3"
+	"\x14ValidateRefreshToken\x12$.session.ValidateRefreshTokenRequest\x1a%.session.ValidateRefreshTokenResponseBGZEgithub.com/cloudnativedaysjp/cnd-handson-app/gen/go/session;sessionpbb\x06proto3"
 
 var (
 	file_session_session_proto_rawDescOnce sync.Once

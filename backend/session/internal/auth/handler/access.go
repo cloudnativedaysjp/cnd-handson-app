@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/session/internal/auth/service"
-	sessionpb "github.com/cloudnativedaysjp/cnd-handson-app/backend/session/proto" // your generated proto package
+	sessionpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/session" // your generated proto package
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

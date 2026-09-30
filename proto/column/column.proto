@@ -1,6 +1,8 @@
 syntax = "proto3";
 package column;
 
+option go_package = "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/column;columnpb";
+
 // ================================
 // サービス定義
 // ================================

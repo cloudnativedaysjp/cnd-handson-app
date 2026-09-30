@@ -4,7 +4,7 @@ package user;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/cloudnativedaysjp/cnd-handson-app/backend/user/proto;userpb";
+option go_package = "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/user;userpb";
 
 // ================================
 // サービス定義

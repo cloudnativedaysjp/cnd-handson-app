@@ -1,5 +1,5 @@
 version: v2
-# Go code lands in each service module (backend/<svc>/proto) so per-service Docker build contexts stay self-contained.
+# Go stubs for every proto land in gen/go/<svc> (single root module).
 # Python (role, column) uses buf.gen.python.yaml, driven by `make gen`.
 plugins:
   - remote: buf.build/protocolbuffers/go:v1.36.6

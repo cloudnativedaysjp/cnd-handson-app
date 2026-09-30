@@ -616,7 +616,7 @@ const file_user_user_proto_rawDesc = "" +
 	"\x0eVerifyPassword\x12\x1b.user.VerifyPasswordRequest\x1a\x12.user.UserResponse\x12<\n" +
 	"\tListUsers\x12\x16.user.ListUsersRequest\x1a\x17.user.ListUsersResponse\x12?\n" +
 	"\n" +
-	"DeleteUser\x12\x17.user.DeleteUserRequest\x1a\x18.user.DeleteUserResponseBHZFgithub.com/cloudnativedaysjp/cnd-handson-app/backend/user/proto;userpbb\x06proto3"
+	"DeleteUser\x12\x17.user.DeleteUserRequest\x1a\x18.user.DeleteUserResponseBAZ?github.com/cloudnativedaysjp/cnd-handson-app/gen/go/user;userpbb\x06proto3"
 
 var (
 	file_user_user_proto_rawDescOnce sync.Once

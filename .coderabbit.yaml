@@ -21,7 +21,7 @@ reviews:
   in_progress_fortune: false
   # 生成物は proto とロックファイルの差分で確認するため、行単位の指摘は不要
   path_filters:
-    - "!backend/*/proto/*.pb.go"
+    - "!gen/go/**"
     - "!backend/*/gen/**"
     - "!**/pnpm-lock.yaml"
     - "!**/go.sum"

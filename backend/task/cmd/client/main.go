@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
-	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/backend/task/proto"
+	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 )
 
 func main() {
