@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: ja-JP
+reviews:
+  profile: chill
+  high_level_summary: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+  # 生成物は proto とロックファイルの差分で確認するため、行単位の指摘は不要
+  path_filters:
+    - "!backend/*/proto/*.pb.go"
+    - "!backend/*/gen/**"
+    - "!**/pnpm-lock.yaml"
+    - "!**/go.sum"
+  path_instructions:
+    - path: "{backend,bff,frontend}/**"
+      instructions: |
+        docs/conventions.md の約束に反していないかを優先して見る。
+        - 受け取った context を下流の gRPC・DB に渡しているか（context.Background() / TODO() を使っていないか）
+        - OTel の endpoint や service.name、接続情報・秘密値をコードに直書きしていないか
+        - gRPC health、SIGTERM での graceful shutdown、非 root 実行
+    - path: "{proto,e2e}/**"
+      instructions: |
+        proto と契約テストは仕様。フィールド番号の再利用、reserved の欠落、テストの skip・削除・期待値の緩和を指摘する。
+    - path: "**/*_test.go"
+      instructions: テストを通すための skip・削除・期待値の緩和がないかを見る。
+knowledge_base:
+  code_guidelines:
+    filePatterns:
+      - "**/AGENTS.md"
+      - "**/CLAUDE.md"
+      - "docs/conventions.md"
