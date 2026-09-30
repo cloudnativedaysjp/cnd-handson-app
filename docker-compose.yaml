@@ -131,6 +131,7 @@ services:
         DB_USER: ${DB_USER}
         DB_PASSWORD: ${DB_PASSWORD}
         DB_DB: ${DB_DB}
+        DATABASE_URL: postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_DB}
       entrypoint: ["python3", "./cmd/server/main.py", "migrate"]      
       platform: linux/amd64
       depends_on:
@@ -151,6 +152,7 @@ services:
         DB_USER: ${DB_USER}
         DB_PASSWORD: ${DB_PASSWORD}
         DB_DB: ${DB_DB}
+        DATABASE_URL: postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_DB}
       entrypoint: ["python3", "./cmd/server/main.py", "server"]
       healthcheck:
         test: ["CMD", "python3", "-c", "import socket; socket.create_connection(('127.0.0.1', 50051), 2)"]
