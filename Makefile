@@ -3,7 +3,7 @@ GO_SERVICES := user session project task
 PY_SERVICES := role column
 PNPM := corepack pnpm
 
-.PHONY: gen lint up down e2e
+.PHONY: gen lint up down clean e2e
 
 # Requires: go (runs buf via `go run`) and network access (buf remote plugins).
 gen:
@@ -21,11 +21,15 @@ lint:
 	@for s in $(PY_SERVICES); do $(MAKE) -C backend/$$s lint || exit 1; done
 
 up:
+	@test -f .env || cp .env.example .env
 	docker compose up -d --build --wait --wait-timeout 300
 
 down:
+	docker compose down
+
+clean:
 	docker compose down -v
 
 # Requires: node (corepack provides pnpm) and a running stack (`make up`).
 e2e:
-	cd e2e && $(PNPM) install --frozen-lockfile && $(PNPM) exec playwright install --with-deps chromium && $(PNPM) test
+	cd e2e && $(PNPM) install --frozen-lockfile && $(PNPM) exec playwright install chromium && $(PNPM) test
