@@ -23,14 +23,16 @@ lint:
 	cd backend/project && go vet ./...  # project has no Docker lint target
 	@for s in $(PY_SERVICES); do $(MAKE) -C backend/$$s lint || exit 1; done
 
-up:
-	@test -f .env || cp .env.example .env
+.env:
+	cp .env.example $@
+
+up: .env
 	docker compose up -d $(UP_BUILD) --wait --wait-timeout 300
 
-down:
+down: .env
 	docker compose down
 
-clean:
+clean: .env
 	docker compose down -v
 
 # Requires: node and pnpm (mise locally, corepack in CI) and a running stack (`make up`).
