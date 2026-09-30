@@ -23,6 +23,13 @@ reviews:
     - "!**/pnpm-lock.yaml"
     - "!**/go.sum"
   path_instructions:
+    - path: "**"
+      instructions: |
+        過剰な作り込みを指摘する（より少ないコードで済む代替を具体的に示す）。
+        - 実装が 1 つしかない interface、製品が 1 つしかない factory、使われていない設定値やフラグ
+        - 要件を満たす標準ライブラリ・既存の依存・プラットフォーム機能があるのに、自前実装または新しい依存を追加している場合
+        - リポジトリ内に既にあるヘルパーや型の再実装
+        - 「将来のため」の足場、呼ばれていない関数、1 か所でしか使わない抽象化
     - path: "{backend,bff,frontend}/**"
       instructions: |
         docs/conventions.md の約束に反していないかを優先して見る。
