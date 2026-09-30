@@ -30,7 +30,7 @@ func main() {
 	// gRPC接続設定
 	target := os.Getenv("PROJECT_ADDR")
 	if target == "" {
-		target = "localhost:50051"
+		log.Fatalf("required environment variable PROJECT_ADDR is not set")
 	}
 
 	// gRPCクライアント接続作成

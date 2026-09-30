@@ -42,8 +42,8 @@ func runServer() {
 	if err != nil {
 		log.Fatalf("Error loading .env file")
 	}
-	if os.Getenv("JWT_SECRET_KEY") == "" {
-		log.Fatalf("required environment variable JWT_SECRET_KEY is not set")
+	if k := os.Getenv("JWT_SECRET_KEY"); k == "" || k == "changeme" {
+		log.Fatalf("JWT_SECRET_KEY must be set to a non-default value")
 	}
 	_, err = db.InitDB()
 	if err != nil {
