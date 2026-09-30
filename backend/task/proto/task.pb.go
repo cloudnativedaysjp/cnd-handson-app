@@ -588,14 +588,15 @@ const file_task_task_proto_rawDesc = "" +
 	"\vassignee_id\x18\x02 \x01(\tR\n" +
 	"assigneeId\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\xa1\x01\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\xc3\x01\n" +
 	"\x11CreateTaskRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x16\n" +
 	"\x06status\x18\x03 \x01(\tR\x06status\x12\x1b\n" +
 	"\tcolumn_id\x18\x06 \x01(\tR\bcolumnId\x12\x1f\n" +
 	"\vassignee_id\x18\a \x01(\tR\n" +
-	"assigneeId\"\x80\x01\n" +
+	"assigneeIdJ\x04\b\x04\x10\x05J\x04\b\x05\x10\x06R\n" +
+	"start_timeR\bend_time\"\x80\x01\n" +
 	"\x11UpdateTaskRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1e\n" +
 	"\x04task\x18\x02 \x01(\v2\n" +
