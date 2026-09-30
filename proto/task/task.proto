@@ -43,6 +43,7 @@ message Task {
   google.protobuf.Timestamp end_time = 6;
   string column_id = 7;
   string assignee_id = 8;
+  string project_id = 9;
 }
 
 // --- 共通レスポンス ---
@@ -76,6 +77,7 @@ message CreateTaskRequest {
   string status = 3;
   string column_id = 6;
   string assignee_id = 7;
+  string project_id = 8;
 }
 
 message UpdateTaskRequest {

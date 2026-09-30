@@ -421,6 +421,7 @@ func (x *ListColumnsResponse) GetTotalCount() int32 {
 	return 0
 }
 
+// board_id には project の ID を入れる（フィールド名は互換のため変更しない）。
 type Column struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`

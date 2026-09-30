@@ -1,6 +1,5 @@
 // Contract for handson-column (#109, Python). The column proto keys columns by board_id; the
-// contract treats a project id as the board id. project -> column listing needs a new RPC
-// (proposed/project_column.proto), so that test is fixme.
+// contract treats a project id as the board id.
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { cfg } from "./lib/config";
@@ -18,12 +17,10 @@ test("create, get and list columns", async () => {
   expect(columns.map((c: { id: string }) => c.id)).toEqual([created.id]);
 });
 
-// fixme: needs ProjectService.ListProjectColumns (proposed/project_column.proto), see #72/#109.
-test.fixme("list columns of a project via project -> column", async () => {
+test("list columns of a project via project -> column", async () => {
   const p = client("project/project.proto", "project", "ProjectService", cfg.projectGrpc);
-  const list = client("project_column.proto", "project", "ProjectService", cfg.projectGrpc, true);
   const { project } = await p("CreateProject", { name: "with columns", owner_id: USER_ID });
   const { column: created } = await column()("CreateColumn", { name: "todo", board_id: project.id });
-  const { columns } = await list("ListProjectColumns", { project_id: project.id });
+  const { columns } = await p("ListProjectColumns", { project_id: project.id });
   expect(columns.map((c: { id: string }) => c.id)).toEqual([created.id]);
 });

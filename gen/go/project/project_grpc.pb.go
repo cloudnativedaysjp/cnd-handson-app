@@ -19,11 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ProjectService_CreateProject_FullMethodName = "/project.ProjectService/CreateProject"
-	ProjectService_UpdateProject_FullMethodName = "/project.ProjectService/UpdateProject"
-	ProjectService_GetProject_FullMethodName    = "/project.ProjectService/GetProject"
-	ProjectService_ListProjects_FullMethodName  = "/project.ProjectService/ListProjects"
-	ProjectService_DeleteProject_FullMethodName = "/project.ProjectService/DeleteProject"
+	ProjectService_CreateProject_FullMethodName      = "/project.ProjectService/CreateProject"
+	ProjectService_UpdateProject_FullMethodName      = "/project.ProjectService/UpdateProject"
+	ProjectService_GetProject_FullMethodName         = "/project.ProjectService/GetProject"
+	ProjectService_ListProjects_FullMethodName       = "/project.ProjectService/ListProjects"
+	ProjectService_DeleteProject_FullMethodName      = "/project.ProjectService/DeleteProject"
+	ProjectService_ListProjectTasks_FullMethodName   = "/project.ProjectService/ListProjectTasks"
+	ProjectService_ListProjectColumns_FullMethodName = "/project.ProjectService/ListProjectColumns"
 )
 
 // ProjectServiceClient is the client API for ProjectService service.
@@ -44,6 +46,10 @@ type ProjectServiceClient interface {
 	ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error)
 	// プロジェクトの削除
 	DeleteProject(ctx context.Context, in *DeleteProjectRequest, opts ...grpc.CallOption) (*DeleteProjectResponse, error)
+	// プロジェクトに属するタスクの一覧取得（task サービスへ集約）
+	ListProjectTasks(ctx context.Context, in *ListProjectTasksRequest, opts ...grpc.CallOption) (*ListProjectTasksResponse, error)
+	// プロジェクトに属するカラムの一覧取得（column サービスへ集約）
+	ListProjectColumns(ctx context.Context, in *ListProjectColumnsRequest, opts ...grpc.CallOption) (*ListProjectColumnsResponse, error)
 }
 
 type projectServiceClient struct {
@@ -104,6 +110,26 @@ func (c *projectServiceClient) DeleteProject(ctx context.Context, in *DeleteProj
 	return out, nil
 }
 
+func (c *projectServiceClient) ListProjectTasks(ctx context.Context, in *ListProjectTasksRequest, opts ...grpc.CallOption) (*ListProjectTasksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListProjectTasksResponse)
+	err := c.cc.Invoke(ctx, ProjectService_ListProjectTasks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) ListProjectColumns(ctx context.Context, in *ListProjectColumnsRequest, opts ...grpc.CallOption) (*ListProjectColumnsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListProjectColumnsResponse)
+	err := c.cc.Invoke(ctx, ProjectService_ListProjectColumns_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProjectServiceServer is the server API for ProjectService service.
 // All implementations should embed UnimplementedProjectServiceServer
 // for forward compatibility.
@@ -122,6 +148,10 @@ type ProjectServiceServer interface {
 	ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error)
 	// プロジェクトの削除
 	DeleteProject(context.Context, *DeleteProjectRequest) (*DeleteProjectResponse, error)
+	// プロジェクトに属するタスクの一覧取得（task サービスへ集約）
+	ListProjectTasks(context.Context, *ListProjectTasksRequest) (*ListProjectTasksResponse, error)
+	// プロジェクトに属するカラムの一覧取得（column サービスへ集約）
+	ListProjectColumns(context.Context, *ListProjectColumnsRequest) (*ListProjectColumnsResponse, error)
 }
 
 // UnimplementedProjectServiceServer should be embedded to have
@@ -145,6 +175,12 @@ func (UnimplementedProjectServiceServer) ListProjects(context.Context, *ListProj
 }
 func (UnimplementedProjectServiceServer) DeleteProject(context.Context, *DeleteProjectRequest) (*DeleteProjectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteProject not implemented")
+}
+func (UnimplementedProjectServiceServer) ListProjectTasks(context.Context, *ListProjectTasksRequest) (*ListProjectTasksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProjectTasks not implemented")
+}
+func (UnimplementedProjectServiceServer) ListProjectColumns(context.Context, *ListProjectColumnsRequest) (*ListProjectColumnsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProjectColumns not implemented")
 }
 func (UnimplementedProjectServiceServer) testEmbeddedByValue() {}
 
@@ -256,6 +292,42 @@ func _ProjectService_DeleteProject_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProjectService_ListProjectTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProjectTasksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).ListProjectTasks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_ListProjectTasks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).ListProjectTasks(ctx, req.(*ListProjectTasksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_ListProjectColumns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProjectColumnsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).ListProjectColumns(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_ListProjectColumns_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).ListProjectColumns(ctx, req.(*ListProjectColumnsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProjectService_ServiceDesc is the grpc.ServiceDesc for ProjectService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -282,6 +354,14 @@ var ProjectService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteProject",
 			Handler:    _ProjectService_DeleteProject_Handler,
+		},
+		{
+			MethodName: "ListProjectTasks",
+			Handler:    _ProjectService_ListProjectTasks_Handler,
+		},
+		{
+			MethodName: "ListProjectColumns",
+			Handler:    _ProjectService_ListProjectColumns_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

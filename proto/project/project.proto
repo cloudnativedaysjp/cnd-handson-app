@@ -24,6 +24,12 @@ service ProjectService {
 
   // プロジェクトの削除
   rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
+
+  // プロジェクトに属するタスクの一覧取得（task サービスへ集約）
+  rpc ListProjectTasks(ListProjectTasksRequest) returns (ListProjectTasksResponse);
+
+  // プロジェクトに属するカラムの一覧取得（column サービスへ集約）
+  rpc ListProjectColumns(ListProjectColumnsRequest) returns (ListProjectColumnsResponse);
 }
 
 // ================================
@@ -82,3 +88,36 @@ message DeleteProjectResponse {
   bool success = 1;
 }
 
+
+// --- ListProjectTasks ---
+// task / column の内部型には結合させず、入口向けの型を project 側で持つ。
+message ListProjectTasksRequest {
+  string project_id = 1;
+}
+
+message ListProjectTasksResponse {
+  repeated ProjectTask tasks = 1;
+}
+
+message ProjectTask {
+  string id = 1;
+  string title = 2;
+  string status = 3;
+  string column_id = 4;
+  string project_id = 5;
+}
+
+// --- ListProjectColumns ---
+message ListProjectColumnsRequest {
+  string project_id = 1;
+}
+
+message ListProjectColumnsResponse {
+  repeated ProjectColumn columns = 1;
+}
+
+// column に順序フィールドはないため id と name のみ。
+message ProjectColumn {
+  string id = 1;
+  string name = 2;
+}

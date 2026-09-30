@@ -497,6 +497,314 @@ func (x *DeleteProjectResponse) GetSuccess() bool {
 	return false
 }
 
+// --- ListProjectTasks ---
+// task / column の内部型には結合させず、入口向けの型を project 側で持つ。
+type ListProjectTasksRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListProjectTasksRequest) Reset() {
+	*x = ListProjectTasksRequest{}
+	mi := &file_project_project_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProjectTasksRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProjectTasksRequest) ProtoMessage() {}
+
+func (x *ListProjectTasksRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_project_project_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProjectTasksRequest.ProtoReflect.Descriptor instead.
+func (*ListProjectTasksRequest) Descriptor() ([]byte, []int) {
+	return file_project_project_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ListProjectTasksRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+type ListProjectTasksResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tasks         []*ProjectTask         `protobuf:"bytes,1,rep,name=tasks,proto3" json:"tasks,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListProjectTasksResponse) Reset() {
+	*x = ListProjectTasksResponse{}
+	mi := &file_project_project_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProjectTasksResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProjectTasksResponse) ProtoMessage() {}
+
+func (x *ListProjectTasksResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_project_project_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProjectTasksResponse.ProtoReflect.Descriptor instead.
+func (*ListProjectTasksResponse) Descriptor() ([]byte, []int) {
+	return file_project_project_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ListProjectTasksResponse) GetTasks() []*ProjectTask {
+	if x != nil {
+		return x.Tasks
+	}
+	return nil
+}
+
+type ProjectTask struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	ColumnId      string                 `protobuf:"bytes,4,opt,name=column_id,json=columnId,proto3" json:"column_id,omitempty"`
+	ProjectId     string                 `protobuf:"bytes,5,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectTask) Reset() {
+	*x = ProjectTask{}
+	mi := &file_project_project_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectTask) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectTask) ProtoMessage() {}
+
+func (x *ProjectTask) ProtoReflect() protoreflect.Message {
+	mi := &file_project_project_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectTask.ProtoReflect.Descriptor instead.
+func (*ProjectTask) Descriptor() ([]byte, []int) {
+	return file_project_project_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ProjectTask) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ProjectTask) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *ProjectTask) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ProjectTask) GetColumnId() string {
+	if x != nil {
+		return x.ColumnId
+	}
+	return ""
+}
+
+func (x *ProjectTask) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+// --- ListProjectColumns ---
+type ListProjectColumnsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListProjectColumnsRequest) Reset() {
+	*x = ListProjectColumnsRequest{}
+	mi := &file_project_project_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProjectColumnsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProjectColumnsRequest) ProtoMessage() {}
+
+func (x *ListProjectColumnsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_project_project_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProjectColumnsRequest.ProtoReflect.Descriptor instead.
+func (*ListProjectColumnsRequest) Descriptor() ([]byte, []int) {
+	return file_project_project_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ListProjectColumnsRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+type ListProjectColumnsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Columns       []*ProjectColumn       `protobuf:"bytes,1,rep,name=columns,proto3" json:"columns,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListProjectColumnsResponse) Reset() {
+	*x = ListProjectColumnsResponse{}
+	mi := &file_project_project_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProjectColumnsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProjectColumnsResponse) ProtoMessage() {}
+
+func (x *ListProjectColumnsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_project_project_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProjectColumnsResponse.ProtoReflect.Descriptor instead.
+func (*ListProjectColumnsResponse) Descriptor() ([]byte, []int) {
+	return file_project_project_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ListProjectColumnsResponse) GetColumns() []*ProjectColumn {
+	if x != nil {
+		return x.Columns
+	}
+	return nil
+}
+
+// column に順序フィールドはないため id と name のみ。
+type ProjectColumn struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectColumn) Reset() {
+	*x = ProjectColumn{}
+	mi := &file_project_project_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectColumn) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectColumn) ProtoMessage() {}
+
+func (x *ProjectColumn) ProtoReflect() protoreflect.Message {
+	mi := &file_project_project_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectColumn.ProtoReflect.Descriptor instead.
+func (*ProjectColumn) Descriptor() ([]byte, []int) {
+	return file_project_project_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ProjectColumn) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ProjectColumn) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
 var File_project_project_proto protoreflect.FileDescriptor
 
 const file_project_project_proto_rawDesc = "" +
@@ -530,14 +838,36 @@ const file_project_project_proto_rawDesc = "" +
 	"\x14DeleteProjectRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"1\n" +
 	"\x15DeleteProjectResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2\x85\x03\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"8\n" +
+	"\x17ListProjectTasksRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\"F\n" +
+	"\x18ListProjectTasksResponse\x12*\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x14.project.ProjectTaskR\x05tasks\"\x87\x01\n" +
+	"\vProjectTask\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12\x1b\n" +
+	"\tcolumn_id\x18\x04 \x01(\tR\bcolumnId\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x05 \x01(\tR\tprojectId\":\n" +
+	"\x19ListProjectColumnsRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\"N\n" +
+	"\x1aListProjectColumnsResponse\x120\n" +
+	"\acolumns\x18\x01 \x03(\v2\x16.project.ProjectColumnR\acolumns\"3\n" +
+	"\rProjectColumn\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name2\xbd\x04\n" +
 	"\x0eProjectService\x12H\n" +
 	"\rCreateProject\x12\x1d.project.CreateProjectRequest\x1a\x18.project.ProjectResponse\x12H\n" +
 	"\rUpdateProject\x12\x1d.project.UpdateProjectRequest\x1a\x18.project.ProjectResponse\x12B\n" +
 	"\n" +
 	"GetProject\x12\x1a.project.GetProjectRequest\x1a\x18.project.ProjectResponse\x12K\n" +
 	"\fListProjects\x12\x1c.project.ListProjectsRequest\x1a\x1d.project.ListProjectsResponse\x12N\n" +
-	"\rDeleteProject\x12\x1d.project.DeleteProjectRequest\x1a\x1e.project.DeleteProjectResponseBGZEgithub.com/cloudnativedaysjp/cnd-handson-app/gen/go/project;projectpbb\x06proto3"
+	"\rDeleteProject\x12\x1d.project.DeleteProjectRequest\x1a\x1e.project.DeleteProjectResponse\x12W\n" +
+	"\x10ListProjectTasks\x12 .project.ListProjectTasksRequest\x1a!.project.ListProjectTasksResponse\x12]\n" +
+	"\x12ListProjectColumns\x12\".project.ListProjectColumnsRequest\x1a#.project.ListProjectColumnsResponseBGZEgithub.com/cloudnativedaysjp/cnd-handson-app/gen/go/project;projectpbb\x06proto3"
 
 var (
 	file_project_project_proto_rawDescOnce sync.Once
@@ -551,39 +881,51 @@ func file_project_project_proto_rawDescGZIP() []byte {
 	return file_project_project_proto_rawDescData
 }
 
-var file_project_project_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_project_project_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_project_project_proto_goTypes = []any{
-	(*CreateProjectRequest)(nil),  // 0: project.CreateProjectRequest
-	(*UpdateProjectRequest)(nil),  // 1: project.UpdateProjectRequest
-	(*GetProjectRequest)(nil),     // 2: project.GetProjectRequest
-	(*ListProjectsRequest)(nil),   // 3: project.ListProjectsRequest
-	(*ListProjectsResponse)(nil),  // 4: project.ListProjectsResponse
-	(*Project)(nil),               // 5: project.Project
-	(*ProjectResponse)(nil),       // 6: project.ProjectResponse
-	(*DeleteProjectRequest)(nil),  // 7: project.DeleteProjectRequest
-	(*DeleteProjectResponse)(nil), // 8: project.DeleteProjectResponse
-	(*timestamppb.Timestamp)(nil), // 9: google.protobuf.Timestamp
+	(*CreateProjectRequest)(nil),       // 0: project.CreateProjectRequest
+	(*UpdateProjectRequest)(nil),       // 1: project.UpdateProjectRequest
+	(*GetProjectRequest)(nil),          // 2: project.GetProjectRequest
+	(*ListProjectsRequest)(nil),        // 3: project.ListProjectsRequest
+	(*ListProjectsResponse)(nil),       // 4: project.ListProjectsResponse
+	(*Project)(nil),                    // 5: project.Project
+	(*ProjectResponse)(nil),            // 6: project.ProjectResponse
+	(*DeleteProjectRequest)(nil),       // 7: project.DeleteProjectRequest
+	(*DeleteProjectResponse)(nil),      // 8: project.DeleteProjectResponse
+	(*ListProjectTasksRequest)(nil),    // 9: project.ListProjectTasksRequest
+	(*ListProjectTasksResponse)(nil),   // 10: project.ListProjectTasksResponse
+	(*ProjectTask)(nil),                // 11: project.ProjectTask
+	(*ListProjectColumnsRequest)(nil),  // 12: project.ListProjectColumnsRequest
+	(*ListProjectColumnsResponse)(nil), // 13: project.ListProjectColumnsResponse
+	(*ProjectColumn)(nil),              // 14: project.ProjectColumn
+	(*timestamppb.Timestamp)(nil),      // 15: google.protobuf.Timestamp
 }
 var file_project_project_proto_depIdxs = []int32{
-	5, // 0: project.ListProjectsResponse.projects:type_name -> project.Project
-	9, // 1: project.Project.created_at:type_name -> google.protobuf.Timestamp
-	9, // 2: project.Project.updated_at:type_name -> google.protobuf.Timestamp
-	5, // 3: project.ProjectResponse.project:type_name -> project.Project
-	0, // 4: project.ProjectService.CreateProject:input_type -> project.CreateProjectRequest
-	1, // 5: project.ProjectService.UpdateProject:input_type -> project.UpdateProjectRequest
-	2, // 6: project.ProjectService.GetProject:input_type -> project.GetProjectRequest
-	3, // 7: project.ProjectService.ListProjects:input_type -> project.ListProjectsRequest
-	7, // 8: project.ProjectService.DeleteProject:input_type -> project.DeleteProjectRequest
-	6, // 9: project.ProjectService.CreateProject:output_type -> project.ProjectResponse
-	6, // 10: project.ProjectService.UpdateProject:output_type -> project.ProjectResponse
-	6, // 11: project.ProjectService.GetProject:output_type -> project.ProjectResponse
-	4, // 12: project.ProjectService.ListProjects:output_type -> project.ListProjectsResponse
-	8, // 13: project.ProjectService.DeleteProject:output_type -> project.DeleteProjectResponse
-	9, // [9:14] is the sub-list for method output_type
-	4, // [4:9] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	5,  // 0: project.ListProjectsResponse.projects:type_name -> project.Project
+	15, // 1: project.Project.created_at:type_name -> google.protobuf.Timestamp
+	15, // 2: project.Project.updated_at:type_name -> google.protobuf.Timestamp
+	5,  // 3: project.ProjectResponse.project:type_name -> project.Project
+	11, // 4: project.ListProjectTasksResponse.tasks:type_name -> project.ProjectTask
+	14, // 5: project.ListProjectColumnsResponse.columns:type_name -> project.ProjectColumn
+	0,  // 6: project.ProjectService.CreateProject:input_type -> project.CreateProjectRequest
+	1,  // 7: project.ProjectService.UpdateProject:input_type -> project.UpdateProjectRequest
+	2,  // 8: project.ProjectService.GetProject:input_type -> project.GetProjectRequest
+	3,  // 9: project.ProjectService.ListProjects:input_type -> project.ListProjectsRequest
+	7,  // 10: project.ProjectService.DeleteProject:input_type -> project.DeleteProjectRequest
+	9,  // 11: project.ProjectService.ListProjectTasks:input_type -> project.ListProjectTasksRequest
+	12, // 12: project.ProjectService.ListProjectColumns:input_type -> project.ListProjectColumnsRequest
+	6,  // 13: project.ProjectService.CreateProject:output_type -> project.ProjectResponse
+	6,  // 14: project.ProjectService.UpdateProject:output_type -> project.ProjectResponse
+	6,  // 15: project.ProjectService.GetProject:output_type -> project.ProjectResponse
+	4,  // 16: project.ProjectService.ListProjects:output_type -> project.ListProjectsResponse
+	8,  // 17: project.ProjectService.DeleteProject:output_type -> project.DeleteProjectResponse
+	10, // 18: project.ProjectService.ListProjectTasks:output_type -> project.ListProjectTasksResponse
+	13, // 19: project.ProjectService.ListProjectColumns:output_type -> project.ListProjectColumnsResponse
+	13, // [13:20] is the sub-list for method output_type
+	6,  // [6:13] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_project_project_proto_init() }
@@ -597,7 +939,7 @@ func file_project_project_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_project_project_proto_rawDesc), len(file_project_project_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
