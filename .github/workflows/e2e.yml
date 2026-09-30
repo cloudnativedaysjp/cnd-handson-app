@@ -77,7 +77,6 @@ jobs:
             frontend.cache-from=type=gha,scope=frontend
             frontend.cache-to=type=gha,mode=max,scope=frontend
       - run: make up UP_BUILD=
-      - run: cd e2e && pnpm install --frozen-lockfile && pnpm exec playwright install --with-deps chromium
       - run: make e2e
       - name: Dump compose logs
         if: failure()
