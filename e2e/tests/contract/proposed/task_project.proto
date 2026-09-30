@@ -7,6 +7,8 @@ service TaskService {
   rpc CreateTask(CreateTaskRequest) returns (TaskResponse);
 }
 message CreateTaskRequest {
+  reserved 4, 5;
+  reserved "start_time", "end_time";
   string title = 1;
   string description = 2;
   string status = 3;
