@@ -36,43 +36,43 @@ make down   # 停止
 ### ロール作成
 #### コマンド
 ```bash
-PYTHONPATH=/workspaces/role python3 /workspaces/role/cmd/client/main.py create <name> <description>
+docker compose exec role-service python3 cmd/client/main.py create <name> <description>
 ```
 #### 例
 ```bash
-$ PYTHONPATH=/workspaces/role python3 /workspaces/role/cmd/client/main.py create test test用のrole
+$ docker compose exec role-service python3 cmd/client/main.py create test test用のrole
 Response from server: id=b99e3afb-dad5-4067-9c3d-883faf43ae04, name=test, description=test用のrole
 ```
 ### ロール更新
 #### コマンド
 ```bash
-PYTHONPATH=/workspaces/role python3 /workspaces/role/cmd/client/main.py update <id> <name> <description>
+docker compose exec role-service python3 cmd/client/main.py update <id> <name> <description>
 ```
 #### 例
 ```bash
-$ PYTHONPATH=/workspaces/role python3 /workspaces/role/cmd/client/main.py update b99e3afb-dad5-4067-9c3d-883faf43ae04 update updateのtest用のrole
+$ docker compose exec role-service python3 cmd/client/main.py update b99e3afb-dad5-4067-9c3d-883faf43ae04 update updateのtest用のrole
 Response from server: id=b99e3afb-dad5-4067-9c3d-883faf43ae04, name=update, description=updateのtest用のrole
 ```
 
 ### ロール情報取得
 ```bash
-PYTHONPATH=/workspaces/role python3 /workspaces/role/cmd/client/main.py get <id>
+docker compose exec role-service python3 cmd/client/main.py get <id>
 ```
 #### 例
 ```bash
-$ PYTHONPATH=/workspaces/role python3 /workspaces/role/cmd/client/main.py get b99e3afb-dad5-4067
+$ docker compose exec role-service python3 cmd/client/main.py get b99e3afb-dad5-4067
 -9c3d-883faf43ae04 
 Response from server: id=b99e3afb-dad5-4067-9c3d-883faf43ae04, name=update, description=updateのtest用のrole
 ```
 
 ### ユーザ削除
 ```bash
-PYTHONPATH=/workspaces/role python3 /workspaces/role/cmd/client/main.py delete <id>
+docker compose exec role-service python3 cmd/client/main.py delete <id>
 ```
 
 #### 例
 ```bash
-$ PYTHONPATH=/workspaces/role python3 /workspaces/role/cmd/client/main.py delete b99e3afb-dad5-4
+$ docker compose exec role-service python3 cmd/client/main.py delete b99e3afb-dad5-4
 067-9c3d-883faf43ae04 
 Response from server: Role with id b99e3afb-dad5-4067-9c3d-883faf43ae04 deleted successfully
 ```
