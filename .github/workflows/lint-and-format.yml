@@ -113,4 +113,4 @@ jobs:
         
         - name: Format check with Black
           working-directory: ./${{ matrix.path }}
-          run: black --check .
+          run: black --check . --exclude "(venv|proto|gen)"
