@@ -29,7 +29,10 @@ jobs:
       - run: buf lint
       - name: buf breaking
         if: github.event_name == 'pull_request'
-        run: buf breaking --against '.git#branch=main,subdir=proto'
+        # buf clones the local repo, so a local main branch must exist
+        run: |
+          git fetch --no-tags origin main:main
+          buf breaking --against '.git#branch=main,subdir=proto'
       - name: Generated code is up to date
         run: |
           make gen
