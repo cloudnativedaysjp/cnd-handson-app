@@ -41,7 +41,7 @@ clean: .env
 e2e:
 	cd e2e && $(PNPM) install --frozen-lockfile && $(PNPM) exec playwright install chromium && $(PNPM) test
 
-# Contract tests for #65 services (entry/idp/project/task). Expected to fail until they are implemented; not run in CI.
+# Contract tests for #65 services. CI runs only the services listed in e2e/contract-enabled.txt.
 # Addresses come from env (defaults in e2e/tests/contract/lib/config.ts).
 # SVC="idp project" で担当サービスの契約テストだけを実行する（ファイル名で絞り込む）
 contract:

@@ -2,9 +2,7 @@
 
 ## セットアップ
 
-```bash
-mise trust && mise install && make .env && make up && make e2e
-```
+[README の「動かし方」](README.md#動かし方) を参照。
 
 ## 進め方
 

@@ -15,7 +15,7 @@ description: Issue 番号を受け取り、着手確認から実装・検証・P
 2. `git fetch origin && git worktree add .claude/worktrees/{n}-{slug} -b feat/{n}-{slug} origin/main`（slug は英語 max 3 語）。以後のコマンドはすべてその worktree 内で実行
 3. `mise trust && mise install && cp -n .env.example .env`（JS を触るなら該当ディレクトリで `pnpm install`）
 4. 実装（proto first: proto → `make gen` → 実装）
-5. `make lint`、単体テスト、`make up && make e2e`
+5. `make lint`、単体テスト、`make up && make e2e`。サービスの実装なら `make contract SVC=<svc>` と `e2e/contract-enabled.txt` への追加
 6. コミット（ファイルを 1 つずつ add）。`git fetch origin && git merge origin/main` で追従し再確認
 7. push は人間の承認後のみ。確認できない環境ではここで止めて報告
 8. `gh pr create` をテンプレートに沿って。ラベル `ai-authored`（無ければ人間に作成を依頼）。未実行の確認は draft PR
