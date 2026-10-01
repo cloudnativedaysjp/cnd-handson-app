@@ -1,10 +1,11 @@
 version: v2
 # Go stubs for every proto land in gen/go/<svc> (single root module).
 # Python (role, column) uses buf.gen.python.yaml, driven by `make gen`.
+# Go plugins run locally via `go tool` (pinned in go.mod) to avoid BSR rate limits on remote plugins.
 plugins:
-  - remote: buf.build/protocolbuffers/go:v1.36.6
+  - local: [go, tool, protoc-gen-go]
     out: .
     opt: module=github.com/cloudnativedaysjp/cnd-handson-app
-  - remote: buf.build/grpc/go:v1.5.1
+  - local: [go, tool, protoc-gen-go-grpc]
     out: .
     opt: module=github.com/cloudnativedaysjp/cnd-handson-app,require_unimplemented_servers=false

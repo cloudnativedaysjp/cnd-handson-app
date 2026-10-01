@@ -12,9 +12,11 @@ PNPM := pnpm
 gen:
 	rm -rf gen/go
 	$(BUF) generate
+	@# Python はサービスと同じ版の grpcio-tools で生成し、BSR のリモートプラグインに依存しない
 	@for s in $(PY_SERVICES); do \
-		rm -rf backend/$$s/gen; \
-		$(BUF) generate --template buf.gen.python.yaml --path proto/$$s -o backend/$$s/gen || exit 1; \
+		rm -rf backend/$$s/gen && mkdir -p backend/$$s/gen && \
+		uvx --from grpcio-tools==1.71.0 python -m grpc_tools.protoc -I proto \
+			--python_out=backend/$$s/gen --grpc_python_out=backend/$$s/gen proto/$$s/$$s.proto || exit 1; \
 	done
 
 # Requires: go, docker (Go services are linted via their Dockerfile lint target).
