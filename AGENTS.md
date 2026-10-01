@@ -21,6 +21,7 @@ CloudNative Days ハンズオン用カンバンのマイクロサービスデモ
 - `make up` / `make down`: docker compose の起動 (healthy まで待つ) / 停止 (データは残す)
 - `make clean`: 停止してデータも削除 (down -v)
 - `make e2e`: Playwright + backend smoke
+- `make contract SVC=<svc>`: サービスの契約テスト（`e2e/tests/contract/<svc>.spec.ts`）
 
 ## 作業ルール
 - proto first: proto を変更 → `make gen` → 実装
@@ -36,6 +37,7 @@ CloudNative Days ハンズオン用カンバンのマイクロサービスデモ
 
 ## 完了条件
 - `make lint`、変更したサービスの単体テスト、`make e2e` がすべて通ること
+- サービスを実装したら `make contract SVC=<svc>` も通し、`e2e/contract-enabled.txt` に `<svc>` を追加する（CI の必須チェックで守られる）
 - 実行できない場合（Docker なし等）は完了と言わない
 - draft PR にし、実行できなかった項目と理由、代わりに実行したものを PR に書く
 - 出力のない「通るはず」は禁止
