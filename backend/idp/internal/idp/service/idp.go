@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -23,14 +25,17 @@ type TokenIssuer interface {
 	Issue(user *model.User) (token string, expiresAt time.Time, err error)
 }
 
+const refreshTokenTTL = 30 * 24 * time.Hour
+
 type IdpService struct {
-	users  repository.UserRepository
-	issuer TokenIssuer
-	now    func() time.Time
+	users   repository.UserRepository
+	refresh repository.RefreshTokenRepository
+	issuer  TokenIssuer
+	now     func() time.Time
 }
 
-func NewIdpService(users repository.UserRepository, issuer TokenIssuer) *IdpService {
-	return &IdpService{users: users, issuer: issuer, now: time.Now}
+func NewIdpService(users repository.UserRepository, refresh repository.RefreshTokenRepository, issuer TokenIssuer) *IdpService {
+	return &IdpService{users: users, refresh: refresh, issuer: issuer, now: time.Now}
 }
 
 func (s *IdpService) Register(ctx context.Context, name, email, password string) (uuid.UUID, error) {
@@ -71,9 +76,69 @@ func (s *IdpService) Login(ctx context.Context, email, password string) (*Tokens
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
 		return nil, ErrInvalidCredentials
 	}
-	token, exp, err := s.issuer.Issue(user)
+	return s.issueTokens(ctx, user)
+}
+
+// Refresh はリフレッシュトークンを使い捨てにし、新しい組を返す
+func (s *IdpService) Refresh(ctx context.Context, refreshToken string) (*Tokens, error) {
+	userID, secret, ok := strings.Cut(refreshToken, ".")
+	if !ok {
+		return nil, ErrInvalidCredentials
+	}
+	id, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, ErrInvalidCredentials
+	}
+	stored, err := s.refresh.Get(ctx, id)
+	if errors.Is(err, repository.ErrNotFound) {
+		return nil, ErrInvalidCredentials
+	}
 	if err != nil {
 		return nil, err
 	}
-	return &Tokens{AccessToken: token, ExpiresAt: exp}, nil
+	if stored.Exp < s.now().Unix() || bcrypt.CompareHashAndPassword([]byte(stored.Token), []byte(secret)) != nil {
+		return nil, ErrInvalidCredentials
+	}
+	user, err := s.users.GetByID(ctx, id)
+	if errors.Is(err, repository.ErrNotFound) {
+		return nil, ErrInvalidCredentials
+	}
+	if err != nil {
+		return nil, err
+	}
+	return s.issueTokens(ctx, user)
+}
+
+func (s *IdpService) issueTokens(ctx context.Context, user *model.User) (*Tokens, error) {
+	access, exp, err := s.issuer.Issue(user)
+	if err != nil {
+		return nil, err
+	}
+	refresh, err := s.newRefreshToken(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &Tokens{AccessToken: access, RefreshToken: refresh, ExpiresAt: exp}, nil
+}
+
+// トークンは "<user_id>.<secret>"。user_id で行を引き、secret を bcrypt で照合する
+func (s *IdpService) newRefreshToken(ctx context.Context, userID uuid.UUID) (string, error) {
+	buf := make([]byte, 32)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	secret := base64.RawURLEncoding.EncodeToString(buf)
+	hash, err := bcrypt.GenerateFromPassword([]byte(secret), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	err = s.refresh.Save(ctx, &model.RefreshToken{
+		UserID: userID,
+		Token:  string(hash),
+		Exp:    s.now().Add(refreshTokenTTL).Unix(),
+	})
+	if err != nil {
+		return "", err
+	}
+	return userID.String() + "." + secret, nil
 }

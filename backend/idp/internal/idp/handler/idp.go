@@ -32,11 +32,23 @@ func (s *IdpServiceServer) Login(ctx context.Context, req *idppb.LoginRequest) (
 	if err != nil {
 		return nil, toStatus(err)
 	}
+	return toTokenResponse(t), nil
+}
+
+func (s *IdpServiceServer) Refresh(ctx context.Context, req *idppb.RefreshRequest) (*idppb.TokenResponse, error) {
+	t, err := s.svc.Refresh(ctx, req.GetRefreshToken())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return toTokenResponse(t), nil
+}
+
+func toTokenResponse(t *service.Tokens) *idppb.TokenResponse {
 	return &idppb.TokenResponse{
 		AccessToken:  t.AccessToken,
 		RefreshToken: t.RefreshToken,
 		ExpiresAt:    t.ExpiresAt.Unix(),
-	}, nil
+	}
 }
 
 func toStatus(err error) error {
