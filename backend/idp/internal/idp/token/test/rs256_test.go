@@ -47,10 +47,13 @@ func TestIssueSignsRS256WithRegisteredClaims(t *testing.T) {
 	require.NoError(t, err)
 	user := &model.User{ID: uuid.New()}
 
-	signed, exp, err := issuer.Issue(user)
+	signed, exp, err := issuer.Issue(user, []string{"member"})
 	require.NoError(t, err)
 
-	claims := &jwt.RegisteredClaims{}
+	claims := &struct {
+		jwt.RegisteredClaims
+		Roles []string `json:"roles"`
+	}{}
 	parsed, err := jwt.ParseWithClaims(signed, claims, func(*jwt.Token) (any, error) { return issuer.PublicKey(), nil },
 		jwt.WithValidMethods([]string{"RS256"}), jwt.WithIssuer("http://idp.test"), jwt.WithAudience("handson"), jwt.WithExpirationRequired())
 	require.NoError(t, err)
@@ -58,6 +61,21 @@ func TestIssueSignsRS256WithRegisteredClaims(t *testing.T) {
 	assert.NotEmpty(t, issuer.KeyID())
 	assert.Equal(t, user.ID.String(), claims.Subject)
 	assert.Equal(t, exp.Unix(), claims.ExpiresAt.Unix())
+	assert.Equal(t, []string{"member"}, claims.Roles)
+}
+
+func TestIssueAlwaysIncludesRolesClaim(t *testing.T) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	issuer, err := token.NewRS256Issuer(key, "http://idp.test", "handson")
+	require.NoError(t, err)
+
+	signed, _, err := issuer.Issue(&model.User{ID: uuid.New()}, nil)
+	require.NoError(t, err)
+	mc := jwt.MapClaims{}
+	_, err = jwt.ParseWithClaims(signed, mc, func(*jwt.Token) (any, error) { return issuer.PublicKey(), nil })
+	require.NoError(t, err)
+	assert.Equal(t, []any{}, mc["roles"])
 }
 
 func TestNewRS256IssuerRequiresIssuerAndAudience(t *testing.T) {
