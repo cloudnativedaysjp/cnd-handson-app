@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [project, user, session, task]
+        service: [project, user, session, task, telemetry]
         include:
           - service: project
             path: backend/project
@@ -51,6 +51,8 @@ jobs:
             path: backend/session
           - service: task
             path: backend/task
+          - service: telemetry
+            path: pkg/telemetry
 
     steps:
       - name: Checkout code

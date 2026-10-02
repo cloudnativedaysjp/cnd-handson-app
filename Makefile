@@ -24,6 +24,7 @@ lint:
 	$(BUF) lint
 	@for s in user session task; do $(MAKE) -C backend/$$s lint || exit 1; done
 	cd backend/project && go vet ./...  # project has no Docker lint target
+	go vet ./pkg/...
 	@for s in $(PY_SERVICES); do $(MAKE) -C backend/$$s lint || exit 1; done
 
 # 既知の署名鍵で起動させないため、JWT の鍵は生成する
