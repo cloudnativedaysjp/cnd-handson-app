@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/idp/internal/idp/handler"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/idp/internal/idp/model"
@@ -65,6 +67,22 @@ func runServer() {
 	healthSrv := health.NewServer()
 	healthpb.RegisterHealthServer(grpcServer, healthSrv)
 	healthSrv.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+
+	httpPort := os.Getenv("HTTP_PORT")
+	if httpPort == "" {
+		httpPort = "8080"
+	}
+	httpServer := &http.Server{
+		Addr:              ":" + httpPort,
+		Handler:           handler.NewHTTPHandler(issuer.PublicKey(), issuer.KeyID(), os.Getenv("IDP_ISS")),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+	go func() {
+		log.Printf("HTTP server listening on port %s", httpPort)
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to serve HTTP: %v", err)
+		}
+	}()
 
 	log.Printf("gRPC server listening on port %s", port)
 	if err := grpcServer.Serve(lis); err != nil {
