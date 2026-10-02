@@ -36,11 +36,10 @@ type IdpService struct {
 	roles   repository.RoleRepository
 	refresh repository.RefreshTokenRepository
 	issuer  TokenIssuer
-	now     func() time.Time
 }
 
 func NewIdpService(users repository.UserRepository, roles repository.RoleRepository, refresh repository.RefreshTokenRepository, issuer TokenIssuer) *IdpService {
-	return &IdpService{users: users, roles: roles, refresh: refresh, issuer: issuer, now: time.Now}
+	return &IdpService{users: users, roles: roles, refresh: refresh, issuer: issuer}
 }
 
 func (s *IdpService) Register(ctx context.Context, name, email, password string) (uuid.UUID, error) {
@@ -56,7 +55,7 @@ func (s *IdpService) Register(ctx context.Context, name, email, password string)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("default role %q: %w", DefaultRole, err)
 	}
-	now := s.now()
+	now := time.Now()
 	user := &model.User{
 		ID:           uuid.New(),
 		Name:         name,
@@ -106,7 +105,7 @@ func (s *IdpService) Refresh(ctx context.Context, refreshToken string) (*Tokens,
 	if err != nil {
 		return nil, err
 	}
-	if stored.Exp < s.now().Unix() || bcrypt.CompareHashAndPassword([]byte(stored.Token), []byte(secret)) != nil {
+	if stored.Exp < time.Now().Unix() || bcrypt.CompareHashAndPassword([]byte(stored.Token), []byte(secret)) != nil {
 		return nil, ErrInvalidCredentials
 	}
 	user, err := s.users.GetByID(ctx, id)
@@ -161,7 +160,7 @@ func (s *IdpService) newRefreshToken(ctx context.Context, userID uuid.UUID) (str
 	err = s.refresh.Save(ctx, &model.RefreshToken{
 		UserID: userID,
 		Token:  string(hash),
-		Exp:    s.now().Add(refreshTokenTTL).Unix(),
+		Exp:    time.Now().Add(refreshTokenTTL).Unix(),
 	})
 	if err != nil {
 		return "", err

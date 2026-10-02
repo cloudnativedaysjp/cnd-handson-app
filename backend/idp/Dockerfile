@@ -7,6 +7,7 @@ COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod,sharing=locked \
     go mod download
 COPY gen/go ./gen/go
+COPY pkg ./pkg
 COPY backend/idp ./backend/idp
 
 FROM base AS build

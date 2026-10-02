@@ -34,7 +34,7 @@ func TestJWKSVerifiesIssuedToken(t *testing.T) {
 	require.NoError(t, err)
 	issuer, err := token.NewRS256Issuer(key, "http://idp.test/", "handson")
 	require.NoError(t, err)
-	h := handler.NewHTTPHandler(issuer.PublicKey(), issuer.KeyID(), "http://idp.test/")
+	h := handler.NewHTTPHandler(issuer.JWK(), "http://idp.test/")
 
 	var disc struct {
 		Issuer  string `json:"issuer"`
@@ -50,7 +50,7 @@ func TestJWKSVerifiesIssuedToken(t *testing.T) {
 	assert.Equal(t, http.StatusOK, get(t, h, "/.well-known/jwks.json", &jwks).Code)
 	require.Len(t, jwks.Keys, 1)
 	k := jwks.Keys[0]
-	assert.Equal(t, map[string]string{"kty": "RSA", "use": "sig", "alg": "RS256", "kid": issuer.KeyID()},
+	assert.Equal(t, map[string]string{"kty": "RSA", "use": "sig", "alg": "RS256", "kid": issuer.JWK()["kid"]},
 		map[string]string{"kty": k["kty"], "use": k["use"], "alg": k["alg"], "kid": k["kid"]})
 
 	n, err := base64.RawURLEncoding.DecodeString(k["n"])
@@ -66,9 +66,7 @@ func TestJWKSVerifiesIssuedToken(t *testing.T) {
 }
 
 func TestHealthz(t *testing.T) {
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	require.NoError(t, err)
-	h := handler.NewHTTPHandler(&key.PublicKey, "kid", "http://idp.test")
+	h := handler.NewHTTPHandler(map[string]string{"kid": "k"}, "http://idp.test")
 	assert.Equal(t, http.StatusOK, get(t, h, "/healthz", nil).Code)
 	assert.Equal(t, http.StatusNotFound, get(t, h, "/nope", nil).Code)
 }

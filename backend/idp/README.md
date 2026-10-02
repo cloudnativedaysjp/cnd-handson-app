@@ -27,5 +27,6 @@ idp-service server    # gRPC を PORT（既定 50051）、HTTP を HTTP_PORT（�
 | `DB_HOST` `DB_PORT` `DB_USER` `DB_PASSWORD` `DB_DB` | Postgres |
 | `IDP_SIGNING_KEY` | アクセストークン（RS256）の署名鍵。base64 の PEM（PKCS#1 / PKCS#8）。`make .env` が生成する |
 | `IDP_ISS` / `IDP_AUD` | JWT の `iss` / `aud` |
+| `OTEL_*` | 計測（`pkg/telemetry`、`docs/conventions.md`）。`OTEL_SERVICE_NAME=handson-idp` |
 
 アクセストークンは 15 分、リフレッシュトークンは 30 日有効。`Refresh` は使ったリフレッシュトークンを無効にし、新しい組を返す。
