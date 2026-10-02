@@ -8,4 +8,5 @@
   - `pkg/db`: DB 接続とマイグレーション
   - `Dockerfile` はサービスごと（ビルドコンテキストはリポジトリルート）
 - Go はルートの `go.mod` 1 つ。gRPC の stub は `gen/go/<svc>`（`make gen` で生成）
-- 他サービスの `internal` は import しない。共有するのは `gen/go/<svc>` の stub だけ
+- 他サービスの `internal` は import しない。共有するのは `gen/go/<svc>` の stub と `pkg/`（計測は `pkg/telemetry`）だけ
+- `pkg/` を使うサービスは Dockerfile で `COPY pkg ./pkg` する
