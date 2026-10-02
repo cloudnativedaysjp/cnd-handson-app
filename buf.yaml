@@ -5,7 +5,7 @@ lint:
   use:
     - STANDARD
   except:
-    # Package names (user, task, ...) are wire-visible; adding .v1 would be an API rename.
+    # Package names (idp, task, ...) are wire-visible; adding .v1 would be an API rename.
     - PACKAGE_VERSION_SUFFIX
     # Shared XxxResponse types across RPCs are the existing API; renaming breaks every client.
     - RPC_RESPONSE_STANDARD_NAME
