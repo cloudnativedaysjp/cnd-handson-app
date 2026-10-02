@@ -1,83 +1,5 @@
 services:
   
-    user-migrate:
-      build:
-        context: .
-        dockerfile: backend/user/Dockerfile
-        target: bin
-        platforms:
-          - linux/amd64
-      image: user:latest
-      env_file:
-        - .env
-      entrypoint: ["/user-service", "migrate"]
-      platform: linux/amd64
-      depends_on:
-        db:
-          condition: service_healthy
-    user-service:
-      build:
-        context: .
-        dockerfile: backend/user/Dockerfile
-        target: bin
-        platforms:
-          - linux/amd64
-      image: user:latest
-      ports:
-        - "50051:50051"
-      env_file:
-        - .env
-      entrypoint: ["/user-service", "server"]
-      healthcheck:
-        test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
-        interval: 3s
-        timeout: 3s
-        retries: 20
-      platform: linux/amd64
-      depends_on:
-        user-migrate:
-          condition: service_completed_successfully
-        db:
-          condition: service_healthy
-    session-migrate:
-      build:
-        context: .
-        dockerfile: backend/session/Dockerfile
-        target: bin
-        platforms:
-          - linux/amd64
-      image: session:latest
-      env_file:
-        - .env
-      entrypoint: ["/session-service", "migrate"]      
-      platform: linux/amd64
-      depends_on:
-        db:
-          condition: service_healthy
-    session-service:
-      build:
-        context: .
-        dockerfile: backend/session/Dockerfile
-        target: bin
-        platforms:
-          - linux/amd64
-      image: session:latest
-      ports:
-        - "50052:50051"
-      env_file:
-        - .env
-      entrypoint: ["/session-service", "server"]      
-      healthcheck:
-        test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
-        interval: 3s
-        timeout: 3s
-        retries: 20
-      platform: linux/amd64
-      depends_on:
-        session-migrate:
-          condition: service_completed_successfully
-        db:
-          condition: service_healthy
     idp-migrate:
       build:
         context: .
@@ -107,8 +29,7 @@ services:
           - linux/amd64
       image: idp:latest
       ports:
-        # 50051 は user が使っているため、user を外す #131 まで仮のポート
-        - "50057:50051"
+        - "50051:50051"
         - "8082:8080"
       env_file:
         - .env
