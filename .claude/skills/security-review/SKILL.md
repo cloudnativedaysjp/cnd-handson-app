@@ -42,7 +42,8 @@ Frontend → BFF → gRPC services → DB の各境界を確認する。
 特に以下を確認する。
 
 - user ID / role を request から偽装できないか
-- BFF の認証結果を backend が無条件に信用していないか
+- BFF での外部認証情報の検証から backend での principal（認証済みユーザー情報）の受領まで追跡し、backend が認証済み BFF から、クライアントや通信経路上の攻撃者が偽装・改ざんできない principal を受け取ることを確認する
+- client が任意に指定した未検証の user ID / role を、認可の主体や権限の根拠に使っていないか
 - service 間で authorization context が失われていないか
 
 ### Untrusted input
@@ -79,8 +80,11 @@ finding ごとに以下を出す。
 - Why exploitable:
 - Fix:
 
-最後に件数と reviewed areas をまとめる。
+最後に件数と reviewed areas、unverified areas をまとめる。
+unverified areas には未確認領域と確認できなかった理由を記載し、未確認領域がなければ `none` と明記する。
 
 finding がない場合は:
 
-`No exploitable security findings found.`
+`No exploitable security findings found in the reviewed areas.`
+
+`Unverified areas: [未確認領域と理由。なければ none].`
