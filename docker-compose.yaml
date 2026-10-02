@@ -78,6 +78,46 @@ services:
           condition: service_completed_successfully
         db:
           condition: service_healthy
+    idp-migrate:
+      build:
+        context: .
+        dockerfile: backend/idp/Dockerfile
+        target: bin
+        platforms:
+          - linux/amd64
+      image: idp:latest
+      env_file:
+        - .env
+      entrypoint: ["/idp-service", "migrate"]
+      platform: linux/amd64
+      depends_on:
+        db:
+          condition: service_healthy
+    idp-service:
+      build:
+        context: .
+        dockerfile: backend/idp/Dockerfile
+        target: bin
+        platforms:
+          - linux/amd64
+      image: idp:latest
+      ports:
+        # 50051 は user が使っているため、user を外す #131 まで仮のポート
+        - "50057:50051"
+      env_file:
+        - .env
+      entrypoint: ["/idp-service", "server"]
+      healthcheck:
+        test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
+        interval: 3s
+        timeout: 3s
+        retries: 20
+      platform: linux/amd64
+      depends_on:
+        idp-migrate:
+          condition: service_completed_successfully
+        db:
+          condition: service_healthy
     frontend:
       build: ./frontend
       tty: true
