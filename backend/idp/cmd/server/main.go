@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -61,7 +62,12 @@ func runServer() {
 	}
 
 	grpcServer := grpc.NewServer()
-	svc := service.NewIdpService(repository.NewUserRepository(conn), repository.NewRefreshTokenRepository(conn), issuer)
+	svc := service.NewIdpService(
+		repository.NewUserRepository(conn),
+		repository.NewRoleRepository(conn),
+		repository.NewRefreshTokenRepository(conn),
+		issuer,
+	)
 	idppb.RegisterIdpServiceServer(grpcServer, handler.NewIdpServiceServer(svc))
 
 	healthSrv := health.NewServer()
@@ -95,8 +101,11 @@ func runMigrate() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	if err := db.Migrate(conn, &model.User{}, &model.RefreshToken{}); err != nil {
+	if err := db.Migrate(conn, &model.Role{}, &model.User{}, &model.RefreshToken{}); err != nil {
 		log.Fatalf("Migration failed: %v", err)
+	}
+	if err := seed(context.Background(), conn); err != nil {
+		log.Fatalf("Seed failed: %v", err)
 	}
 	log.Println("Migration completed")
 }

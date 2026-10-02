@@ -18,6 +18,11 @@ import (
 
 const accessTokenTTL = 15 * time.Minute
 
+type claims struct {
+	jwt.RegisteredClaims
+	Roles []string `json:"roles"`
+}
+
 type RS256Issuer struct {
 	key      *rsa.PrivateKey
 	kid      string
@@ -37,17 +42,23 @@ func NewRS256Issuer(key *rsa.PrivateKey, issuer, audience string) (*RS256Issuer,
 	return &RS256Issuer{key: key, kid: kid, issuer: issuer, audience: audience, now: time.Now}, nil
 }
 
-func (i *RS256Issuer) Issue(user *model.User) (string, time.Time, error) {
+func (i *RS256Issuer) Issue(user *model.User, roles []string) (string, time.Time, error) {
 	now := i.now()
 	exp := now.Add(accessTokenTTL)
-	claims := jwt.RegisteredClaims{
-		Issuer:    i.issuer,
-		Audience:  jwt.ClaimStrings{i.audience},
-		Subject:   user.ID.String(),
-		ExpiresAt: jwt.NewNumericDate(exp),
-		IssuedAt:  jwt.NewNumericDate(now),
+	if roles == nil {
+		roles = []string{}
 	}
-	t := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	c := claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    i.issuer,
+			Audience:  jwt.ClaimStrings{i.audience},
+			Subject:   user.ID.String(),
+			ExpiresAt: jwt.NewNumericDate(exp),
+			IssuedAt:  jwt.NewNumericDate(now),
+		},
+		Roles: roles,
+	}
+	t := jwt.NewWithClaims(jwt.SigningMethodRS256, c)
 	t.Header["kid"] = i.kid
 	signed, err := t.SignedString(i.key)
 	return signed, exp, err

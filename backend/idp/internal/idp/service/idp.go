@@ -22,20 +22,25 @@ type Tokens struct {
 }
 
 type TokenIssuer interface {
-	Issue(user *model.User) (token string, expiresAt time.Time, err error)
+	Issue(user *model.User, roles []string) (token string, expiresAt time.Time, err error)
 }
 
-const refreshTokenTTL = 30 * 24 * time.Hour
+const (
+	refreshTokenTTL = 30 * 24 * time.Hour
+	// DefaultRole は Register したユーザーに付ける role。migrate で作る
+	DefaultRole = "member"
+)
 
 type IdpService struct {
 	users   repository.UserRepository
+	roles   repository.RoleRepository
 	refresh repository.RefreshTokenRepository
 	issuer  TokenIssuer
 	now     func() time.Time
 }
 
-func NewIdpService(users repository.UserRepository, refresh repository.RefreshTokenRepository, issuer TokenIssuer) *IdpService {
-	return &IdpService{users: users, refresh: refresh, issuer: issuer, now: time.Now}
+func NewIdpService(users repository.UserRepository, roles repository.RoleRepository, refresh repository.RefreshTokenRepository, issuer TokenIssuer) *IdpService {
+	return &IdpService{users: users, roles: roles, refresh: refresh, issuer: issuer, now: time.Now}
 }
 
 func (s *IdpService) Register(ctx context.Context, name, email, password string) (uuid.UUID, error) {
@@ -47,12 +52,17 @@ func (s *IdpService) Register(ctx context.Context, name, email, password string)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("%w: %v", ErrInvalidArgument, err)
 	}
+	role, err := s.roles.GetByName(ctx, DefaultRole)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("default role %q: %w", DefaultRole, err)
+	}
 	now := s.now()
 	user := &model.User{
 		ID:           uuid.New(),
 		Name:         name,
 		Email:        email,
 		PasswordHash: string(hash),
+		RoleID:       role.ID,
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}
@@ -110,7 +120,11 @@ func (s *IdpService) Refresh(ctx context.Context, refreshToken string) (*Tokens,
 }
 
 func (s *IdpService) issueTokens(ctx context.Context, user *model.User) (*Tokens, error) {
-	access, exp, err := s.issuer.Issue(user)
+	roles, err := s.roleNames(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+	access, exp, err := s.issuer.Issue(user, roles)
 	if err != nil {
 		return nil, err
 	}
@@ -119,6 +133,18 @@ func (s *IdpService) issueTokens(ctx context.Context, user *model.User) (*Tokens
 		return nil, err
 	}
 	return &Tokens{AccessToken: access, RefreshToken: refresh, ExpiresAt: exp}, nil
+}
+
+// user サービスから引き継いだユーザーは role_id が空のことがあるため、見つからなければ roles は空にする
+func (s *IdpService) roleNames(ctx context.Context, user *model.User) ([]string, error) {
+	role, err := s.roles.GetByID(ctx, user.RoleID)
+	if errors.Is(err, repository.ErrNotFound) {
+		return []string{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return []string{role.Name}, nil
 }
 
 // トークンは "<user_id>.<secret>"。user_id で行を引き、secret を bcrypt で照合する
