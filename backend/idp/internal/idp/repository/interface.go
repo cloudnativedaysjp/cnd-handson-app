@@ -24,3 +24,8 @@ type RefreshTokenRepository interface {
 	Save(ctx context.Context, token *model.RefreshToken) error
 	Get(ctx context.Context, userID uuid.UUID) (*model.RefreshToken, error)
 }
+
+type RoleRepository interface {
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Role, error)
+	GetByName(ctx context.Context, name string) (*model.Role, error)
+}

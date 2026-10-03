@@ -130,39 +130,6 @@ services:
         start_interval: 1s
         timeout: 3s
         retries: 40
-    role-migrate:
-      build:
-        context: ./backend/role
-        dockerfile: Dockerfile
-      image: role:latest
-      env_file:
-        - .env
-      entrypoint: ["python3", "./cmd/server/main.py", "migrate"]      
-      depends_on:
-        db:
-          condition: service_healthy
-    role-service:
-      build:
-        context: ./backend/role
-        dockerfile: Dockerfile
-      image: role:latest
-      ports:
-        - "50054:50051"
-      env_file:
-        - .env
-      entrypoint: ["python3", "./cmd/server/main.py", "server"]
-      healthcheck:
-        test: ["CMD", "python3", "-c", "import socket; socket.create_connection(('127.0.0.1', 50051), 2)"]
-        interval: 3s
-        start_period: 30s
-        start_interval: 1s
-        timeout: 3s
-        retries: 20
-      depends_on:
-        role-migrate:
-          condition: service_completed_successfully
-        db:
-          condition: service_healthy
     project-migrate:
       build:
         context: .
