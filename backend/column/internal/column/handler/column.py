@@ -1,6 +1,8 @@
 import functools
+import uuid
 
 import grpc
+from opentelemetry import trace
 
 from column import column_pb2, column_pb2_grpc
 from internal.column.service.column import ColumnService, InvalidArgument, NotFound
@@ -57,4 +59,34 @@ class ColumnHandler(column_pb2_grpc.ColumnServiceServicer):
         )
         return column_pb2.ListColumnsResponse(
             columns=[to_proto(c) for c in columns], total_count=total
+        )
+
+
+class RequireUserID(grpc.ServerInterceptor):
+    """ColumnService の呼び出しに x-user-id（JWT は入口が検証済み）を求め、スパンに user.id を付ける。
+    health check は metadata を送らないので対象外"""
+
+    def intercept_service(self, continuation, details):
+        handler = continuation(details)
+        if handler is None or not details.method.startswith("/column.ColumnService/"):
+            return handler
+        inner = handler.unary_unary
+
+        def checked(request, context):
+            values = [v for k, v in context.invocation_metadata() if k == "x-user-id"]
+            if len(values) != 1:
+                context.abort(grpc.StatusCode.UNAUTHENTICATED, "x-user-id is required")
+            try:
+                user_id = str(uuid.UUID(values[0]))
+            except ValueError:
+                context.abort(
+                    grpc.StatusCode.UNAUTHENTICATED, "x-user-id must be a UUID"
+                )
+            trace.get_current_span().set_attribute("user.id", user_id)
+            return inner(request, context)
+
+        return grpc.unary_unary_rpc_method_handler(
+            checked,
+            request_deserializer=handler.request_deserializer,
+            response_serializer=handler.response_serializer,
         )

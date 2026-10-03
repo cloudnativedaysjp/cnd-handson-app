@@ -10,7 +10,7 @@ from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 
 from column import column_pb2_grpc
-from internal.column.handler.column import ColumnHandler
+from internal.column.handler.column import ColumnHandler, RequireUserID
 from internal.column.model.column import Base
 from internal.column.repository.column import ColumnRepository
 from internal.column.service.column import ColumnService
@@ -27,7 +27,7 @@ def serve() -> None:
 
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=10),
-        interceptors=[telemetry.RequestLog(log)],
+        interceptors=[telemetry.RequestLog(log), RequireUserID()],
     )
     service = ColumnService(ColumnRepository(make_sessions(engine)))
     column_pb2_grpc.add_ColumnServiceServicer_to_server(ColumnHandler(service), server)
