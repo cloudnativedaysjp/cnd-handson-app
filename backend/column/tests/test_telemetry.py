@@ -63,3 +63,7 @@ def test_request_log_writes_one_line_per_rpc(caplog):
 def test_json_log_is_compact():
     record = logging.LogRecord("t", logging.INFO, __file__, 1, "m", None, None)
     assert '": "' not in telemetry.JSONFormatter().format(record)
+
+
+def test_client_channel_builds():
+    telemetry.client_channel("localhost:1").close()

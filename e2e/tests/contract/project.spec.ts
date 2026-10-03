@@ -1,7 +1,7 @@
 // Contract for handson-project (#72).
 import { expect, test } from "@playwright/test";
 import { cfg } from "./lib/config";
-import { client, USER_ID } from "./lib/grpc";
+import { client, grpc, OTHER_USER_ID, USER_ID } from "./lib/grpc";
 
 const project = () => client("project/project.proto", "project", "ProjectService", cfg.projectGrpc);
 
@@ -27,4 +27,14 @@ test("list tasks of a project via project -> task", async () => {
   const { task } = await t("CreateTask", { title: "in project", status: "todo", project_id: created.id });
   const { tasks } = await p("ListProjectTasks", { project_id: created.id });
   expect(tasks.map((x: { id: string }) => x.id)).toEqual([task.id]);
+});
+
+test("only the owner can see a project", async () => {
+  const call = project();
+  const { project: created } = await call("CreateProject", { name: "private", owner_id: USER_ID });
+  const notFound = { code: grpc.status.NOT_FOUND };
+  await expect(call("GetProject", { id: created.id }, OTHER_USER_ID)).rejects.toMatchObject(notFound);
+  await expect(call("ListProjectTasks", { project_id: created.id }, OTHER_USER_ID)).rejects.toMatchObject(notFound);
+  const { projects } = await call("ListProjects", {}, OTHER_USER_ID);
+  expect(projects.map((p: { id: string }) => p.id)).not.toContain(created.id);
 });

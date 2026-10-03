@@ -4,6 +4,8 @@ BUF ?= $(shell [ "$$(buf --version 2>/dev/null)" = "$(BUF_VERSION)" ] && echo bu
 UP_BUILD ?= --build
 GO_SERVICES := idp project task
 PY_SERVICES := column
+# Python のサービスが client として呼ぶ proto（column は所有者の確認で project を呼ぶ）
+PY_CLIENT_PROTOS := proto/project/project.proto
 PNPM := pnpm
 
 .PHONY: gen lint up down clean e2e contract
@@ -16,7 +18,7 @@ gen:
 	@for s in $(PY_SERVICES); do \
 		rm -rf backend/$$s/gen && mkdir -p backend/$$s/gen && \
 		uvx --from grpcio-tools==1.71.0 python -m grpc_tools.protoc -I proto \
-			--python_out=backend/$$s/gen --grpc_python_out=backend/$$s/gen proto/$$s/$$s.proto || exit 1; \
+			--python_out=backend/$$s/gen --grpc_python_out=backend/$$s/gen proto/$$s/$$s.proto $(PY_CLIENT_PROTOS) || exit 1; \
 	done
 
 # Requires: go, docker (Go services are linted via their Dockerfile lint target).
