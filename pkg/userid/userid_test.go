@@ -32,6 +32,8 @@ func TestRequire(t *testing.T) {
 	assert.Equal(t, codes.Unauthenticated, status.Code(err))
 	_, err = call(withUser("not-a-uuid"), m)
 	assert.Equal(t, codes.Unauthenticated, status.Code(err))
+	_, err = call(withUser("00000000-0000-0000-0000-000000000000"), m)
+	assert.Equal(t, codes.Unauthenticated, status.Code(err), "the zero UUID must not pass")
 	_, err = call(context.Background(), "/grpc.health.v1.Health/Check")
 	assert.NoError(t, err, "health checks carry no user")
 }

@@ -31,8 +31,9 @@ func Require(servicePrefix string) grpc.UnaryServerInterceptor {
 			return nil, status.Error(codes.Unauthenticated, "x-user-id is required")
 		}
 		id, err := uuid.Parse(vals[0])
-		if err != nil {
-			return nil, status.Error(codes.Unauthenticated, "x-user-id must be a UUID")
+		// ゼロの UUID は「未指定」と区別できないので受け付けない
+		if err != nil || id == uuid.Nil {
+			return nil, status.Error(codes.Unauthenticated, "x-user-id must be a non-zero UUID")
 		}
 		trace.SpanFromContext(ctx).SetAttributes(semconv.UserID(id.String()))
 		return handler(NewContext(ctx, id.String()), req)

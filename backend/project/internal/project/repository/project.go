@@ -31,14 +31,11 @@ func (r *ProjectRepository) Get(ctx context.Context, id uuid.UUID) (*model.Proje
 	return &p, nil
 }
 
-// List は ownerID が uuid.Nil なら全件を返す
+// List は ownerID のプロジェクトだけを返す。全件を返す経路は作らない
 func (r *ProjectRepository) List(ctx context.Context, ownerID uuid.UUID) ([]*model.Project, error) {
-	query := r.db.WithContext(ctx).Order("created_at DESC")
-	if ownerID != uuid.Nil {
-		query = query.Where("owner_id = ?", ownerID)
-	}
 	var projects []*model.Project
-	return projects, query.Find(&projects).Error
+	err := r.db.WithContext(ctx).Where("owner_id = ?", ownerID).Order("created_at DESC").Find(&projects).Error
+	return projects, err
 }
 
 func (r *ProjectRepository) Create(ctx context.Context, p *model.Project) error {

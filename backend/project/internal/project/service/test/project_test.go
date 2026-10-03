@@ -56,7 +56,7 @@ func (f *fakeRepo) Get(_ context.Context, id uuid.UUID) (*model.Project, error) 
 func (f *fakeRepo) List(_ context.Context, ownerID uuid.UUID) ([]*model.Project, error) {
 	var out []*model.Project
 	for _, p := range f.projects {
-		if ownerID == uuid.Nil || p.OwnerID == ownerID {
+		if p.OwnerID == ownerID {
 			out = append(out, p)
 		}
 	}
