@@ -81,12 +81,6 @@ DB_DB=postgres
 go run cmd/server/main.go migrate
 ```
 
-マイグレーションに失敗した場合やテーブルをリセットしたい場合：
-
-```bash
-go run cmd/server/main.go reset
-```
-
 ### 4. サーバーの起動
 
 ```bash

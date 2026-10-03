@@ -1,18 +1,43 @@
 # Build context is the repo root (single Go module): docker build -f backend/project/Dockerfile .
-FROM golang:1.24.3-alpine AS builder
-
-WORKDIR /app
+FROM --platform=${BUILDPLATFORM} golang:1.24.3-alpine3.21 AS base
+WORKDIR /src
 ENV CGO_ENABLED=0
-
+ENV GOFLAGS="-mod=readonly"
 COPY go.mod go.sum ./
-RUN go mod download
-
+RUN --mount=type=cache,target=/go/pkg/mod,sharing=locked \
+    go mod download
 COPY gen/go ./gen/go
+COPY pkg ./pkg
 COPY backend/project ./backend/project
 
-RUN go build -o project-service ./backend/project/cmd/server
+FROM base AS build
+ARG TARGETOS
+ARG TARGETARCH
+RUN --mount=type=cache,target=/go/pkg/mod,sharing=locked \
+    --mount=type=cache,target=/root/.cache/go-build,sharing=locked \
+    GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /out/project-service ./backend/project/cmd/server \
+    && GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /out/project-client ./backend/project/cmd/client
 
-FROM alpine:3.21 AS probe
+FROM base AS unit-test
+RUN --mount=type=cache,target=/go/pkg/mod,sharing=locked \
+    --mount=type=cache,target=/root/.cache/go-build,sharing=locked \
+    mkdir /out && go test -v -coverprofile=/out/cover.out ./backend/project/...
+
+FROM golangci/golangci-lint:v2.1.6-alpine AS lint-base
+
+FROM base AS lint
+ENV GOLANGCI_LINT_CACHE="/root/.cache/golangci-lint"
+RUN --mount=from=lint-base,src=/usr/bin/golangci-lint,target=/usr/bin/golangci-lint \
+    --mount=type=cache,target=${GOLANGCI_LINT_CACHE},sharing=locked \
+    golangci-lint run --timeout 10m0s ./backend/project/...
+
+FROM scratch AS unit-test-coverage
+COPY --from=unit-test /out/cover.out /cover.out
+
+FROM scratch AS client
+COPY --from=build /out/project-client /
+
+FROM --platform=${BUILDPLATFORM} alpine:3.21 AS probe
 ARG TARGETARCH
 RUN case "${TARGETARCH}" in \
       amd64) SHA256=7e98a938983343b00c09a04faf13be0a2cb77fb476410ebca99721598fa2499f ;; \
@@ -23,14 +48,7 @@ RUN case "${TARGETARCH}" in \
     && echo "${SHA256}  /grpc_health_probe" | sha256sum -c - \
     && chmod +x /grpc_health_probe
 
-FROM alpine:3.18
-
-WORKDIR /app
-
-RUN apk --no-cache add ca-certificates
-COPY --from=builder /app/project-service .
-COPY --from=probe /grpc_health_probe /grpc_health_probe
-
-EXPOSE 50051
-
-CMD ["./project-service", "server"]
+FROM scratch AS bin
+COPY --from=probe /grpc_health_probe /
+COPY --from=build /out/project-service /
+USER 65532:65532

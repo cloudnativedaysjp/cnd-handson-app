@@ -22,8 +22,7 @@ gen:
 # Requires: go, docker (Go services are linted via their Dockerfile lint target).
 lint:
 	$(BUF) lint
-	@for s in idp task; do $(MAKE) -C backend/$$s lint || exit 1; done
-	cd backend/project && go vet ./...  # project has no Docker lint target
+	@for s in idp project task; do $(MAKE) -C backend/$$s lint || exit 1; done
 	go vet ./pkg/...
 	@for s in $(PY_SERVICES); do $(MAKE) -C backend/$$s lint || exit 1; done
 

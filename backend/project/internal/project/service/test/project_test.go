@@ -1,132 +1,104 @@
-package test
+package service_test
 
 import (
-	"os"
+	"context"
 	"testing"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/model"
+	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/repository"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/service"
+	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func init() {
-	// テスト実行中はDB接続をスキップする
-	if err := os.Setenv("DB_SKIP_CONNECT", "true"); err != nil {
-		panic("Failed to set environment variable: " + err.Error())
-	}
-}
-
-// インメモリプロジェクトリポジトリの実装
-type InMemoryProjectRepository struct {
+type fakeRepo struct {
 	projects map[uuid.UUID]*model.Project
-	byOwner  map[uuid.UUID][]*model.Project
 }
 
-// NewInMemoryProjectRepository は新しいインメモリリポジトリを作成する
-func NewInMemoryProjectRepository() *InMemoryProjectRepository {
-	return &InMemoryProjectRepository{
-		projects: make(map[uuid.UUID]*model.Project),
-		byOwner:  make(map[uuid.UUID][]*model.Project),
-	}
+func newService() *service.ProjectService {
+	return service.NewProjectService(&fakeRepo{projects: map[uuid.UUID]*model.Project{}})
 }
 
-// GetProjectByID はIDによるプロジェクトの取得
-func (r *InMemoryProjectRepository) GetProjectByID(projectID uuid.UUID) (*model.Project, error) {
-	project, exists := r.projects[projectID]
-	if !exists {
-		return nil, service.ErrProjectNotFound
+func (f *fakeRepo) Get(_ context.Context, id uuid.UUID) (*model.Project, error) {
+	p, ok := f.projects[id]
+	if !ok {
+		return nil, repository.ErrNotFound
 	}
-	return project, nil
+	cp := *p
+	return &cp, nil
 }
 
-// GetProjectsByOwnerID はオーナーIDによるプロジェクト一覧の取得
-func (r *InMemoryProjectRepository) GetProjectsByOwnerID(ownerID uuid.UUID) ([]*model.Project, error) {
-	projects, exists := r.byOwner[ownerID]
-	if !exists {
-		return []*model.Project{}, nil
-	}
-	return projects, nil
-}
-
-// ListProjects は全プロジェクトの取得
-func (r *InMemoryProjectRepository) ListProjects() ([]*model.Project, error) {
-	projects := make([]*model.Project, 0, len(r.projects))
-	for _, p := range r.projects {
-		projects = append(projects, p)
-	}
-	return projects, nil
-}
-
-// CreateProject は新規プロジェクトの作成
-func (r *InMemoryProjectRepository) CreateProject(project *model.Project) (*model.Project, error) {
-	// 既存のIDを持つプロジェクトがないことを確認
-	if _, exists := r.projects[project.ID]; exists {
-		return nil, service.ErrProjectAlreadyExists
-	}
-
-	// プロジェクトを保存
-	r.projects[project.ID] = project
-
-	// オーナーごとのプロジェクト一覧を更新
-	ownerProjects := r.byOwner[project.OwnerID]
-	r.byOwner[project.OwnerID] = append(ownerProjects, project)
-
-	return project, nil
-}
-
-// UpdateProject はプロジェクト情報の更新
-func (r *InMemoryProjectRepository) UpdateProject(project *model.Project) (*model.Project, error) {
-	if _, exists := r.projects[project.ID]; !exists {
-		return nil, service.ErrProjectNotFound
-	}
-
-	// プロジェクトを更新
-	r.projects[project.ID] = project
-	return project, nil
-}
-
-// DeleteProject はプロジェクトの削除
-func (r *InMemoryProjectRepository) DeleteProject(projectID uuid.UUID) error {
-	project, exists := r.projects[projectID]
-	if !exists {
-		return service.ErrProjectNotFound
-	}
-
-	// プロジェクトを削除
-	delete(r.projects, projectID)
-
-	// オーナーごとのプロジェクト一覧から削除
-	ownerProjects := r.byOwner[project.OwnerID]
-	var newOwnerProjects []*model.Project
-	for _, p := range ownerProjects {
-		if p.ID != projectID {
-			newOwnerProjects = append(newOwnerProjects, p)
+func (f *fakeRepo) List(_ context.Context, ownerID uuid.UUID) ([]*model.Project, error) {
+	var out []*model.Project
+	for _, p := range f.projects {
+		if ownerID == uuid.Nil || p.OwnerID == ownerID {
+			out = append(out, p)
 		}
 	}
-	r.byOwner[project.OwnerID] = newOwnerProjects
+	return out, nil
+}
 
+func (f *fakeRepo) Create(_ context.Context, p *model.Project) error {
+	f.projects[p.ID] = p
 	return nil
 }
 
-// TestCreateProject はCreateProjectのテスト
-func TestCreateProject(t *testing.T) {
-	// テスト用リポジトリとサービスの作成
-	repo := NewInMemoryProjectRepository()
-	projectService := service.NewProjectService(repo)
+func (f *fakeRepo) Update(_ context.Context, p *model.Project) error {
+	f.projects[p.ID] = p
+	return nil
+}
 
-	// テストデータ
-	name := "CloudNative Days"
-	description := "CloudNative Days hands-on project"
-	ownerID := uuid.New()
+func (f *fakeRepo) Delete(_ context.Context, id uuid.UUID) error {
+	if _, ok := f.projects[id]; !ok {
+		return repository.ErrNotFound
+	}
+	delete(f.projects, id)
+	return nil
+}
 
-	// テスト実行
-	result, err := projectService.CreateProject(name, description, ownerID)
+func TestCreateGetListUpdateDelete(t *testing.T) {
+	ctx := context.Background()
+	svc := newService()
+	owner := uuid.NewString()
 
-	// 検証
-	assert.NoError(t, err, "Should not return an error")
-	assert.NotNil(t, result, "Result should not be nil")
-	assert.Equal(t, name, result.Name, "Project name should match input")
-	assert.Equal(t, description, result.Description, "Project description should match input")
-	assert.Equal(t, ownerID, result.OwnerID, "Project owner ID should match input")
+	p, err := svc.Create(ctx, &projectpb.CreateProjectRequest{Name: "p1", Description: "d", OwnerId: owner})
+	require.NoError(t, err)
+	_, err = svc.Create(ctx, &projectpb.CreateProjectRequest{Name: "other", OwnerId: uuid.NewString()})
+	require.NoError(t, err)
+
+	got, err := svc.Get(ctx, p.ID.String())
+	require.NoError(t, err)
+	assert.Equal(t, "p1", got.Name)
+
+	mine, err := svc.List(ctx, owner)
+	require.NoError(t, err)
+	assert.Len(t, mine, 1)
+	all, err := svc.List(ctx, "")
+	require.NoError(t, err)
+	assert.Len(t, all, 2)
+
+	updated, err := svc.Update(ctx, &projectpb.UpdateProjectRequest{Id: p.ID.String(), Name: "p2"})
+	require.NoError(t, err)
+	assert.Equal(t, "p2", updated.Name)
+	assert.Equal(t, "d", updated.Description, "empty fields are left as is")
+
+	require.NoError(t, svc.Delete(ctx, p.ID.String()))
+	_, err = svc.Get(ctx, p.ID.String())
+	assert.ErrorIs(t, err, service.ErrNotFound)
+	assert.ErrorIs(t, svc.Delete(ctx, p.ID.String()), service.ErrNotFound)
+}
+
+func TestRejectsBadInput(t *testing.T) {
+	ctx := context.Background()
+	svc := newService()
+	_, err := svc.Create(ctx, &projectpb.CreateProjectRequest{OwnerId: uuid.NewString()})
+	assert.ErrorIs(t, err, service.ErrInvalidArgument)
+	_, err = svc.Create(ctx, &projectpb.CreateProjectRequest{Name: "p", OwnerId: "bad"})
+	assert.ErrorIs(t, err, service.ErrInvalidArgument)
+	_, err = svc.Get(ctx, "bad")
+	assert.ErrorIs(t, err, service.ErrInvalidArgument)
+	_, err = svc.List(ctx, "bad")
+	assert.ErrorIs(t, err, service.ErrInvalidArgument)
 }
