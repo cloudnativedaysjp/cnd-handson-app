@@ -87,7 +87,11 @@ func (s *ProjectService) Update(ctx context.Context, req *projectpb.UpdateProjec
 		p.Description = req.GetDescription()
 	}
 	p.UpdatedAt = time.Now()
-	if err := s.repo.Update(ctx, p); err != nil {
+	err = s.repo.Update(ctx, p)
+	if errors.Is(err, repository.ErrNotFound) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
 		return nil, err
 	}
 	return p, nil

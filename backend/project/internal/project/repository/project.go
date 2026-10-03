@@ -45,8 +45,13 @@ func (r *ProjectRepository) Create(ctx context.Context, p *model.Project) error 
 	return r.db.WithContext(ctx).Create(p).Error
 }
 
+// Update は UPDATE だけを実行する（Save だと消えた行を INSERT で作り直してしまう）
 func (r *ProjectRepository) Update(ctx context.Context, p *model.Project) error {
-	return r.db.WithContext(ctx).Save(p).Error
+	res := r.db.WithContext(ctx).Model(p).Select("*").Updates(p)
+	if res.Error == nil && res.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return res.Error
 }
 
 func (r *ProjectRepository) Delete(ctx context.Context, id uuid.UUID) error {
