@@ -99,6 +99,39 @@ services:
           condition: service_completed_successfully
         db:
           condition: service_healthy
+    column-migrate:
+      build:
+        context: ./backend/column
+        target: runtime
+      image: column:latest
+      env_file:
+        - .env
+      entrypoint: ["python", "./cmd/server/main.py", "migrate"]
+      depends_on:
+        db:
+          condition: service_healthy
+    column-service:
+      build:
+        context: ./backend/column
+        target: runtime
+      image: column:latest
+      ports:
+        - "50056:50051"
+      env_file:
+        - .env
+      entrypoint: ["python", "./cmd/server/main.py", "server"]
+      healthcheck:
+        test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
+        interval: 3s
+        start_period: 30s
+        start_interval: 1s
+        timeout: 3s
+        retries: 20
+      depends_on:
+        column-migrate:
+          condition: service_completed_successfully
+        db:
+          condition: service_healthy
     project-migrate:
       build:
         context: .
