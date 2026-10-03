@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	idppb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/idp"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/telemetry"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/userid"
@@ -71,7 +72,7 @@ func TestAPI(t *testing.T) {
 	hs256, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{Subject: testUser}).SignedString([]byte("secret"))
 
 	projects := &fakeProjects{}
-	h := newHandler(telemetry.NewLogger(io.Discard), "blue", t.TempDir(), projects, newVerifier(jwksSrv.URL, "iss", "aud"))
+	h := newHandler(telemetry.NewLogger(io.Discard), "blue", t.TempDir(), nil, projects, newVerifier(jwksSrv.URL, "iss", "aud"))
 
 	for name, tc := range map[string]struct {
 		path, auth string
@@ -110,5 +111,32 @@ func TestAPI(t *testing.T) {
 	h.ServeHTTP(rec, req)
 	if !strings.Contains(rec.Body.String(), `"name":"demo"`) {
 		t.Errorf("body = %s", rec.Body.String())
+	}
+}
+
+type fakeIdp struct{ idppb.IdpServiceClient }
+
+func (fakeIdp) Login(_ context.Context, req *idppb.LoginRequest, _ ...grpc.CallOption) (*idppb.TokenResponse, error) {
+	if req.GetPassword() != "pw" {
+		return nil, status.Error(codes.Unauthenticated, "invalid credentials")
+	}
+	return &idppb.TokenResponse{AccessToken: "tok", RefreshToken: "refresh"}, nil
+}
+
+func TestLogin(t *testing.T) {
+	h := newHandler(telemetry.NewLogger(io.Discard), "blue", t.TempDir(), fakeIdp{}, nil, nil)
+	for body, want := range map[string]struct {
+		code int
+		body string
+	}{
+		`{"email":"a@example.com","password":"pw"}`:    {http.StatusOK, `{"accessToken":"tok"}`},
+		`{"email":"a@example.com","password":"wrong"}`: {http.StatusUnauthorized, `{"error":"Unauthorized"}`},
+		`not json`: {http.StatusBadRequest, `{"error":"Bad Request"}`},
+	} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/login", strings.NewReader(body)))
+		if rec.Code != want.code || strings.TrimSpace(rec.Body.String()) != want.body {
+			t.Errorf("%s: got %d %s, want %d %s", body, rec.Code, rec.Body.String(), want.code, want.body)
+		}
 	}
 }

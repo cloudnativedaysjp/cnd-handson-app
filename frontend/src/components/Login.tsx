@@ -4,20 +4,34 @@ import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { login } from "../features/sessions/slice";
+import { ApiError, api } from "../utils/api";
 
 const Login: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!email.trim() || !password) return;
 
-    dispatch(login({ email }));
-    navigate("/");
+    try {
+      const { accessToken } = await api<{ accessToken: string }>("/api/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      dispatch(login({ token: accessToken }));
+      navigate("/");
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.status === 401
+          ? "メールアドレスかパスワードが違います"
+          : "ログインできませんでした。時間をおいてもう一度試してください",
+      );
+    }
   };
 
   return (
@@ -42,6 +56,7 @@ const Login: React.FC = () => {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            slotProps={{ htmlInput: { "data-testid": "login-email" } }}
           />
           <TextField
             label="パスワード"
@@ -49,8 +64,15 @@ const Login: React.FC = () => {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            slotProps={{ htmlInput: { "data-testid": "login-password" } }}
           />
-          <Button type="submit" variant="contained" fullWidth>
+          {error && <Typography color="error">{error}</Typography>}
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            data-testid="login-submit"
+          >
             ログイン
           </Button>
         </Box>
