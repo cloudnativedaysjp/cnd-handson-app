@@ -45,3 +45,38 @@ def test_rejects_bad_input(service):
         service.create("todo", "not-a-uuid")
     with pytest.raises(InvalidArgument):
         service.get("not-a-uuid")
+
+
+class FakeContext:
+    def __init__(self, metadata):
+        self.metadata = metadata
+
+    def invocation_metadata(self):
+        return self.metadata
+
+    def abort(self, code, details):
+        raise PermissionError(code)
+
+
+class Details:
+    def __init__(self, method):
+        self.method = method
+
+
+def test_require_user_id():
+    import grpc
+
+    from internal.column.handler.column import RequireUserID
+
+    def call(method, metadata):
+        h = grpc.unary_unary_rpc_method_handler(lambda req, ctx: "ok")
+        wrapped = RequireUserID().intercept_service(lambda _: h, Details(method))
+        return wrapped.unary_unary(None, FakeContext(metadata))
+
+    m = "/column.ColumnService/ListColumns"
+    assert call(m, [("x-user-id", "00000000-0000-4000-8000-000000000071")]) == "ok"
+    for bad in ([], [("x-user-id", "not-a-uuid")]):
+        with pytest.raises(PermissionError) as e:
+            call(m, bad)
+        assert e.value.args[0] == grpc.StatusCode.UNAUTHENTICATED
+    assert call("/grpc.health.v1.Health/Check", []) == "ok"
