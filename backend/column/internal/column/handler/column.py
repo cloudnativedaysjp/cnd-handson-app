@@ -23,6 +23,9 @@ def grpc_errors(method):
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, str(e))
         except NotFound as e:
             context.abort(grpc.StatusCode.NOT_FOUND, str(e))
+        # project を呼んで失敗したら、UNKNOWN にせず元のステータスを返す
+        except grpc.RpcError as e:
+            context.abort(e.code(), e.details())
 
     return wrapper
 

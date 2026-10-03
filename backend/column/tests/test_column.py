@@ -122,3 +122,24 @@ def test_require_user_id():
             call(m, bad)
         assert e.value.args[0] == grpc.StatusCode.UNAUTHENTICATED
     assert call("/grpc.health.v1.Health/Check", []) == "ok"
+
+
+def test_handler_keeps_status_of_project_errors():
+    import grpc
+
+    from internal.column.handler.column import grpc_errors
+
+    class Unavailable(grpc.RpcError):
+        def code(self):
+            return grpc.StatusCode.UNAVAILABLE
+
+        def details(self):
+            return "project is down"
+
+    @grpc_errors
+    def call(self, request, context):
+        raise Unavailable()
+
+    with pytest.raises(PermissionError) as e:
+        call(None, None, FakeContext([]))
+    assert e.value.args[0] == grpc.StatusCode.UNAVAILABLE
