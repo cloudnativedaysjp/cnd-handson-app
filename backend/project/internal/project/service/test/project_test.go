@@ -7,6 +7,7 @@ import (
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/model"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/repository"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/service"
+	columnpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/column"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
 	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 	"github.com/google/uuid"
@@ -30,8 +31,16 @@ func newService() *service.ProjectService {
 	return newServiceWithTasks(&fakeTasks{})
 }
 
+type fakeColumns struct {
+	byProject map[uuid.UUID][]*columnpb.Column
+}
+
+func (f *fakeColumns) ListByProject(_ context.Context, id uuid.UUID) ([]*columnpb.Column, error) {
+	return f.byProject[id], nil
+}
+
 func newServiceWithTasks(tasks service.Tasks) *service.ProjectService {
-	return service.NewProjectService(&fakeRepo{projects: map[uuid.UUID]*model.Project{}}, tasks)
+	return service.NewProjectService(&fakeRepo{projects: map[uuid.UUID]*model.Project{}}, tasks, &fakeColumns{})
 }
 
 func (f *fakeRepo) Get(_ context.Context, id uuid.UUID) (*model.Project, error) {
@@ -129,5 +138,21 @@ func TestListTasksRequiresExistingProject(t *testing.T) {
 	assert.Equal(t, "t1", got[0].GetId())
 
 	_, err = svc.ListTasks(ctx, uuid.NewString())
+	assert.ErrorIs(t, err, service.ErrNotFound)
+}
+
+func TestListColumnsRequiresExistingProject(t *testing.T) {
+	ctx := context.Background()
+	columns := &fakeColumns{byProject: map[uuid.UUID][]*columnpb.Column{}}
+	svc := service.NewProjectService(&fakeRepo{projects: map[uuid.UUID]*model.Project{}}, &fakeTasks{}, columns)
+	p, err := svc.Create(ctx, &projectpb.CreateProjectRequest{Name: "p", OwnerId: uuid.NewString()})
+	require.NoError(t, err)
+	columns.byProject[p.ID] = []*columnpb.Column{{Id: "c1", Name: "todo", BoardId: p.ID.String()}}
+
+	got, err := svc.ListColumns(ctx, p.ID.String())
+	require.NoError(t, err)
+	assert.Equal(t, "c1", got[0].GetId())
+
+	_, err = svc.ListColumns(ctx, uuid.NewString())
 	assert.ErrorIs(t, err, service.ErrNotFound)
 }

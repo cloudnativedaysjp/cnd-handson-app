@@ -8,6 +8,7 @@ import (
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/model"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/repository"
+	columnpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/column"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
 	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 	"github.com/google/uuid"
@@ -25,13 +26,18 @@ type Tasks interface {
 	ListByProject(ctx context.Context, projectID uuid.UUID) ([]*taskpb.Task, error)
 }
 
-type ProjectService struct {
-	repo  Repository
-	tasks Tasks
+type Columns interface {
+	ListByProject(ctx context.Context, projectID uuid.UUID) ([]*columnpb.Column, error)
 }
 
-func NewProjectService(repo Repository, tasks Tasks) *ProjectService {
-	return &ProjectService{repo: repo, tasks: tasks}
+type ProjectService struct {
+	repo    Repository
+	tasks   Tasks
+	columns Columns
+}
+
+func NewProjectService(repo Repository, tasks Tasks, columns Columns) *ProjectService {
+	return &ProjectService{repo: repo, tasks: tasks, columns: columns}
 }
 
 func (s *ProjectService) Create(ctx context.Context, req *projectpb.CreateProjectRequest) (*model.Project, error) {
@@ -122,6 +128,15 @@ func (s *ProjectService) ListTasks(ctx context.Context, projectID string) ([]*ta
 		return nil, err
 	}
 	return s.tasks.ListByProject(ctx, p.ID)
+}
+
+// ListColumns はプロジェクトがあることを確かめてから、column サービスに問い合わせる
+func (s *ProjectService) ListColumns(ctx context.Context, projectID string) ([]*columnpb.Column, error) {
+	p, err := s.Get(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return s.columns.ListByProject(ctx, p.ID)
 }
 
 func ParseID(s string) (uuid.UUID, error) {

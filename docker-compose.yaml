@@ -164,6 +164,7 @@ services:
       environment:
         OTEL_SERVICE_NAME: handson-project
         TASK_ADDR: task-service:50051
+        COLUMN_ADDR: column-service:50051
         OTEL_RESOURCE_ATTRIBUTES: service.namespace=handson
         OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
         OTEL_PROPAGATORS: tracecontext,baggage
@@ -179,6 +180,8 @@ services:
         project-migrate:
           condition: service_completed_successfully
         task-service:
+          condition: service_healthy
+        column-service:
           condition: service_healthy
         db:
           condition: service_healthy
