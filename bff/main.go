@@ -16,6 +16,9 @@ import (
 
 var colors = map[string]string{"legacy": "blue", "modern": "green"}
 
+// frontend のビルド成果物。Dockerfile がここに置く
+const webDir = "/web"
+
 func main() {
 	slog.SetDefault(telemetry.NewLogger(os.Stdout))
 	var err error
@@ -45,7 +48,7 @@ func run() error {
 		return err
 	}
 	srv := &http.Server{
-		Handler:           newHandler(slog.Default().With("variant", variant, "color", color), color),
+		Handler:           newHandler(slog.Default().With("variant", variant, "color", color), color, webDir),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

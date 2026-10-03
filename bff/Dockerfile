@@ -1,4 +1,13 @@
-# Build context is the repo root (single Go module): docker build -f bff/Dockerfile --build-arg VARIANT=legacy .
+# Build context is the repo root (Go module + pnpm workspace): docker build -f bff/Dockerfile --build-arg VARIANT=legacy .
+FROM --platform=${BUILDPLATFORM} node:24.21.0-alpine3.23 AS web
+WORKDIR /src
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY frontend/package.json ./frontend/
+RUN pnpm install --frozen-lockfile --filter app
+COPY frontend ./frontend
+RUN pnpm --filter app build
+
 FROM --platform=${BUILDPLATFORM} golang:1.24.3-alpine3.21 AS base
 WORKDIR /src
 ENV CGO_ENABLED=0
@@ -29,5 +38,6 @@ FROM scratch AS bin
 ARG VARIANT
 ENV VARIANT=${VARIANT}
 COPY --from=build /out/handson-entry /
+COPY --from=web /src/frontend/dist /web
 USER 65532:65532
 ENTRYPOINT ["/handson-entry"]

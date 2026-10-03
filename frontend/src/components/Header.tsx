@@ -11,7 +11,6 @@ import {
   Typography,
 } from "@mui/material";
 import type React from "react";
-import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setSelectedProject } from "../features/projects/slice";

@@ -3,8 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/telemetry"
@@ -15,7 +18,7 @@ import (
 func TestColorLogsOneLineWithTrace(t *testing.T) {
 	otel.SetTracerProvider(sdktrace.NewTracerProvider())
 	var buf bytes.Buffer
-	h := newHandler(telemetry.NewLogger(&buf).With("variant", "legacy", "color", "blue"), "blue")
+	h := newHandler(telemetry.NewLogger(&buf).With("variant", "legacy", "color", "blue"), "blue", t.TempDir())
 
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/color", nil))
@@ -37,5 +40,36 @@ func TestColorLogsOneLineWithTrace(t *testing.T) {
 	}
 	if line["trace_id"] == "" {
 		t.Error("trace_id is empty")
+	}
+}
+
+func TestWebFallsBackToIndex(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "index.html"), []byte("index"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(dir, "assets"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "assets", "app.js"), []byte("js"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	h := newHandler(telemetry.NewLogger(io.Discard), "blue", dir)
+
+	for path, want := range map[string]struct {
+		code int
+		body string
+	}{
+		"/":                  {http.StatusOK, "index"},
+		"/projects/1":        {http.StatusOK, "index"},
+		"/assets/":           {http.StatusOK, "index"},
+		"/assets/app.js":     {http.StatusOK, "js"},
+		"/assets/missing.js": {http.StatusNotFound, "404 page not found\n"},
+	} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != want.code || rec.Body.String() != want.body {
+			t.Errorf("%s: got %d %q, want %d %q", path, rec.Code, rec.Body.String(), want.code, want.body)
+		}
 	}
 }

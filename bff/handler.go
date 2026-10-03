@@ -1,27 +1,35 @@
 package main
 
 import (
-	_ "embed"
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-//go:embed index.html
-var indexHTML []byte
-
-func newHandler(log *slog.Logger, color string) http.Handler {
+func newHandler(log *slog.Logger, color, webDir string) http.Handler {
 	mux := http.NewServeMux()
 	// パターン（"GET /color"）をそのままスパン名にする
 	route := func(pattern string, h http.HandlerFunc) {
 		mux.Handle(pattern, otelhttp.NewHandler(accessLog(log, h), pattern))
 	}
-	route("GET /", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write(indexHTML)
+	web := http.FileServer(http.Dir(webDir))
+	route("GET /", func(w http.ResponseWriter, r *http.Request) {
+		fi, err := os.Stat(filepath.Join(webDir, filepath.Clean(r.URL.Path)))
+		switch {
+		case err == nil && !fi.IsDir():
+			web.ServeHTTP(w, r)
+		// /projects/1 などの画面の URL は react-router が解決する。ディレクトリも一覧を出さず index.html にする
+		case filepath.Ext(r.URL.Path) == "":
+			http.ServeFile(w, r, filepath.Join(webDir, "index.html"))
+		// 無いアセットは 404 にする。HTML を返すとブラウザが JS として読んで分かりにくく壊れる
+		default:
+			http.NotFound(w, r)
+		}
 	})
 	route("GET /color", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
