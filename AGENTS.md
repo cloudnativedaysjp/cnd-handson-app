@@ -31,7 +31,7 @@ CloudNative Days ハンズオン用カンバンのマイクロサービスデモ
 - コミットは Conventional Commits、英語
 - 履歴を書き換えない (rebase / amend / force push / reset --hard 禁止)
 - main への追従は `git merge origin/main`
-- コンフリクトは生成コード（`make gen` で再生成）以外は自動解決せず人間に確認
+- コンフリクトは生成コード（`make gen` で再生成）以外は自動解決せず人間に確認。stacked PR の squash マージ後の追従だけは `docs/stacked-pr.md` の手順で解決してよい
 - `proto/`・`e2e/` のコンフリクトは必ず止める
 - push の確認を人間に取れない環境ではコミットまでで止め「push 待ち」と報告する
 
