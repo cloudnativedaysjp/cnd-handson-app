@@ -83,6 +83,18 @@ func (s *ProjectServiceServer) ListProjectTasks(ctx context.Context, req *projec
 	return res, nil
 }
 
+func (s *ProjectServiceServer) ListProjectColumns(ctx context.Context, req *projectpb.ListProjectColumnsRequest) (*projectpb.ListProjectColumnsResponse, error) {
+	columns, err := s.svc.ListColumns(ctx, req.GetProjectId())
+	if err != nil {
+		return nil, toStatus(ctx, err)
+	}
+	res := &projectpb.ListProjectColumnsResponse{}
+	for _, c := range columns {
+		res.Columns = append(res.Columns, &projectpb.ProjectColumn{Id: c.GetId(), Name: c.GetName()})
+	}
+	return res, nil
+}
+
 func toProto(p *model.Project) *projectpb.Project {
 	return &projectpb.Project{
 		Id:          p.ID.String(),
