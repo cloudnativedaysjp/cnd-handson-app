@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/telemetry"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -16,5 +17,9 @@ func Open() (*gorm.DB, error) {
 		}
 	}
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", v[0], v[1], v[2], v[3], v[4])
-	return gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	sqlDB, err := telemetry.OpenPostgres(dsn)
+	if err != nil {
+		return nil, err
+	}
+	return gorm.Open(postgres.New(postgres.Config{Conn: sqlDB}), &gorm.Config{})
 }

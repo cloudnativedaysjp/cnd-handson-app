@@ -95,7 +95,7 @@ func runServer() error {
 	go func() { serveErr <- httpServer.Serve(httpLis) }()
 	slog.Info("listening", "grpc", grpcLis.Addr().String(), "http", httpLis.Addr().String())
 
-	return telemetry.WaitAndStop(10*time.Second, serveErr, telemetry.GRPCStop(grpcServer), httpServer.Shutdown, shutdownTelemetry)
+	return telemetry.WaitAndStop(5*time.Second, serveErr, telemetry.GRPCStop(grpcServer), httpServer.Shutdown, shutdownTelemetry)
 }
 
 func runMigrate() error {
