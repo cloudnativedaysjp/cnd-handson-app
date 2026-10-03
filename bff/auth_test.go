@@ -53,3 +53,30 @@ func TestVerifierRetriesAfterFailedFetch(t *testing.T) {
 		t.Fatalf("second call: got %q, %v", sub, err)
 	}
 }
+
+// 未知の kid の取得が idp で詰まっていても、キャッシュ済みの kid は待たずに返ること
+func TestKnownKidNotBlockedByFetch(t *testing.T) {
+	release := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		<-release
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer srv.Close()
+	defer close(release)
+
+	cached := &rsa.PublicKey{}
+	j := &jwks{url: srv.URL, client: srv.Client(), keys: map[string]*rsa.PublicKey{"k1": cached}}
+	go func() { _, _ = j.key(context.Background(), "unknown") }()
+	time.Sleep(100 * time.Millisecond) // 取得が始まるのを待つ
+
+	done := make(chan *rsa.PublicKey)
+	go func() { k, _ := j.key(context.Background(), "k1"); done <- k }()
+	select {
+	case k := <-done:
+		if k != cached {
+			t.Fatal("got a different key for k1")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("cached kid waited for the in-flight fetch")
+	}
+}

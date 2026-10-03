@@ -14,6 +14,7 @@ import (
 
 	jwt "github.com/golang-jwt/jwt/v5"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"golang.org/x/sync/singleflight"
 )
 
 // verifyFunc は JWT を検証し、sub（ユーザー ID）を返す
@@ -45,33 +46,46 @@ const jwksRefetchInterval = 30 * time.Second
 type jwks struct {
 	url    string
 	client *http.Client
+	group  singleflight.Group
 
-	// ponytail: 取得中は全リクエストが待つ。idp が遅くて詰まるなら singleflight にする
 	mu      sync.Mutex
 	keys    map[string]*rsa.PublicKey
 	fetched time.Time
 }
 
+// ロックはキャッシュの読み書きだけに使う。取得中に、キャッシュ済みの kid のリクエストを待たせないため
 func (j *jwks) key(ctx context.Context, kid string) (*rsa.PublicKey, error) {
-	j.mu.Lock()
-	defer j.mu.Unlock()
-	if k, ok := j.keys[kid]; ok {
+	if k, ok, recent := j.cached(kid); ok {
 		return k, nil
-	}
-	if time.Since(j.fetched) < jwksRefetchInterval {
+	} else if recent {
 		return nil, fmt.Errorf("unknown kid %q", kid)
 	}
-	// 取得できたときだけ間隔を空ける。失敗（idp の起動前など）で 30 秒間すべて 401 にしないため。
-	// 呼び出し元が切断しても取得は続け、ほかのリクエストに鍵を残す
-	keys, err := j.fetch(context.WithoutCancel(ctx))
+	// 同時に来た取得は 1 回にまとめる。呼び出し元が切断しても取得は続け、ほかのリクエストに鍵を残す
+	_, err, _ := j.group.Do("", func() (any, error) {
+		keys, err := j.fetch(context.WithoutCancel(ctx))
+		if err != nil {
+			return nil, err
+		}
+		// 取得できたときだけ間隔を空ける。失敗（idp の起動前など）で 30 秒間すべて 401 にしないため
+		j.mu.Lock()
+		j.keys, j.fetched = keys, time.Now()
+		j.mu.Unlock()
+		return nil, nil
+	})
 	if err != nil {
 		return nil, fmt.Errorf("jwks: %w", err)
 	}
-	j.keys, j.fetched = keys, time.Now()
-	if k, ok := keys[kid]; ok {
+	if k, ok, _ := j.cached(kid); ok {
 		return k, nil
 	}
 	return nil, fmt.Errorf("unknown kid %q", kid)
+}
+
+func (j *jwks) cached(kid string) (key *rsa.PublicKey, ok, recent bool) {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	key, ok = j.keys[kid]
+	return key, ok, time.Since(j.fetched) < jwksRefetchInterval
 }
 
 func (j *jwks) fetch(ctx context.Context) (map[string]*rsa.PublicKey, error) {
