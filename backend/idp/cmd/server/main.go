@@ -40,7 +40,11 @@ func runServer() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	issuer, err := token.NewHS256Issuer([]byte(os.Getenv("JWT_SECRET_KEY")))
+	key, err := token.ParsePrivateKey(os.Getenv("IDP_SIGNING_KEY"))
+	if err != nil {
+		log.Fatalf("Invalid IDP_SIGNING_KEY: %v", err)
+	}
+	issuer, err := token.NewRS256Issuer(key, os.Getenv("IDP_ISS"), os.Getenv("IDP_AUD"))
 	if err != nil {
 		log.Fatalf("Failed to set up token issuer: %v", err)
 	}
@@ -55,7 +59,7 @@ func runServer() {
 	}
 
 	grpcServer := grpc.NewServer()
-	svc := service.NewIdpService(repository.NewUserRepository(conn), issuer)
+	svc := service.NewIdpService(repository.NewUserRepository(conn), repository.NewRefreshTokenRepository(conn), issuer)
 	idppb.RegisterIdpServiceServer(grpcServer, handler.NewIdpServiceServer(svc))
 
 	healthSrv := health.NewServer()
@@ -73,7 +77,7 @@ func runMigrate() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	if err := db.Migrate(conn, &model.User{}); err != nil {
+	if err := db.Migrate(conn, &model.User{}, &model.RefreshToken{}); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
 	log.Println("Migration completed")

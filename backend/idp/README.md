@@ -18,4 +18,7 @@ idp-service server    # gRPC を PORT（既定 50051）で起動
 |---|---|
 | `PORT` | gRPC のポート（既定 50051） |
 | `DB_HOST` `DB_PORT` `DB_USER` `DB_PASSWORD` `DB_DB` | Postgres |
-| `JWT_SECRET_KEY` | アクセストークンの署名鍵 |
+| `IDP_SIGNING_KEY` | アクセストークン（RS256）の署名鍵。base64 の PEM（PKCS#1 / PKCS#8）。`make .env` が生成する |
+| `IDP_ISS` / `IDP_AUD` | JWT の `iss` / `aud` |
+
+アクセストークンは 15 分、リフレッシュトークンは 30 日有効。`Refresh` は使ったリフレッシュトークンを無効にし、新しい組を返す。
