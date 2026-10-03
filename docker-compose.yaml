@@ -143,10 +143,11 @@ services:
       build:
         context: .
         dockerfile: backend/project/Dockerfile
+        target: bin
       image: project:latest
       env_file:
         - .env
-      entrypoint: ["./project-service", "migrate"]      
+      entrypoint: ["/project-service", "migrate"]
       depends_on:
         db:
           condition: service_healthy
@@ -154,12 +155,13 @@ services:
       build:
         context: .
         dockerfile: backend/project/Dockerfile
+        target: bin
       image: project:latest
       ports:
         - "50053:50051"
       env_file:
         - .env
-      entrypoint: ["./project-service", "server"]      
+      entrypoint: ["/project-service", "server"]
       healthcheck:
         test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
         interval: 3s

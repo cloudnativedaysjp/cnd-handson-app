@@ -1,116 +1,63 @@
 package repository
 
 import (
+	"context"
+	"errors"
+
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/model"
-	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/pkg/db"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
-// projectRepository はProjectRepositoryインターフェースの実装
-type projectRepository struct {
-	db db.Database
+var ErrNotFound = errors.New("not found")
+
+type ProjectRepository struct {
+	db *gorm.DB
 }
 
-// NewProjectRepositoryWithDB はDBを指定してリポジトリを作成
-func NewProjectRepositoryWithDB(database db.Database) ProjectRepository {
-	return &projectRepository{db: database}
+func NewProjectRepository(db *gorm.DB) *ProjectRepository {
+	return &ProjectRepository{db: db}
 }
 
-// GetProjectByID はIDによるプロジェクトの取得
-func (r *projectRepository) GetProjectByID(projectID uuid.UUID) (*model.Project, error) {
-	var project model.Project
-	if err := r.db.GetDB().Where("id = ?", projectID).First(&project).Error; err != nil {
-		return nil, err
+func (r *ProjectRepository) Get(ctx context.Context, id uuid.UUID) (*model.Project, error) {
+	var p model.Project
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&p).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrNotFound
 	}
-	return &project, nil
-}
-
-// GetProjectsByOwnerID はオーナーIDによるプロジェクト一覧の取得
-func (r *projectRepository) GetProjectsByOwnerID(ownerID uuid.UUID) ([]*model.Project, error) {
-	var projects []*model.Project
-	if err := r.db.GetDB().Where("owner_id = ?", ownerID).Find(&projects).Error; err != nil {
-		return nil, err
-	}
-	return projects, nil
-}
-
-// ListProjects は全プロジェクトの取得
-func (r *projectRepository) ListProjects() ([]*model.Project, error) {
-	var projects []*model.Project
-	if err := r.db.GetDB().Find(&projects).Error; err != nil {
-		return nil, err
-	}
-	return projects, nil
-}
-
-// CreateProject は新規プロジェクトの作成
-func (r *projectRepository) CreateProject(project *model.Project) (*model.Project, error) {
-	if err := r.db.GetDB().Create(project).Error; err != nil {
-		return nil, err
-	}
-	return project, nil
-}
-
-// UpdateProject はプロジェクト情報の更新
-func (r *projectRepository) UpdateProject(project *model.Project) (*model.Project, error) {
-	if err := r.db.GetDB().Model(&model.Project{}).Where("id = ?", project.ID).Updates(project).Error; err != nil {
-		return nil, err
-	}
-	// 更新後のプロジェクト情報を取得
-	updatedProject, err := r.GetProjectByID(project.ID)
 	if err != nil {
 		return nil, err
 	}
-	return updatedProject, nil
+	return &p, nil
 }
 
-// DeleteProject はプロジェクトの削除
-func (r *projectRepository) DeleteProject(projectID uuid.UUID) error {
-	if err := r.db.GetDB().Where("id = ?", projectID).Delete(&model.Project{}).Error; err != nil {
-		return err
+// List は ownerID が uuid.Nil なら全件を返す
+func (r *ProjectRepository) List(ctx context.Context, ownerID uuid.UUID) ([]*model.Project, error) {
+	query := r.db.WithContext(ctx).Order("created_at DESC")
+	if ownerID != uuid.Nil {
+		query = query.Where("owner_id = ?", ownerID)
 	}
-	return nil
+	var projects []*model.Project
+	return projects, query.Find(&projects).Error
 }
 
-// 後方互換性のための実装 (グローバルDB変数を使用)
-func init() {
-	DefaultProjectRepository = NewProjectRepository()
+func (r *ProjectRepository) Create(ctx context.Context, p *model.Project) error {
+	return r.db.WithContext(ctx).Create(p).Error
 }
 
-// NewProjectRepository は新しいプロジェクトリポジトリを作成する（後方互換性のため）
-func NewProjectRepository() ProjectRepository {
-	// 既存のグローバルDB変数を使用するラッパー
-	database := &db.PostgresDatabase{} // 注：空の構造体だがGetDB()でグローバルDB変数を返す
-	return NewProjectRepositoryWithDB(database)
+// Update は UPDATE だけを実行する（Save だと消えた行を INSERT で作り直してしまう）
+func (r *ProjectRepository) Update(ctx context.Context, p *model.Project) error {
+	res := r.db.WithContext(ctx).Model(p).Select("*").Updates(p)
+	if res.Error == nil && res.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return res.Error
 }
 
-// 以下は後方互換性のための関数群
-// GetProjectByID はIDによるプロジェクトの取得（後方互換性用）
-func GetProjectByID(projectID uuid.UUID) (*model.Project, error) {
-	return DefaultProjectRepository.GetProjectByID(projectID)
-}
-
-// GetProjectsByOwnerID はオーナーIDによるプロジェクト一覧の取得（後方互換性用）
-func GetProjectsByOwnerID(ownerID uuid.UUID) ([]*model.Project, error) {
-	return DefaultProjectRepository.GetProjectsByOwnerID(ownerID)
-}
-
-// ListProjects は全プロジェクトの取得（後方互換性用）
-func ListProjects() ([]*model.Project, error) {
-	return DefaultProjectRepository.ListProjects()
-}
-
-// CreateProject は新規プロジェクトの作成（後方互換性用）
-func CreateProject(project *model.Project) (*model.Project, error) {
-	return DefaultProjectRepository.CreateProject(project)
-}
-
-// UpdateProject はプロジェクト情報の更新（後方互換性用）
-func UpdateProject(project *model.Project) (*model.Project, error) {
-	return DefaultProjectRepository.UpdateProject(project)
-}
-
-// DeleteProject はプロジェクトの削除（後方互換性用）
-func DeleteProject(projectID uuid.UUID) error {
-	return DefaultProjectRepository.DeleteProject(projectID)
+func (r *ProjectRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	res := r.db.WithContext(ctx).Delete(&model.Project{}, id)
+	if res.Error == nil && res.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return res.Error
 }

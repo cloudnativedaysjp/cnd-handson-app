@@ -1,158 +1,118 @@
 package service
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/model"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/repository"
+	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
 	"github.com/google/uuid"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
-// projectService はプロジェクトサービスの実装
-type projectService struct {
-	repo repository.ProjectRepository
+type Repository interface {
+	Get(ctx context.Context, id uuid.UUID) (*model.Project, error)
+	List(ctx context.Context, ownerID uuid.UUID) ([]*model.Project, error)
+	Create(ctx context.Context, p *model.Project) error
+	Update(ctx context.Context, p *model.Project) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
-// DefaultProjectService はデフォルトのプロジェクトサービス
-var DefaultProjectService = NewProjectService(repository.DefaultProjectRepository)
-
-// NewProjectService は新しいプロジェクトサービスを作成する
-func NewProjectService(repo repository.ProjectRepository) *projectService {
-	return &projectService{repo: repo}
+type ProjectService struct {
+	repo Repository
 }
 
-// CreateProject プロジェクトを新規作成する
-func (s *projectService) CreateProject(name string, description string, ownerID uuid.UUID) (*model.Project, error) {
-	// 入力値の検証
-	if name == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "project name cannot be empty")
-	}
-	if ownerID == uuid.Nil {
-		return nil, status.Errorf(codes.InvalidArgument, "owner ID cannot be empty")
-	}
+func NewProjectService(repo Repository) *ProjectService {
+	return &ProjectService{repo: repo}
+}
 
-	// プロジェクトオブジェクト作成
-	project := model.Project{
-		ID:          uuid.New(), // 新規UUIDを生成
-		Name:        name,
-		Description: description,
+func (s *ProjectService) Create(ctx context.Context, req *projectpb.CreateProjectRequest) (*model.Project, error) {
+	if req.GetName() == "" {
+		return nil, fmt.Errorf("%w: name is required", ErrInvalidArgument)
+	}
+	ownerID, err := ParseID(req.GetOwnerId())
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now()
+	p := &model.Project{
+		ID:          uuid.New(),
+		Name:        req.GetName(),
+		Description: req.GetDescription(),
 		OwnerID:     ownerID,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
-
-	// データベースに保存
-	return s.repo.CreateProject(&project)
+	if err := s.repo.Create(ctx, p); err != nil {
+		return nil, err
+	}
+	return p, nil
 }
 
-// GetProject プロジェクトをIDで取得する
-func (s *projectService) GetProject(projectID uuid.UUID) (*model.Project, error) {
-	// IDの検証
-	if projectID == uuid.Nil {
-		return nil, status.Errorf(codes.InvalidArgument, "project ID cannot be empty")
-	}
-
-	// リポジトリからプロジェクトを取得
-	project, err := s.repo.GetProjectByID(projectID)
+func (s *ProjectService) Get(ctx context.Context, id string) (*model.Project, error) {
+	pid, err := ParseID(id)
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "project not found: %v", err)
+		return nil, err
 	}
-
-	return project, nil
+	p, err := s.repo.Get(ctx, pid)
+	if errors.Is(err, repository.ErrNotFound) {
+		return nil, ErrNotFound
+	}
+	return p, err
 }
 
-// ListProjects すべてのプロジェクトを取得する
-func (s *projectService) ListProjects() ([]*model.Project, error) {
-	return s.repo.ListProjects()
-}
-
-// ListProjectsByOwner 特定のオーナーのプロジェクトを取得する
-func (s *projectService) ListProjectsByOwner(ownerID uuid.UUID) ([]*model.Project, error) {
-	if ownerID == uuid.Nil {
-		return nil, status.Errorf(codes.InvalidArgument, "owner ID cannot be empty")
-	}
-
-	return s.repo.GetProjectsByOwnerID(ownerID)
-}
-
-// UpdateProject プロジェクト情報を更新する
-func (s *projectService) UpdateProject(projectID uuid.UUID, name *string, description *string) (*model.Project, error) {
-	// IDの検証
-	if projectID == uuid.Nil {
-		return nil, status.Errorf(codes.InvalidArgument, "project ID cannot be empty")
-	}
-
-	// 現在のプロジェクト情報を取得
-	project, err := s.repo.GetProjectByID(projectID)
-	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "project not found: %v", err)
-	}
-
-	// 更新するフィールドの処理
-	if name != nil {
-		if *name == "" {
-			return nil, status.Errorf(codes.InvalidArgument, "project name cannot be empty")
+func (s *ProjectService) List(ctx context.Context, ownerID string) ([]*model.Project, error) {
+	oid := uuid.Nil
+	if ownerID != "" {
+		var err error
+		if oid, err = ParseID(ownerID); err != nil {
+			return nil, err
 		}
-		project.Name = *name
 	}
-
-	if description != nil {
-		project.Description = *description
-	}
-
-	// 更新日時を設定
-	project.UpdatedAt = time.Now()
-
-	// データベースを更新
-	return s.repo.UpdateProject(project)
+	return s.repo.List(ctx, oid)
 }
 
-// DeleteProject プロジェクトを削除する
-func (s *projectService) DeleteProject(projectID uuid.UUID) error {
-	// IDの検証
-	if projectID == uuid.Nil {
-		return status.Errorf(codes.InvalidArgument, "project ID cannot be empty")
-	}
-
-	// プロジェクトの存在確認
-	_, err := s.repo.GetProjectByID(projectID)
+// Update は空でないフィールドだけを書き換える
+func (s *ProjectService) Update(ctx context.Context, req *projectpb.UpdateProjectRequest) (*model.Project, error) {
+	p, err := s.Get(ctx, req.GetId())
 	if err != nil {
-		return status.Errorf(codes.NotFound, "project not found: %v", err)
+		return nil, err
 	}
-
-	// プロジェクト削除
-	return s.repo.DeleteProject(projectID)
+	if req.GetName() != "" {
+		p.Name = req.GetName()
+	}
+	if req.GetDescription() != "" {
+		p.Description = req.GetDescription()
+	}
+	p.UpdatedAt = time.Now()
+	err = s.repo.Update(ctx, p)
+	if errors.Is(err, repository.ErrNotFound) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
 }
 
-// 以下は後方互換性のための関数群
-// CreateProject プロジェクトを新規作成する（後方互換性用）
-func CreateProject(name string, description string, ownerID uuid.UUID) (*model.Project, error) {
-	return DefaultProjectService.CreateProject(name, description, ownerID)
+func (s *ProjectService) Delete(ctx context.Context, id string) error {
+	pid, err := ParseID(id)
+	if err != nil {
+		return err
+	}
+	err = s.repo.Delete(ctx, pid)
+	if errors.Is(err, repository.ErrNotFound) {
+		return ErrNotFound
+	}
+	return err
 }
 
-// GetProject プロジェクトをIDで取得する（後方互換性用）
-func GetProject(projectID uuid.UUID) (*model.Project, error) {
-	return DefaultProjectService.GetProject(projectID)
-}
-
-// ListProjects すべてのプロジェクトを取得する（後方互換性用）
-func ListProjects() ([]*model.Project, error) {
-	return DefaultProjectService.ListProjects()
-}
-
-// ListProjectsByOwner 特定のオーナーのプロジェクトを取得する（後方互換性用）
-func ListProjectsByOwner(ownerID uuid.UUID) ([]*model.Project, error) {
-	return DefaultProjectService.ListProjectsByOwner(ownerID)
-}
-
-// UpdateProject プロジェクト情報を更新する（後方互換性用）
-func UpdateProject(projectID uuid.UUID, name *string, description *string) (*model.Project, error) {
-	return DefaultProjectService.UpdateProject(projectID, name, description)
-}
-
-// DeleteProject プロジェクトを削除する（後方互換性用）
-func DeleteProject(projectID uuid.UUID) error {
-	return DefaultProjectService.DeleteProject(projectID)
+func ParseID(s string) (uuid.UUID, error) {
+	id, err := uuid.Parse(s)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("%w: invalid id %q", ErrInvalidArgument, s)
+	}
+	return id, nil
 }
