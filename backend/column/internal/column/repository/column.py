@@ -47,10 +47,8 @@ class ColumnRepository:
     def list(
         self, board_id: Optional[UUID], page: int, page_size: int
     ) -> tuple[list[ColumnModel], int]:
-        """board_id が None なら全件。page / page_size が 0 以下ならページングしない"""
-        query = select(ColumnModel)
-        if board_id is not None:
-            query = query.where(ColumnModel.board_id == board_id)
+        """board_id が None なら board の無い column だけ。page / page_size が 0 以下ならページングしない"""
+        query = select(ColumnModel).where(ColumnModel.board_id == board_id)
         with self.sessions() as s:
             total = s.scalar(select(func.count()).select_from(query.subquery()))
             if page > 0 and page_size > 0:

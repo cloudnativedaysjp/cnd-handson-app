@@ -14,7 +14,11 @@ from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.exporter.prometheus import PrometheusMetricReader
-from opentelemetry.instrumentation.grpc import filters, server_interceptor
+from opentelemetry.instrumentation.grpc import (
+    client_interceptor,
+    filters,
+    server_interceptor,
+)
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
@@ -94,6 +98,11 @@ def go_code(code: grpc.StatusCode) -> str:
     """Go の codes.Code.String() と同じ表記にする（NOT_FOUND → NotFound）"""
     special = {grpc.StatusCode.OK: "OK", grpc.StatusCode.CANCELLED: "Canceled"}
     return special.get(code) or "".join(w.capitalize() for w in code.name.split("_"))
+
+
+def client_channel(addr: str) -> grpc.Channel:
+    """trace context を引き継ぐ client の channel。平文なのは、クラスタ内の暗号化を Istio の mTLS に任せるため"""
+    return grpc.intercept_channel(grpc.insecure_channel(addr), client_interceptor())
 
 
 def server_interceptors(log: logging.Logger) -> list[grpc.ServerInterceptor]:
