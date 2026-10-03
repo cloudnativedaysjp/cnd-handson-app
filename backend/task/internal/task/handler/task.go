@@ -3,13 +3,13 @@ package handler
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/model"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/repository"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/service"
 	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -123,7 +123,7 @@ func toStatus(ctx context.Context, err error) error {
 	case errors.Is(err, service.ErrNotFound):
 		return status.Error(codes.NotFound, err.Error())
 	default:
-		slog.ErrorContext(ctx, "internal error", "err", err)
+		trace.SpanFromContext(ctx).RecordError(err) // ログは interceptor の 1 行に任せ、原因はトレースで追う
 		return status.Error(codes.Internal, "internal error")
 	}
 }

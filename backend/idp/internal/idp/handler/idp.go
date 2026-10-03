@@ -3,10 +3,10 @@ package handler
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/idp/internal/idp/service"
 	idppb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/idp"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -61,7 +61,7 @@ func toStatus(ctx context.Context, err error) error {
 	case errors.Is(err, service.ErrInvalidCredentials):
 		return status.Error(codes.Unauthenticated, err.Error())
 	default:
-		slog.ErrorContext(ctx, "internal error", "err", err)
+		trace.SpanFromContext(ctx).RecordError(err) // ログは interceptor の 1 行に任せ、原因はトレースで追う
 		return status.Error(codes.Internal, "internal error")
 	}
 }
