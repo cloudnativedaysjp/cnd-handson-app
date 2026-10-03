@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -63,7 +64,7 @@ func runServer() error {
 		return fmt.Errorf("token issuer: %w", err)
 	}
 
-	grpcLis, err := net.Listen("tcp", ":"+envOr("PORT", "50051"))
+	grpcLis, err := net.Listen("tcp", ":"+cmp.Or(os.Getenv("PORT"), "50051"))
 	if err != nil {
 		return err
 	}
@@ -122,11 +123,4 @@ func runMigrate() error {
 	}
 	slog.Info("migration completed")
 	return nil
-}
-
-func envOr(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return def
 }
