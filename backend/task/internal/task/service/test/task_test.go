@@ -35,6 +35,9 @@ func (f *fakeRepo) List(_ context.Context, flt repository.Filter, _, _ int32) ([
 		if flt.ColumnID != uuid.Nil && t.Column_id != flt.ColumnID {
 			continue
 		}
+		if flt.ProjectID != uuid.Nil && t.Project_id != flt.ProjectID {
+			continue
+		}
 		out = append(out, t)
 	}
 	return out, int32(len(out)), nil
@@ -56,14 +59,14 @@ func TestCreateGetListDelete(t *testing.T) {
 	ctx := context.Background()
 	svc := service.NewTaskService(newFake())
 
-	created, err := svc.Create(ctx, "t1", "d", "todo", uuid.Nil, uuid.Nil)
+	created, err := svc.Create(ctx, &taskpb.CreateTaskRequest{Title: "t1", Description: "d", Status: "todo"})
 	require.NoError(t, err)
 
 	got, err := svc.Get(ctx, created.ID)
 	require.NoError(t, err)
 	assert.Equal(t, "t1", got.Title)
 
-	tasks, total, err := svc.List(ctx, repository.Filter{}, 1, 100)
+	tasks, total, err := svc.List(ctx, &taskpb.ListTasksRequest{Page: 1, PageSize: 100})
 	require.NoError(t, err)
 	assert.Equal(t, int32(1), total)
 	assert.Equal(t, created.ID, tasks[0].ID)
@@ -75,14 +78,14 @@ func TestCreateGetListDelete(t *testing.T) {
 }
 
 func TestCreateRequiresTitle(t *testing.T) {
-	_, err := service.NewTaskService(newFake()).Create(context.Background(), "", "", "", uuid.Nil, uuid.Nil)
+	_, err := service.NewTaskService(newFake()).Create(context.Background(), &taskpb.CreateTaskRequest{})
 	assert.ErrorIs(t, err, service.ErrInvalidArgument)
 }
 
 func TestUpdateAppliesMaskedFields(t *testing.T) {
 	ctx := context.Background()
 	svc := service.NewTaskService(newFake())
-	created, err := svc.Create(ctx, "t1", "d", "todo", uuid.Nil, uuid.Nil)
+	created, err := svc.Create(ctx, &taskpb.CreateTaskRequest{Title: "t1", Description: "d", Status: "todo"})
 	require.NoError(t, err)
 	col := uuid.New()
 
@@ -100,10 +103,27 @@ func TestUpdateAppliesMaskedFields(t *testing.T) {
 	assert.ErrorIs(t, err, service.ErrInvalidArgument)
 }
 
-func TestParseOptionalUUID(t *testing.T) {
-	id, err := service.ParseOptionalUUID("")
-	require.NoError(t, err)
-	assert.Equal(t, uuid.Nil, id)
-	_, err = service.ParseOptionalUUID("bad")
+func TestRejectsMalformedIDs(t *testing.T) {
+	ctx := context.Background()
+	svc := service.NewTaskService(newFake())
+	_, err := svc.Create(ctx, &taskpb.CreateTaskRequest{Title: "t", ColumnId: "bad"})
 	assert.ErrorIs(t, err, service.ErrInvalidArgument)
+	_, _, err = svc.List(ctx, &taskpb.ListTasksRequest{ProjectId: "bad"})
+	assert.ErrorIs(t, err, service.ErrInvalidArgument)
+}
+
+func TestListFiltersByProject(t *testing.T) {
+	ctx := context.Background()
+	svc := service.NewTaskService(newFake())
+	p1, p2 := uuid.New(), uuid.New()
+	in1, err := svc.Create(ctx, &taskpb.CreateTaskRequest{Title: "in p1", ProjectId: p1.String()})
+	require.NoError(t, err)
+	_, err = svc.Create(ctx, &taskpb.CreateTaskRequest{Title: "in p2", ProjectId: p2.String()})
+	require.NoError(t, err)
+
+	tasks, total, err := svc.List(ctx, &taskpb.ListTasksRequest{ProjectId: p1.String()})
+	require.NoError(t, err)
+	assert.Equal(t, int32(1), total)
+	assert.Equal(t, in1.ID, tasks[0].ID)
+	assert.Equal(t, p1, tasks[0].Project_id)
 }

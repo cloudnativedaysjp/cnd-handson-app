@@ -14,6 +14,7 @@ var ErrNotFound = errors.New("not found")
 type Filter struct {
 	ColumnID   uuid.UUID
 	AssigneeID uuid.UUID
+	ProjectID  uuid.UUID
 }
 
 type TaskRepository struct {
@@ -44,6 +45,9 @@ func (r *TaskRepository) List(ctx context.Context, f Filter, page, pageSize int3
 	}
 	if f.AssigneeID != uuid.Nil {
 		query = query.Where("assignee_id = ?", f.AssigneeID)
+	}
+	if f.ProjectID != uuid.Nil {
+		query = query.Where("project_id = ?", f.ProjectID)
 	}
 	var total int64
 	if err := query.Count(&total).Error; err != nil {

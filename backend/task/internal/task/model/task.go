@@ -15,4 +15,5 @@ type Task struct {
 	End_time    time.Time `gorm:"type:timestamp;"`                                   // TIMESTAMP型
 	Column_id   uuid.UUID `gorm:"type:uuid;not null"`                                // UUID型の外部キー
 	Assignee_id uuid.UUID `gorm:"type:uuid;not null"`                                // UUID型の外部キー
+	Project_id  uuid.UUID `gorm:"type:uuid;index"`                                   // 既存の行があっても migrate できるよう NOT NULL にしない
 }

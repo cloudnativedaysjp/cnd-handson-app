@@ -279,6 +279,7 @@ type ListTasksRequest struct {
 	AssigneeId    string                 `protobuf:"bytes,2,opt,name=assignee_id,json=assigneeId,proto3" json:"assignee_id,omitempty"` // 担当者ID
 	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`                              // ページ番号
 	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`      // ページサイズ
+	ProjectId     string                 `protobuf:"bytes,5,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`    // プロジェクトID（project の ListProjectTasks から使う）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -339,6 +340,13 @@ func (x *ListTasksRequest) GetPageSize() int32 {
 		return x.PageSize
 	}
 	return 0
+}
+
+func (x *ListTasksRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
 }
 
 type CreateTaskRequest struct {
@@ -600,13 +608,15 @@ const file_task_task_proto_rawDesc = "" +
 	"\vtotal_count\x18\x02 \x01(\x05R\n" +
 	"totalCount\" \n" +
 	"\x0eGetTaskRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\x81\x01\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xa0\x01\n" +
 	"\x10ListTasksRequest\x12\x1b\n" +
 	"\tcolumn_id\x18\x01 \x01(\tR\bcolumnId\x12\x1f\n" +
 	"\vassignee_id\x18\x02 \x01(\tR\n" +
 	"assigneeId\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\xe2\x01\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x05 \x01(\tR\tprojectId\"\xe2\x01\n" +
 	"\x11CreateTaskRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x16\n" +
