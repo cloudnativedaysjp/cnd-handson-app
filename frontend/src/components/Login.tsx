@@ -4,14 +4,14 @@ import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { login } from "../features/sessions/slice";
-import { api } from "../utils/api";
+import { ApiError, api } from "../utils/api";
 
 const Login: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [failed, setFailed] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,8 +25,12 @@ const Login: React.FC = () => {
       });
       dispatch(login({ token: accessToken }));
       navigate("/");
-    } catch {
-      setFailed(true);
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.status === 401
+          ? "メールアドレスかパスワードが違います"
+          : "ログインできませんでした。時間をおいてもう一度試してください",
+      );
     }
   };
 
@@ -62,11 +66,7 @@ const Login: React.FC = () => {
             onChange={(e) => setPassword(e.target.value)}
             slotProps={{ htmlInput: { "data-testid": "login-password" } }}
           />
-          {failed && (
-            <Typography color="error">
-              メールアドレスかパスワードが違います
-            </Typography>
-          )}
+          {error && <Typography color="error">{error}</Typography>}
           <Button
             type="submit"
             variant="contained"

@@ -10,7 +10,10 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { setSelectedProject } from "../features/projects/slice";
+import {
+  setProjects as storeProjects,
+  setSelectedProject,
+} from "../features/projects/slice";
 import type { Project } from "../features/projects/types";
 import { api } from "../utils/api";
 
@@ -25,12 +28,14 @@ const ProjectList: React.FC = () => {
       try {
         const res = await api<{ projects: Project[] }>("/api/projects");
         setProjects(res.projects);
+        // ヘッダーのプロジェクト選択メニューは redux の一覧を使う
+        dispatch(storeProjects(res.projects));
       } catch {
         setFailed(true);
       }
     };
     load();
-  }, []);
+  }, [dispatch]);
 
   const handleClickCard = (projectId: string) => {
     dispatch(setSelectedProject(projectId));
