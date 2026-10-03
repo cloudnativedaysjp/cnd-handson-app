@@ -27,7 +27,7 @@ def serve() -> None:
 
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=10),
-        interceptors=[telemetry.RequestLog(log)],
+        interceptors=telemetry.server_interceptors(log),
     )
     service = ColumnService(ColumnRepository(make_sessions(engine)))
     column_pb2_grpc.add_ColumnServiceServicer_to_server(ColumnHandler(service), server)
@@ -44,7 +44,8 @@ def serve() -> None:
     log.info("listening", extra={"fields": {"grpc": f":{port}"}})
 
     stop.wait()
-    server.stop(grace=5).wait()
+    # grace を過ぎても戻らないハンドラーで止まらないよう、待ちにも上限を付ける
+    server.stop(grace=5).wait(timeout=6)
     shutdown_telemetry()
 
 

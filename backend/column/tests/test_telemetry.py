@@ -51,10 +51,12 @@ def test_request_log_writes_one_line_per_rpc(caplog):
     assert call("/column.ColumnService/GetColumn", FakeContext()) == "resp"
     call("/column.ColumnService/GetColumn", FakeContext(grpc.StatusCode.NOT_FOUND))
     call("/grpc.health.v1.Health/Check", FakeContext())
+    assert interceptor.intercept_service(lambda _: None, Details("/x.Y/Z")) is None
     fields = [r.fields for r in caplog.records]
     assert fields == [
         {"rpc.method": "/column.ColumnService/GetColumn", "code": "OK"},
         {"rpc.method": "/column.ColumnService/GetColumn", "code": "NotFound"},
+        {"rpc.method": "/x.Y/Z", "code": "Unimplemented"},
     ]
 
 
