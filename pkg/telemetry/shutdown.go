@@ -16,9 +16,9 @@ func WaitAndStop(timeout time.Duration, stops ...func(context.Context) error) er
 
 	ctx, cancel = context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	var errs []error
+	var err error
 	for _, stop := range stops {
-		errs = append(errs, stop(ctx))
+		err = errors.Join(err, stop(ctx))
 	}
-	return errors.Join(errs...)
+	return err
 }

@@ -21,14 +21,14 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
-const MetricsAddr = ":9464"
+const metricsAddr = ":9464"
 
-// Setup は TracerProvider / MeterProvider / propagator を設定し、/metrics を MetricsAddr で公開する。
+// Setup は TracerProvider / MeterProvider / propagator を設定し、/metrics を metricsAddr で公開する。
 // endpoint・service name などは OTEL_* の env から SDK が解決する。返す関数で終了処理をする
 func Setup(ctx context.Context) (shutdown func(context.Context) error, err error) {
 	log := NewLogger(os.Stdout)
 	// 失敗しうる準備を先に済ませ、provider とグローバル設定は最後に作る（途中で失敗しても残さない）
-	ln, err := net.Listen("tcp", MetricsAddr)
+	ln, err := net.Listen("tcp", metricsAddr)
 	if err != nil {
 		return nil, err
 	}

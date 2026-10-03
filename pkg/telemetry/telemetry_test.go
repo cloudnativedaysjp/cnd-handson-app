@@ -84,7 +84,7 @@ func TestSetupServesMetricsWithoutCollector(t *testing.T) {
 	_, span := otel.Tracer("test").Start(context.Background(), "op")
 	span.End()
 
-	res, err := http.Get("http://127.0.0.1" + MetricsAddr + "/metrics")
+	res, err := http.Get("http://127.0.0.1" + metricsAddr + "/metrics")
 	require.NoError(t, err)
 	body, _ := io.ReadAll(res.Body)
 	_ = res.Body.Close()
