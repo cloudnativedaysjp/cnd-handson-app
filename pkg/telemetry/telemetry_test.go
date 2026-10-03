@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"io"
 	"net"
 	"net/http"
@@ -107,4 +111,36 @@ func TestSetupFailsWhenMetricsPortIsTaken(t *testing.T) {
 
 	_, err = Setup(context.Background())
 	assert.Error(t, err)
+}
+
+func TestWaitAndStopReturnsOnServeError(t *testing.T) {
+	serveErr := make(chan error, 1)
+	serveErr <- errors.New("listener closed")
+	stopped := false
+	err := WaitAndStop(time.Second, serveErr, func(context.Context) error { stopped = true; return nil })
+	assert.ErrorContains(t, err, "listener closed")
+	assert.True(t, stopped)
+}
+
+// 開いたままの stream があっても、期限が来たら Stop で打ち切って戻る
+func TestGRPCStopForcesStopAfterDeadline(t *testing.T) {
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	srv := grpc.NewServer()
+	healthpb.RegisterHealthServer(srv, health.NewServer())
+	go func() { _ = srv.Serve(lis) }()
+
+	conn, err := grpc.NewClient(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+	defer func() { _ = conn.Close() }()
+	stream, err := healthpb.NewHealthClient(conn).Watch(context.Background(), &healthpb.HealthCheckRequest{})
+	require.NoError(t, err)
+	_, err = stream.Recv()
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+	start := time.Now()
+	require.NoError(t, GRPCStop(srv)(ctx))
+	assert.Less(t, time.Since(start), 2*time.Second)
 }

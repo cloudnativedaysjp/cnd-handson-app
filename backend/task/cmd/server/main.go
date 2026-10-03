@@ -65,17 +65,11 @@ func runServer() error {
 	healthpb.RegisterHealthServer(grpcServer, healthSrv)
 	healthSrv.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
-	go func() {
-		if err := grpcServer.Serve(lis); err != nil {
-			slog.Error("gRPC server stopped", "err", err)
-		}
-	}()
+	serveErr := make(chan error, 1)
+	go func() { serveErr <- grpcServer.Serve(lis) }()
 	slog.Info("listening", "grpc", lis.Addr().String())
 
-	return telemetry.WaitAndStop(10*time.Second,
-		func(context.Context) error { grpcServer.GracefulStop(); return nil },
-		shutdownTelemetry,
-	)
+	return telemetry.WaitAndStop(10*time.Second, serveErr, telemetry.GRPCStop(grpcServer), shutdownTelemetry)
 }
 
 func runMigrate() error {
