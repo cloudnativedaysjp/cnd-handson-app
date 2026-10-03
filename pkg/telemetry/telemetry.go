@@ -4,7 +4,6 @@ package telemetry
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -27,21 +26,27 @@ const MetricsAddr = ":9464"
 // Setup は TracerProvider / MeterProvider / propagator を設定し、/metrics を MetricsAddr で公開する。
 // endpoint・service name などは OTEL_* の env から SDK が解決する。返す関数で終了処理をする
 func Setup(ctx context.Context) (shutdown func(context.Context) error, err error) {
-	// エクスポートの失敗（collector 停止など）はリクエストを止めず、JSON ログに残す
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) { slog.Warn("otel export failed", "err", err) }))
-
-	res := resource.Default()
+	log := NewLogger(os.Stdout)
+	// 失敗しうる準備を先に済ませ、provider とグローバル設定は最後に作る（途中で失敗しても残さない）
+	ln, err := net.Listen("tcp", MetricsAddr)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err != nil {
+			_ = ln.Close()
+		}
+	}()
 	traceExp, err := otlptracehttp.New(ctx)
 	if err != nil {
 		return nil, err
 	}
-	tp := sdktrace.NewTracerProvider(sdktrace.WithBatcher(traceExp), sdktrace.WithResource(res))
-
 	reg := prometheus.NewRegistry()
 	promReader, err := otelprom.New(otelprom.WithRegisterer(reg))
 	if err != nil {
 		return nil, err
 	}
+	res := resource.Default()
 	opts := []sdkmetric.Option{sdkmetric.WithResource(res), sdkmetric.WithReader(promReader)}
 	if os.Getenv("OTEL_METRICS_EXPORTER") == "otlp" {
 		metricExp, err := otlpmetrichttp.New(ctx)
@@ -50,22 +55,21 @@ func Setup(ctx context.Context) (shutdown func(context.Context) error, err error
 		}
 		opts = append(opts, sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExp)))
 	}
-	mp := sdkmetric.NewMeterProvider(opts...)
 
+	tp := sdktrace.NewTracerProvider(sdktrace.WithBatcher(traceExp), sdktrace.WithResource(res))
+	mp := sdkmetric.NewMeterProvider(opts...)
 	otel.SetTracerProvider(tp)
 	otel.SetMeterProvider(mp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+	// エクスポートの失敗（collector 停止など）はリクエストを止めず、JSON ログに残す
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) { log.Warn("otel export failed", "err", err) }))
 
-	ln, err := net.Listen("tcp", MetricsAddr)
-	if err != nil {
-		return nil, err
-	}
 	mux := http.NewServeMux()
 	mux.Handle("GET /metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
 	srv := &http.Server{Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 	go func() {
 		if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.Error("metrics server stopped", "err", err)
+			log.Error("metrics server stopped", "err", err)
 		}
 	}()
 

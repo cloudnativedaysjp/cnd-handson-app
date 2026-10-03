@@ -12,7 +12,7 @@ import (
 func WaitAndStop(timeout time.Duration, stops ...func(context.Context) error) error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	<-ctx.Done()
-	cancel()
+	cancel() // 通知を解除し、停止処理中に 2 回目のシグナルが来たら既定どおり即終了させる
 
 	ctx, cancel = context.WithTimeout(context.Background(), timeout)
 	defer cancel()
