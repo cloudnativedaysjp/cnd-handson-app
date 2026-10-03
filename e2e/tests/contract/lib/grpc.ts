@@ -35,3 +35,5 @@ export { grpc };
 
 // Project ids are UUID columns, so the caller id must be a UUID too.
 export const USER_ID = "00000000-0000-4000-8000-000000000071";
+// A second caller for authorization checks (#184): only the owner may see a project and its tasks and columns.
+export const OTHER_USER_ID = "00000000-0000-4000-8000-000000000072";
