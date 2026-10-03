@@ -5,11 +5,7 @@ inputs:
   node-version:
     description: 'Node.js version'
     required: false
-    default: '22.5.1'
-  pnpm-version:
-    description: 'PNPM version'
-    required: false
-    default: '10.8.0'
+    default: '24.21.0'
 
 runs:
   using: "composite"
@@ -20,9 +16,9 @@ runs:
         node-version: ${{ inputs.node-version }}
     
     - name: Setup PNPM
+      # version はルートの package.json の packageManager から読む
       uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
       with:
-        version: ${{ inputs.pnpm-version }}
         run_install: false
     
     - name: Get pnpm store directory

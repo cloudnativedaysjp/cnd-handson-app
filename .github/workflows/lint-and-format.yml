@@ -53,12 +53,7 @@ jobs:
         uses: ./.github/actions/setup-node
       
       - name: Install dependencies
-        run: |
-          # Install root dependencies for Biome
-          pnpm install
-          # Install service dependencies
-          cd ./${{ matrix.service }}
-          pnpm install
+        run: pnpm install --frozen-lockfile
       
       - name: Lint with Biome
         run: npx @biomejs/biome lint ./${{ matrix.service }}/src/

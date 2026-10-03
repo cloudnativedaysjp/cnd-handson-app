@@ -1,14 +1,15 @@
-FROM node:22-alpine
+# Build context is the repo root (pnpm workspace): docker build -f frontend/Dockerfile .
+FROM node:24.21.0-alpine3.23
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable
 
-ENV PNPM_STORE_PATH=/app/.pnpm-store
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY frontend/package.json ./frontend/
+RUN pnpm install --frozen-lockfile --filter app
 
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install
-
-COPY . .
+COPY frontend ./frontend
+WORKDIR /app/frontend
 
 CMD ["pnpm", "dev"]

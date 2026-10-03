@@ -42,16 +42,15 @@ services:
         db:
           condition: service_healthy
     frontend:
-      build: ./frontend
+      build:
+        context: .
+        dockerfile: frontend/Dockerfile
       tty: true
       volumes:
-        - ./frontend:/app
-        - /app/node_modules
-        - ./frontend/.pnpm-store/:/app/.pnpm-store/
+        - ./frontend:/app/frontend
+        - /app/frontend/node_modules
       ports:
         - 5173:5173
-      environment:
-        - PNPM_STORE_PATH=/app/.pnpm-store
       healthcheck:
         test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5173/"]
         interval: 3s
