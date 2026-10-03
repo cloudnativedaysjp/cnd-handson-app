@@ -28,7 +28,7 @@ if has '^(\.github/|mise\.toml$)'; then
   all
   exit 0
 fi
-flag '^(backend/(idp|project|task)/|pkg/|gen/go/|go\.(mod|sum)$)' go
+flag '^(backend/(idp|project|task)/|bff/|pkg/|gen/go/|go\.(mod|sum)$)' go
 flag '^backend/column/' python
 flag '^(frontend/|package\.json$|pnpm-lock\.yaml$|biome\.json$)' ts
 flag '^(proto/|gen/|backend/column/gen/|buf(\.gen)?\.yaml$|Makefile$)' proto
