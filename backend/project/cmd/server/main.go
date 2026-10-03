@@ -17,10 +17,10 @@ import (
 	columnpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/column"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
 	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
+	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/grpcclient"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/telemetry"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/userid"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
@@ -56,12 +56,12 @@ func runServer() error {
 	if err != nil {
 		return fmt.Errorf("database: %w", err)
 	}
-	taskConn, err := dial("TASK_ADDR")
+	taskConn, err := grpcclient.Dial("TASK_ADDR")
 	if err != nil {
 		return err
 	}
 	defer func() { _ = taskConn.Close() }()
-	columnConn, err := dial("COLUMN_ADDR")
+	columnConn, err := grpcclient.Dial("COLUMN_ADDR")
 	if err != nil {
 		return err
 	}
@@ -89,17 +89,6 @@ func runServer() error {
 	slog.Info("listening", "grpc", lis.Addr().String())
 
 	return telemetry.WaitAndStop(5*time.Second, serveErr, telemetry.GRPCStop(grpcServer), shutdownTelemetry)
-}
-
-// dial は addrEnv の接続先に、trace context と x-user-id を引き継ぐ client で接続する
-func dial(addrEnv string) (*grpc.ClientConn, error) {
-	addr := os.Getenv(addrEnv)
-	if addr == "" {
-		return nil, fmt.Errorf("%s is required", addrEnv)
-	}
-	return grpc.NewClient(addr, append(telemetry.ClientOptions(),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(userid.Forward()))...)
 }
 
 func runMigrate() error {

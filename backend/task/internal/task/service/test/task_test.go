@@ -35,7 +35,7 @@ func (f *fakeRepo) List(_ context.Context, flt repository.Filter, _, _ int32) ([
 		if flt.ColumnID != uuid.Nil && t.Column_id != flt.ColumnID {
 			continue
 		}
-		if flt.ProjectID != uuid.Nil && t.Project_id != flt.ProjectID {
+		if t.Project_id != flt.ProjectID { // 未指定ならプロジェクトなしのタスクだけ（本物の repository と同じ）
 			continue
 		}
 		out = append(out, t)
@@ -55,9 +55,24 @@ func (f *fakeRepo) Delete(_ context.Context, id uuid.UUID) error {
 	return nil
 }
 
+// allowAll はどのプロジェクトにも触れる呼び出し元を表す
+type allowAll struct{}
+
+func (allowAll) CheckAccess(context.Context, uuid.UUID) error { return nil }
+
+// ownerOf は owned のプロジェクトにだけ触れる呼び出し元を表す
+type ownerOf struct{ owned map[uuid.UUID]bool }
+
+func (o ownerOf) CheckAccess(_ context.Context, id uuid.UUID) error {
+	if !o.owned[id] {
+		return repository.ErrNotFound
+	}
+	return nil
+}
+
 func TestCreateGetListDelete(t *testing.T) {
 	ctx := context.Background()
-	svc := service.NewTaskService(newFake())
+	svc := service.NewTaskService(newFake(), allowAll{})
 
 	created, err := svc.Create(ctx, &taskpb.CreateTaskRequest{Title: "t1", Description: "d", Status: "todo"})
 	require.NoError(t, err)
@@ -78,13 +93,13 @@ func TestCreateGetListDelete(t *testing.T) {
 }
 
 func TestCreateRequiresTitle(t *testing.T) {
-	_, err := service.NewTaskService(newFake()).Create(context.Background(), &taskpb.CreateTaskRequest{})
+	_, err := service.NewTaskService(newFake(), allowAll{}).Create(context.Background(), &taskpb.CreateTaskRequest{})
 	assert.ErrorIs(t, err, service.ErrInvalidArgument)
 }
 
 func TestUpdateAppliesMaskedFields(t *testing.T) {
 	ctx := context.Background()
-	svc := service.NewTaskService(newFake())
+	svc := service.NewTaskService(newFake(), allowAll{})
 	created, err := svc.Create(ctx, &taskpb.CreateTaskRequest{Title: "t1", Description: "d", Status: "todo"})
 	require.NoError(t, err)
 	col := uuid.New()
@@ -105,7 +120,7 @@ func TestUpdateAppliesMaskedFields(t *testing.T) {
 
 func TestRejectsMalformedIDs(t *testing.T) {
 	ctx := context.Background()
-	svc := service.NewTaskService(newFake())
+	svc := service.NewTaskService(newFake(), allowAll{})
 	_, err := svc.Create(ctx, &taskpb.CreateTaskRequest{Title: "t", ColumnId: "bad"})
 	assert.ErrorIs(t, err, service.ErrInvalidArgument)
 	_, _, err = svc.List(ctx, &taskpb.ListTasksRequest{ProjectId: "bad"})
@@ -114,7 +129,7 @@ func TestRejectsMalformedIDs(t *testing.T) {
 
 func TestListFiltersByProject(t *testing.T) {
 	ctx := context.Background()
-	svc := service.NewTaskService(newFake())
+	svc := service.NewTaskService(newFake(), allowAll{})
 	p1, p2 := uuid.New(), uuid.New()
 	in1, err := svc.Create(ctx, &taskpb.CreateTaskRequest{Title: "in p1", ProjectId: p1.String()})
 	require.NoError(t, err)
@@ -126,4 +141,36 @@ func TestListFiltersByProject(t *testing.T) {
 	assert.Equal(t, int32(1), total)
 	assert.Equal(t, in1.ID, tasks[0].ID)
 	assert.Equal(t, p1, tasks[0].Project_id)
+}
+
+func TestTasksOfOthersProjectsAreNotFound(t *testing.T) {
+	ctx := context.Background()
+	repo := newFake()
+	mine, theirs := uuid.New(), uuid.New()
+	owner := service.NewTaskService(repo, ownerOf{owned: map[uuid.UUID]bool{mine: true, theirs: true}})
+	other := service.NewTaskService(repo, ownerOf{owned: map[uuid.UUID]bool{mine: true}})
+
+	task, err := owner.Create(ctx, &taskpb.CreateTaskRequest{Title: "t", ProjectId: theirs.String()})
+	require.NoError(t, err)
+
+	_, err = other.Create(ctx, &taskpb.CreateTaskRequest{Title: "x", ProjectId: theirs.String()})
+	assert.ErrorIs(t, err, service.ErrNotFound)
+	_, err = other.Get(ctx, task.ID)
+	assert.ErrorIs(t, err, service.ErrNotFound)
+	_, _, err = other.List(ctx, &taskpb.ListTasksRequest{ProjectId: theirs.String()})
+	assert.ErrorIs(t, err, service.ErrNotFound)
+	_, err = other.Update(ctx, task.ID, &taskpb.Task{Title: "x"}, &fieldmaskpb.FieldMask{Paths: []string{"title"}})
+	assert.ErrorIs(t, err, service.ErrNotFound)
+	assert.ErrorIs(t, other.Delete(ctx, task.ID), service.ErrNotFound)
+
+	// 自分のタスクを、触れないプロジェクトへ移すこともできない
+	own, err := other.Create(ctx, &taskpb.CreateTaskRequest{Title: "o", ProjectId: mine.String()})
+	require.NoError(t, err)
+	_, err = other.Update(ctx, own.ID, &taskpb.Task{ProjectId: theirs.String()}, &fieldmaskpb.FieldMask{Paths: []string{"project_id"}})
+	assert.ErrorIs(t, err, service.ErrNotFound)
+
+	// project_id を指定しない一覧には、プロジェクトのタスクは出ない
+	tasks, _, err := other.List(ctx, &taskpb.ListTasksRequest{})
+	require.NoError(t, err)
+	assert.Empty(t, tasks)
 }

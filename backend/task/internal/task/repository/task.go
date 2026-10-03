@@ -46,8 +46,11 @@ func (r *TaskRepository) List(ctx context.Context, f Filter, page, pageSize int3
 	if f.AssigneeID != uuid.Nil {
 		query = query.Where("assignee_id = ?", f.AssigneeID)
 	}
+	// project_id を指定しないときは、プロジェクトなしのタスクだけを返す（他人のプロジェクトのタスクを出さない）
 	if f.ProjectID != uuid.Nil {
 		query = query.Where("project_id = ?", f.ProjectID)
+	} else {
+		query = query.Where("project_id = ? OR project_id IS NULL", uuid.Nil)
 	}
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
