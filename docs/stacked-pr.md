@@ -25,8 +25,10 @@
 
    ```bash
    git fetch origin
-   git merge --no-edit origin/main
+   git merge --no-commit --no-ff origin/main
    ```
+
+   `--no-commit` を付ける。コンフリクトが無くても、手順 4 で確かめるまでコミットしないため
 
 3. コンフリクトしたファイルは、上の PR 側を採る
 
