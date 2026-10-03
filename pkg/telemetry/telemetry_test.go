@@ -144,3 +144,14 @@ func TestGRPCStopForcesStopAfterDeadline(t *testing.T) {
 	require.NoError(t, GRPCStop(srv)(ctx))
 	assert.Less(t, time.Since(start), 2*time.Second)
 }
+
+func TestWaitAndStopGivesEachStopItsOwnDeadline(t *testing.T) {
+	serveErr := make(chan error, 1)
+	serveErr <- errors.New("stop")
+	var second error
+	_ = WaitAndStop(100*time.Millisecond, serveErr,
+		func(ctx context.Context) error { <-ctx.Done(); return nil }, // 期限を使い切る
+		func(ctx context.Context) error { second = ctx.Err(); return nil },
+	)
+	assert.NoError(t, second, "the next stop starts with a fresh deadline")
+}
