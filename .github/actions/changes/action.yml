@@ -1,0 +1,19 @@
+name: Detect changes
+description: 変更されたファイルから走らせるジョブの種類を判定する。ジョブは if で飛ばす（skipped は必須チェックでも合格扱い）。呼ぶ前に fetch-depth 0 で checkout する
+outputs:
+  go:
+    value: ${{ steps.detect.outputs.go }}
+  python:
+    value: ${{ steps.detect.outputs.python }}
+  ts:
+    value: ${{ steps.detect.outputs.ts }}
+  proto:
+    value: ${{ steps.detect.outputs.proto }}
+  e2e:
+    value: ${{ steps.detect.outputs.e2e }}
+runs:
+  using: composite
+  steps:
+    - id: detect
+      shell: bash
+      run: ${{ github.action_path }}/detect.sh >> "$GITHUB_OUTPUT"

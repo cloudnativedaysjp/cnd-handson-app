@@ -18,8 +18,26 @@ env:
   PYTHON_VERSION: 3.12
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.changes.outputs.go }}
+      python: ${{ steps.changes.outputs.python }}
+      ts: ${{ steps.changes.outputs.ts }}
+      proto: ${{ steps.changes.outputs.proto }}
+      e2e: ${{ steps.changes.outputs.e2e }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: changes
+        uses: ./.github/actions/changes
+
   typescript-lint-format:
     name: TypeScript lint and format
+    needs: changes
+    if: needs.changes.outputs.ts == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -50,6 +68,8 @@ jobs:
   
   go-lint-format:
     name: Go lint and format
+    needs: changes
+    if: needs.changes.outputs.go == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -79,6 +99,8 @@ jobs:
 
   python-lint-format:
       name: Python lint and format
+      needs: changes
+      if: needs.changes.outputs.python == 'true'
       runs-on: ubuntu-latest
       defaults:
         run:
