@@ -61,12 +61,13 @@ func (j *jwks) key(ctx context.Context, kid string) (*rsa.PublicKey, error) {
 	if time.Since(j.fetched) < jwksRefetchInterval {
 		return nil, fmt.Errorf("unknown kid %q", kid)
 	}
-	j.fetched = time.Now()
-	keys, err := j.fetch(ctx)
+	// 取得できたときだけ間隔を空ける。失敗（idp の起動前など）で 30 秒間すべて 401 にしないため。
+	// 呼び出し元が切断しても取得は続け、ほかのリクエストに鍵を残す
+	keys, err := j.fetch(context.WithoutCancel(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("jwks: %w", err)
 	}
-	j.keys = keys
+	j.keys, j.fetched = keys, time.Now()
 	if k, ok := keys[kid]; ok {
 		return k, nil
 	}
