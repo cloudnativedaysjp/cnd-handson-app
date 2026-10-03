@@ -3,20 +3,24 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 
 	idppb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/idp"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
+	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/userid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
-// registerAPI は frontend 向けの REST API。タスクと列も project 経由で取り、入口からの gRPC の呼び先を project に絞る
-func registerAPI(route func(string, http.HandlerFunc), idp idppb.IdpServiceClient, projects projectpb.ProjectServiceClient, verify verifyFunc) {
+// registerAPI は frontend 向けの REST API。一覧は project 経由で取り、タスクの書き込みだけ task を直接呼ぶ。
+// task も呼び出し元がプロジェクトの所有者かを確かめる
+func registerAPI(route func(string, http.HandlerFunc), idp idppb.IdpServiceClient, projects projectpb.ProjectServiceClient, tasks taskpb.TaskServiceClient, verify verifyFunc) {
 	// ブラウザは gRPC を呼べないので、入口が idp の Login を中継する。refresh token は使わないので返さない
 	route("POST /api/login", func(w http.ResponseWriter, r *http.Request) {
 		var body struct{ Email, Password string }
@@ -67,6 +71,31 @@ func registerAPI(route func(string, http.HandlerFunc), idp idppb.IdpServiceClien
 	api("GET /api/projects/{id}/columns", func(ctx context.Context, r *http.Request) (proto.Message, error) {
 		return projects.ListProjectColumns(ctx, &projectpb.ListProjectColumnsRequest{ProjectId: r.PathValue("id")})
 	})
+	api("POST /api/projects/{id}/tasks", func(ctx context.Context, r *http.Request) (proto.Message, error) {
+		var body struct{ Title, Status string }
+		if err := decode(r, &body); err != nil {
+			return nil, err
+		}
+		return tasks.CreateTask(ctx, &taskpb.CreateTaskRequest{Title: body.Title, Status: body.Status, ProjectId: r.PathValue("id")})
+	})
+	api("PATCH /api/tasks/{id}", func(ctx context.Context, r *http.Request) (proto.Message, error) {
+		var body struct{ Status string }
+		if err := decode(r, &body); err != nil {
+			return nil, err
+		}
+		return tasks.UpdateTask(ctx, &taskpb.UpdateTaskRequest{
+			Id: r.PathValue("id"), Task: &taskpb.Task{Status: body.Status},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"status"}},
+		})
+	})
+}
+
+// decode は JSON の本文を読む。読めなければ 400 になるよう InvalidArgument を返す
+func decode(r *http.Request, v any) error {
+	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<10)).Decode(v); err != nil {
+		return status.Error(codes.InvalidArgument, "invalid body")
+	}
+	return nil
 }
 
 func httpStatus(c codes.Code) int {

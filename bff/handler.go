@@ -10,10 +10,11 @@ import (
 
 	idppb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/idp"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
+	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-func newHandler(log *slog.Logger, color, webDir string, idp idppb.IdpServiceClient, projects projectpb.ProjectServiceClient, verify verifyFunc) http.Handler {
+func newHandler(log *slog.Logger, color, webDir string, idp idppb.IdpServiceClient, projects projectpb.ProjectServiceClient, tasks taskpb.TaskServiceClient, verify verifyFunc) http.Handler {
 	mux := http.NewServeMux()
 	// パターン（"GET /color"）をそのままスパン名にする
 	route := func(pattern string, h http.HandlerFunc) {
@@ -37,7 +38,7 @@ func newHandler(log *slog.Logger, color, webDir string, idp idppb.IdpServiceClie
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		_, _ = io.WriteString(w, color)
 	})
-	registerAPI(route, idp, projects, verify)
+	registerAPI(route, idp, projects, tasks, verify)
 	// probe は数秒おきに来るため、スパンとログを出さない
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)

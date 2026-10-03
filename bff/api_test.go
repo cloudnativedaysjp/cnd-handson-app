@@ -16,6 +16,7 @@ import (
 
 	idppb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/idp"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
+	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/telemetry"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/userid"
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -38,6 +39,22 @@ func (f *fakeProjects) ListProjects(ctx context.Context, _ *projectpb.ListProjec
 
 func (f *fakeProjects) ListProjectTasks(context.Context, *projectpb.ListProjectTasksRequest, ...grpc.CallOption) (*projectpb.ListProjectTasksResponse, error) {
 	return nil, status.Error(codes.NotFound, "project p2 owned by someone else")
+}
+
+type fakeTasks struct {
+	taskpb.TaskServiceClient
+	created *taskpb.CreateTaskRequest
+	updated *taskpb.UpdateTaskRequest
+}
+
+func (f *fakeTasks) CreateTask(_ context.Context, req *taskpb.CreateTaskRequest, _ ...grpc.CallOption) (*taskpb.TaskResponse, error) {
+	f.created = req
+	return &taskpb.TaskResponse{Task: &taskpb.Task{Id: "t1", Title: req.GetTitle()}}, nil
+}
+
+func (f *fakeTasks) UpdateTask(_ context.Context, req *taskpb.UpdateTaskRequest, _ ...grpc.CallOption) (*taskpb.TaskResponse, error) {
+	f.updated = req
+	return &taskpb.TaskResponse{Task: &taskpb.Task{Id: req.GetId(), Status: req.GetTask().GetStatus()}}, nil
 }
 
 func TestAPI(t *testing.T) {
@@ -72,7 +89,8 @@ func TestAPI(t *testing.T) {
 	hs256, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{Subject: testUser}).SignedString([]byte("secret"))
 
 	projects := &fakeProjects{}
-	h := newHandler(telemetry.NewLogger(io.Discard), "blue", t.TempDir(), nil, projects, newVerifier(jwksSrv.URL, "iss", "aud"))
+	tasks := &fakeTasks{}
+	h := newHandler(telemetry.NewLogger(io.Discard), "blue", t.TempDir(), nil, projects, tasks, newVerifier(jwksSrv.URL, "iss", "aud"))
 
 	for name, tc := range map[string]struct {
 		path, auth string
@@ -105,12 +123,26 @@ func TestAPI(t *testing.T) {
 	if projects.gotUser != testUser {
 		t.Errorf("x-user-id = %q, want %q", projects.gotUser, testUser)
 	}
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/api/projects", nil)
-	req.Header.Set("Authorization", "Bearer "+sign("k1", nil))
-	h.ServeHTTP(rec, req)
-	if !strings.Contains(rec.Body.String(), `"name":"demo"`) {
+	call := func(method, path, body string) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(method, path, strings.NewReader(body))
+		req.Header.Set("Authorization", "Bearer "+sign("k1", nil))
+		h.ServeHTTP(rec, req)
+		return rec
+	}
+	if rec := call(http.MethodGet, "/api/projects", ""); !strings.Contains(rec.Body.String(), `"name":"demo"`) {
 		t.Errorf("body = %s", rec.Body.String())
+	}
+	if rec := call(http.MethodPost, "/api/projects/p1/tasks", `{"title":"t","status":"todo"}`); rec.Code != http.StatusOK ||
+		tasks.created.GetProjectId() != "p1" || tasks.created.GetTitle() != "t" || tasks.created.GetStatus() != "todo" {
+		t.Errorf("create: %d %s %v", rec.Code, rec.Body.String(), tasks.created)
+	}
+	if rec := call(http.MethodPatch, "/api/tasks/t1", `{"status":"done"}`); rec.Code != http.StatusOK ||
+		tasks.updated.GetId() != "t1" || tasks.updated.GetTask().GetStatus() != "done" || tasks.updated.GetUpdateMask().GetPaths()[0] != "status" {
+		t.Errorf("update: %d %s %v", rec.Code, rec.Body.String(), tasks.updated)
+	}
+	if rec := call(http.MethodPatch, "/api/tasks/t1", "not json"); rec.Code != http.StatusBadRequest {
+		t.Errorf("bad body: got %d", rec.Code)
 	}
 }
 
@@ -124,7 +156,7 @@ func (fakeIdp) Login(_ context.Context, req *idppb.LoginRequest, _ ...grpc.CallO
 }
 
 func TestLogin(t *testing.T) {
-	h := newHandler(telemetry.NewLogger(io.Discard), "blue", t.TempDir(), fakeIdp{}, nil, nil)
+	h := newHandler(telemetry.NewLogger(io.Discard), "blue", t.TempDir(), fakeIdp{}, nil, nil, nil)
 	for body, want := range map[string]struct {
 		code int
 		body string
