@@ -3,7 +3,6 @@ package main
 import (
 	"cmp"
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -91,23 +90,12 @@ func runServer() error {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	go func() {
-		if err := grpcServer.Serve(grpcLis); err != nil {
-			slog.Error("gRPC server stopped", "err", err)
-		}
-	}()
-	go func() {
-		if err := httpServer.Serve(httpLis); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.Error("HTTP server stopped", "err", err)
-		}
-	}()
+	serveErr := make(chan error, 2)
+	go func() { serveErr <- grpcServer.Serve(grpcLis) }()
+	go func() { serveErr <- httpServer.Serve(httpLis) }()
 	slog.Info("listening", "grpc", grpcLis.Addr().String(), "http", httpLis.Addr().String())
 
-	return telemetry.WaitAndStop(10*time.Second,
-		func(context.Context) error { grpcServer.GracefulStop(); return nil },
-		httpServer.Shutdown,
-		shutdownTelemetry,
-	)
+	return telemetry.WaitAndStop(10*time.Second, serveErr, telemetry.GRPCStop(grpcServer), httpServer.Shutdown, shutdownTelemetry)
 }
 
 func runMigrate() error {
