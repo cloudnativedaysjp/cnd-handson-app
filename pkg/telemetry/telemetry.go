@@ -28,19 +28,24 @@ const metricsAddr = ":9464"
 func Setup(ctx context.Context) (shutdown func(context.Context) error, err error) {
 	log := NewLogger(os.Stdout)
 	// 失敗しうる準備を先に済ませ、provider とグローバル設定は最後に作る（途中で失敗しても残さない）
+	var cleanup []func(context.Context) error
+	defer func() {
+		if err != nil {
+			for _, c := range cleanup {
+				_ = c(ctx)
+			}
+		}
+	}()
 	ln, err := net.Listen("tcp", metricsAddr)
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err != nil {
-			_ = ln.Close()
-		}
-	}()
+	cleanup = append(cleanup, func(context.Context) error { return ln.Close() })
 	traceExp, err := otlptracehttp.New(ctx)
 	if err != nil {
 		return nil, err
 	}
+	cleanup = append(cleanup, traceExp.Shutdown)
 	reg := prometheus.NewRegistry()
 	promReader, err := otelprom.New(otelprom.WithRegisterer(reg))
 	if err != nil {
@@ -53,6 +58,7 @@ func Setup(ctx context.Context) (shutdown func(context.Context) error, err error
 		if err != nil {
 			return nil, err
 		}
+		cleanup = append(cleanup, metricExp.Shutdown)
 		opts = append(opts, sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metricExp)))
 	}
 
