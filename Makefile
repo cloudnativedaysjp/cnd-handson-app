@@ -42,10 +42,10 @@ clean: .env
 
 # Requires: node and pnpm (mise locally, corepack in CI) and a running stack (`make up`).
 e2e:
-	cd e2e && $(PNPM) install --frozen-lockfile && $(PNPM) exec playwright install chromium && $(PNPM) test
+	$(PNPM) install --frozen-lockfile --filter e2e && cd e2e && $(PNPM) exec playwright install chromium && $(PNPM) test
 
 # Contract tests for #65 services. CI runs only the services listed in e2e/contract-enabled.txt.
 # Addresses come from env (defaults in e2e/tests/contract/lib/config.ts).
 # SVC="idp project" で担当サービスの契約テストだけを実行する（ファイル名で絞り込む）
 contract:
-	cd e2e && $(PNPM) install --frozen-lockfile && $(PNPM) exec playwright install chromium && $(PNPM) test:contract $(SVC)
+	$(PNPM) install --frozen-lockfile --filter e2e && cd e2e && $(PNPM) exec playwright install chromium && $(PNPM) test:contract $(SVC)

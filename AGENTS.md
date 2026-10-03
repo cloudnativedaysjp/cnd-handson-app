@@ -10,9 +10,9 @@ CloudNative Days ハンズオン用カンバンのマイクロサービスデモ
 - `proto/`: 全サービスの proto (buf)。唯一の定義元
 - `e2e/`: Playwright と契約テスト
 - Postgres は docker compose で起動
-- JS は `frontend/` と `e2e/` がそれぞれ独立した pnpm プロジェクト（ロックファイルも別）
-- ルートの package.json は biome のみ
-- pnpm workspace への統合は #73（入口のイメージをルート起点ビルドに変えるとき）。それまで統合しない
+- JS は pnpm workspace（`frontend/` と `e2e/`）。ロックファイルはルートの 1 つだけ
+- ルートの package.json は biome と packageManager のみ
+- 1 つのパッケージだけ入れるときは `pnpm install --filter <name>`
 
 ## コマンド
 - `mise install`: ツール導入 (go / python / node / pnpm / buf)。mise 未導入なら https://mise.jdx.dev

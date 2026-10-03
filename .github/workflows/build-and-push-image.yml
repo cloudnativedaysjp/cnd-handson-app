@@ -23,7 +23,7 @@ jobs:
         service: [frontend, project, idp, task, column]
         include:
           - service: frontend
-            context: frontend
+            context: .
             file: frontend/Dockerfile
           - service: project
             context: .
