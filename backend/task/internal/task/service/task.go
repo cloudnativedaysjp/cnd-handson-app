@@ -26,12 +26,29 @@ type Repository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
-type TaskService struct {
-	repo Repository
+type Projects interface {
+	CheckAccess(ctx context.Context, projectID uuid.UUID) error
 }
 
-func NewTaskService(repo Repository) *TaskService {
-	return &TaskService{repo: repo}
+type TaskService struct {
+	repo     Repository
+	projects Projects
+}
+
+func NewTaskService(repo Repository, projects Projects) *TaskService {
+	return &TaskService{repo: repo, projects: projects}
+}
+
+// checkProject はプロジェクトにひも付くときだけ、呼び出し元が所有者かを project に確かめる（#184）
+func (s *TaskService) checkProject(ctx context.Context, projectID uuid.UUID) error {
+	if projectID == uuid.Nil {
+		return nil
+	}
+	err := s.projects.CheckAccess(ctx, projectID)
+	if errors.Is(err, repository.ErrNotFound) {
+		return ErrNotFound
+	}
+	return err
 }
 
 func (s *TaskService) Get(ctx context.Context, id uuid.UUID) (*model.Task, error) {
@@ -39,12 +56,21 @@ func (s *TaskService) Get(ctx context.Context, id uuid.UUID) (*model.Task, error
 	if errors.Is(err, repository.ErrNotFound) {
 		return nil, ErrNotFound
 	}
-	return task, err
+	if err != nil {
+		return nil, err
+	}
+	if err := s.checkProject(ctx, task.Project_id); err != nil {
+		return nil, err
+	}
+	return task, nil
 }
 
 func (s *TaskService) List(ctx context.Context, req *taskpb.ListTasksRequest) ([]*model.Task, int32, error) {
 	ids, err := parseOptionalIDs(req.GetColumnId(), req.GetAssigneeId(), req.GetProjectId())
 	if err != nil {
+		return nil, 0, err
+	}
+	if err := s.checkProject(ctx, ids[2]); err != nil {
 		return nil, 0, err
 	}
 	f := repository.Filter{ColumnID: ids[0], AssigneeID: ids[1], ProjectID: ids[2]}
@@ -57,6 +83,9 @@ func (s *TaskService) Create(ctx context.Context, req *taskpb.CreateTaskRequest)
 	}
 	ids, err := parseOptionalIDs(req.GetColumnId(), req.GetAssigneeId(), req.GetProjectId())
 	if err != nil {
+		return nil, err
+	}
+	if err := s.checkProject(ctx, ids[2]); err != nil {
 		return nil, err
 	}
 	now := time.Now()
@@ -102,6 +131,10 @@ func (s *TaskService) Update(ctx context.Context, id uuid.UUID, req *taskpb.Task
 			if task.Project_id, err = parseOptionalUUID(req.GetProjectId()); err != nil {
 				return nil, err
 			}
+			// 移動先のプロジェクトも、呼び出し元が所有者でなければならない
+			if err := s.checkProject(ctx, task.Project_id); err != nil {
+				return nil, err
+			}
 		default:
 			return nil, fmt.Errorf("%w: unsupported field %q", ErrInvalidArgument, path)
 		}
@@ -114,6 +147,9 @@ func (s *TaskService) Update(ctx context.Context, id uuid.UUID, req *taskpb.Task
 }
 
 func (s *TaskService) Delete(ctx context.Context, id uuid.UUID) error {
+	if _, err := s.Get(ctx, id); err != nil {
+		return err
+	}
 	err := s.repo.Delete(ctx, id)
 	if errors.Is(err, repository.ErrNotFound) {
 		return ErrNotFound

@@ -14,7 +14,9 @@ import (
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/repository"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/service"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/pkg/db"
+	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
 	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
+	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/grpcclient"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/telemetry"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/userid"
 	"google.golang.org/grpc"
@@ -53,6 +55,12 @@ func runServer() error {
 	if err != nil {
 		return fmt.Errorf("database: %w", err)
 	}
+	projectConn, err := grpcclient.Dial("PROJECT_ADDR")
+	if err != nil {
+		return err
+	}
+	defer func() { _ = projectConn.Close() }()
+
 	lis, err := net.Listen("tcp", ":"+cmp.Or(os.Getenv("PORT"), "50051"))
 	if err != nil {
 		return err
@@ -60,7 +68,10 @@ func runServer() error {
 
 	opts := append(telemetry.ServerOptions(slog.Default()), grpc.ChainUnaryInterceptor(userid.Require("/task.TaskService/")))
 	grpcServer := grpc.NewServer(opts...)
-	svc := service.NewTaskService(repository.NewTaskRepository(conn))
+	svc := service.NewTaskService(
+		repository.NewTaskRepository(conn),
+		repository.NewProjectRepository(projectpb.NewProjectServiceClient(projectConn)),
+	)
 	taskpb.RegisterTaskServiceServer(grpcServer, handler.NewTaskServiceServer(svc))
 	healthSrv := health.NewServer()
 	healthpb.RegisterHealthServer(grpcServer, healthSrv)
