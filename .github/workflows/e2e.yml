@@ -2,7 +2,8 @@ name: E2E
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    # labeled / unlabeled: breaking-proto の付け外しで buf breaking を再判定する
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
   push:
     branches: [ main ]
 
@@ -27,8 +28,9 @@ jobs:
           version: 1.57.0
           github_token: ${{ github.token }}
       - run: buf lint
+      # サービス削除など意図的な破壊的変更は breaking-proto ラベルで明示して飛ばす
       - name: buf breaking
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'breaking-proto')
         # buf clones the local repo, so a local main branch must exist
         run: |
           git fetch --no-tags origin main:main
