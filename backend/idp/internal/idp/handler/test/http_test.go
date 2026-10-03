@@ -59,7 +59,7 @@ func TestJWKSVerifiesIssuedToken(t *testing.T) {
 	require.NoError(t, err)
 	pub := &rsa.PublicKey{N: new(big.Int).SetBytes(n), E: int(new(big.Int).SetBytes(e).Int64())}
 
-	signed, _, err := issuer.Issue(&model.User{ID: uuid.New()})
+	signed, _, err := issuer.Issue(&model.User{ID: uuid.New()}, nil)
 	require.NoError(t, err)
 	_, err = jwt.Parse(signed, func(*jwt.Token) (any, error) { return pub, nil }, jwt.WithValidMethods([]string{"RS256"}))
 	assert.NoError(t, err)

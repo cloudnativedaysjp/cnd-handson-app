@@ -62,15 +62,59 @@ func (f *fakeRefresh) Get(_ context.Context, id uuid.UUID) (*model.RefreshToken,
 	return t, nil
 }
 
-type fakeIssuer struct{}
+type fakeRoles struct {
+	roles []model.Role
+}
 
-func (fakeIssuer) Issue(u *model.User) (string, time.Time, error) {
+func (f *fakeRoles) GetByID(_ context.Context, id uuid.UUID) (*model.Role, error) {
+	for i := range f.roles {
+		if f.roles[i].ID == id {
+			return &f.roles[i], nil
+		}
+	}
+	return nil, repository.ErrNotFound
+}
+
+func (f *fakeRoles) GetByName(_ context.Context, name string) (*model.Role, error) {
+	for i := range f.roles {
+		if f.roles[i].Name == name {
+			return &f.roles[i], nil
+		}
+	}
+	return nil, repository.ErrNotFound
+}
+
+// fakeIssuer は渡された roles を記録する
+type fakeIssuer struct {
+	lastRoles []string
+}
+
+func (f *fakeIssuer) Issue(u *model.User, roles []string) (string, time.Time, error) {
+	f.lastRoles = roles
 	return "token-for-" + u.ID.String(), time.Unix(1700000000, 0), nil
 }
 
+type fixture struct {
+	svc     *service.IdpService
+	users   *fakeUsers
+	refresh *fakeRefresh
+	issuer  *fakeIssuer
+}
+
+func newFixture() *fixture {
+	f := &fixture{
+		users:   newFakeUsers(),
+		refresh: &fakeRefresh{byUser: map[uuid.UUID]*model.RefreshToken{}},
+		issuer:  &fakeIssuer{},
+	}
+	roles := &fakeRoles{roles: []model.Role{{ID: uuid.New(), Name: service.DefaultRole}}}
+	f.svc = service.NewIdpService(f.users, roles, f.refresh, f.issuer)
+	return f
+}
+
 func newService() (*service.IdpService, *fakeRefresh) {
-	refresh := &fakeRefresh{byUser: map[uuid.UUID]*model.RefreshToken{}}
-	return service.NewIdpService(newFakeUsers(), refresh, fakeIssuer{}), refresh
+	f := newFixture()
+	return f.svc, f.refresh
 }
 
 func TestRegisterAndLogin(t *testing.T) {
@@ -154,4 +198,28 @@ func TestRefreshRejectsInvalidTokens(t *testing.T) {
 	refresh.byUser[id].Exp = time.Now().Add(-time.Minute).Unix()
 	_, err = svc.Refresh(ctx, tokens.RefreshToken)
 	assert.ErrorIs(t, err, service.ErrInvalidCredentials, "expired")
+}
+
+func TestLoginPutsRoleInToken(t *testing.T) {
+	ctx := context.Background()
+	f := newFixture()
+	_, err := f.svc.Register(ctx, "alice", "alice@example.com", "secret")
+	require.NoError(t, err)
+
+	_, err = f.svc.Login(ctx, "alice@example.com", "secret")
+	require.NoError(t, err)
+	assert.Equal(t, []string{service.DefaultRole}, f.issuer.lastRoles)
+}
+
+func TestLoginWithUnknownRoleGivesEmptyRoles(t *testing.T) {
+	ctx := context.Background()
+	f := newFixture()
+	_, err := f.svc.Register(ctx, "alice", "alice@example.com", "secret")
+	require.NoError(t, err)
+	f.users.byEmail["alice@example.com"].RoleID = uuid.Nil // user サービスから引き継いだユーザー
+
+	_, err = f.svc.Login(ctx, "alice@example.com", "secret")
+	require.NoError(t, err)
+	assert.NotNil(t, f.issuer.lastRoles)
+	assert.Empty(t, f.issuer.lastRoles)
 }

@@ -3,7 +3,7 @@ BUF_VERSION := 1.57.0
 BUF ?= $(shell [ "$$(buf --version 2>/dev/null)" = "$(BUF_VERSION)" ] && echo buf || echo go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION))
 UP_BUILD ?= --build
 GO_SERVICES := user session idp project task
-PY_SERVICES := role column
+PY_SERVICES := column
 PNPM := pnpm
 
 .PHONY: gen lint up down clean e2e contract

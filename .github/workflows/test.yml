@@ -81,12 +81,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [column, role]
+        service: [column]
         include:
           - service: column
             path: backend/column
-          - service: role
-            path: backend/role
 
     steps:
       - name: Checkout code
