@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/model"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/repository"
@@ -30,7 +31,7 @@ func (s *TaskServiceServer) GetTask(ctx context.Context, req *taskpb.GetTaskRequ
 	}
 	task, err := s.svc.Get(ctx, id)
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	return &taskpb.TaskResponse{Task: toProto(task)}, nil
 }
@@ -38,15 +39,15 @@ func (s *TaskServiceServer) GetTask(ctx context.Context, req *taskpb.GetTaskRequ
 func (s *TaskServiceServer) ListTasks(ctx context.Context, req *taskpb.ListTasksRequest) (*taskpb.ListTasksResponse, error) {
 	columnID, err := service.ParseOptionalUUID(req.GetColumnId())
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	assigneeID, err := service.ParseOptionalUUID(req.GetAssigneeId())
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	tasks, total, err := s.svc.List(ctx, repository.Filter{ColumnID: columnID, AssigneeID: assigneeID}, req.GetPage(), req.GetPageSize())
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	res := &taskpb.ListTasksResponse{TotalCount: total}
 	for _, t := range tasks {
@@ -58,15 +59,15 @@ func (s *TaskServiceServer) ListTasks(ctx context.Context, req *taskpb.ListTasks
 func (s *TaskServiceServer) CreateTask(ctx context.Context, req *taskpb.CreateTaskRequest) (*taskpb.TaskResponse, error) {
 	columnID, err := service.ParseOptionalUUID(req.GetColumnId())
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	assigneeID, err := service.ParseOptionalUUID(req.GetAssigneeId())
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	task, err := s.svc.Create(ctx, req.GetTitle(), req.GetDescription(), req.GetStatus(), columnID, assigneeID)
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	return &taskpb.TaskResponse{Task: toProto(task)}, nil
 }
@@ -78,7 +79,7 @@ func (s *TaskServiceServer) UpdateTask(ctx context.Context, req *taskpb.UpdateTa
 	}
 	task, err := s.svc.Update(ctx, id, req.GetTask(), req.GetUpdateMask())
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	return &taskpb.TaskResponse{Task: toProto(task)}, nil
 }
@@ -89,7 +90,7 @@ func (s *TaskServiceServer) DeleteTask(ctx context.Context, req *taskpb.DeleteTa
 		return nil, status.Errorf(codes.InvalidArgument, "invalid id: %v", err)
 	}
 	if err := s.svc.Delete(ctx, id); err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	return &taskpb.DeleteTaskResponse{Success: true}, nil
 }
@@ -115,13 +116,14 @@ func toProto(t *model.Task) *taskpb.Task {
 	}
 }
 
-func toStatus(err error) error {
+func toStatus(ctx context.Context, err error) error {
 	switch {
 	case errors.Is(err, service.ErrInvalidArgument):
 		return status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, service.ErrNotFound):
 		return status.Error(codes.NotFound, err.Error())
 	default:
+		slog.ErrorContext(ctx, "internal error", "err", err)
 		return status.Error(codes.Internal, "internal error")
 	}
 }
