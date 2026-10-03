@@ -8,6 +8,7 @@ import (
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/repository"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/service"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
+	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,8 +18,20 @@ type fakeRepo struct {
 	projects map[uuid.UUID]*model.Project
 }
 
+type fakeTasks struct {
+	byProject map[uuid.UUID][]*taskpb.Task
+}
+
+func (f *fakeTasks) ListByProject(_ context.Context, id uuid.UUID) ([]*taskpb.Task, error) {
+	return f.byProject[id], nil
+}
+
 func newService() *service.ProjectService {
-	return service.NewProjectService(&fakeRepo{projects: map[uuid.UUID]*model.Project{}})
+	return newServiceWithTasks(&fakeTasks{})
+}
+
+func newServiceWithTasks(tasks service.Tasks) *service.ProjectService {
+	return service.NewProjectService(&fakeRepo{projects: map[uuid.UUID]*model.Project{}}, tasks)
 }
 
 func (f *fakeRepo) Get(_ context.Context, id uuid.UUID) (*model.Project, error) {
@@ -101,4 +114,20 @@ func TestRejectsBadInput(t *testing.T) {
 	assert.ErrorIs(t, err, service.ErrInvalidArgument)
 	_, err = svc.List(ctx, "bad")
 	assert.ErrorIs(t, err, service.ErrInvalidArgument)
+}
+
+func TestListTasksRequiresExistingProject(t *testing.T) {
+	ctx := context.Background()
+	tasks := &fakeTasks{byProject: map[uuid.UUID][]*taskpb.Task{}}
+	svc := newServiceWithTasks(tasks)
+	p, err := svc.Create(ctx, &projectpb.CreateProjectRequest{Name: "p", OwnerId: uuid.NewString()})
+	require.NoError(t, err)
+	tasks.byProject[p.ID] = []*taskpb.Task{{Id: "t1", ProjectId: p.ID.String()}}
+
+	got, err := svc.ListTasks(ctx, p.ID.String())
+	require.NoError(t, err)
+	assert.Equal(t, "t1", got[0].GetId())
+
+	_, err = svc.ListTasks(ctx, uuid.NewString())
+	assert.ErrorIs(t, err, service.ErrNotFound)
 }

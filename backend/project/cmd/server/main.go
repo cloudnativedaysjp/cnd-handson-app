@@ -3,6 +3,7 @@ package main
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -15,8 +16,11 @@ import (
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/service"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/pkg/db"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
+	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/telemetry"
+	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/userid"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
@@ -52,13 +56,31 @@ func runServer() error {
 	if err != nil {
 		return fmt.Errorf("database: %w", err)
 	}
+	taskAddr := os.Getenv("TASK_ADDR")
+	if taskAddr == "" {
+		return errors.New("TASK_ADDR is required")
+	}
+	// trace context と x-user-id を task に引き継ぐ
+	clientOpts := append(telemetry.ClientOptions(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(userid.Forward()))
+	taskConn, err := grpc.NewClient(taskAddr, clientOpts...)
+	if err != nil {
+		return fmt.Errorf("task client: %w", err)
+	}
+	defer func() { _ = taskConn.Close() }()
+
 	lis, err := net.Listen("tcp", ":"+cmp.Or(os.Getenv("PORT"), "50051"))
 	if err != nil {
 		return err
 	}
 
-	grpcServer := grpc.NewServer(telemetry.ServerOptions(slog.Default())...)
-	svc := service.NewProjectService(repository.NewProjectRepository(conn))
+	opts := append(telemetry.ServerOptions(slog.Default()), grpc.ChainUnaryInterceptor(userid.Require("/project.ProjectService/")))
+	grpcServer := grpc.NewServer(opts...)
+	svc := service.NewProjectService(
+		repository.NewProjectRepository(conn),
+		repository.NewTaskRepository(taskpb.NewTaskServiceClient(taskConn)),
+	)
 	projectpb.RegisterProjectServiceServer(grpcServer, handler.NewProjectServiceServer(svc))
 	healthSrv := health.NewServer()
 	healthpb.RegisterHealthServer(grpcServer, healthSrv)
