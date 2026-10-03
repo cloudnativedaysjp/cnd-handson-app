@@ -7,6 +7,7 @@ import (
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/model"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/service"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -24,7 +25,7 @@ func NewProjectServiceServer(svc *service.ProjectService) *ProjectServiceServer 
 func (s *ProjectServiceServer) CreateProject(ctx context.Context, req *projectpb.CreateProjectRequest) (*projectpb.ProjectResponse, error) {
 	p, err := s.svc.Create(ctx, req)
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	return &projectpb.ProjectResponse{Project: toProto(p)}, nil
 }
@@ -32,7 +33,7 @@ func (s *ProjectServiceServer) CreateProject(ctx context.Context, req *projectpb
 func (s *ProjectServiceServer) GetProject(ctx context.Context, req *projectpb.GetProjectRequest) (*projectpb.ProjectResponse, error) {
 	p, err := s.svc.Get(ctx, req.GetId())
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	return &projectpb.ProjectResponse{Project: toProto(p)}, nil
 }
@@ -40,7 +41,7 @@ func (s *ProjectServiceServer) GetProject(ctx context.Context, req *projectpb.Ge
 func (s *ProjectServiceServer) ListProjects(ctx context.Context, req *projectpb.ListProjectsRequest) (*projectpb.ListProjectsResponse, error) {
 	projects, err := s.svc.List(ctx, req.GetOwnerId())
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	res := &projectpb.ListProjectsResponse{}
 	for _, p := range projects {
@@ -52,14 +53,14 @@ func (s *ProjectServiceServer) ListProjects(ctx context.Context, req *projectpb.
 func (s *ProjectServiceServer) UpdateProject(ctx context.Context, req *projectpb.UpdateProjectRequest) (*projectpb.ProjectResponse, error) {
 	p, err := s.svc.Update(ctx, req)
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	return &projectpb.ProjectResponse{Project: toProto(p)}, nil
 }
 
 func (s *ProjectServiceServer) DeleteProject(ctx context.Context, req *projectpb.DeleteProjectRequest) (*projectpb.DeleteProjectResponse, error) {
 	if err := s.svc.Delete(ctx, req.GetId()); err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	return &projectpb.DeleteProjectResponse{Success: true}, nil
 }
@@ -75,13 +76,14 @@ func toProto(p *model.Project) *projectpb.Project {
 	}
 }
 
-func toStatus(err error) error {
+func toStatus(ctx context.Context, err error) error {
 	switch {
 	case errors.Is(err, service.ErrInvalidArgument):
 		return status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, service.ErrNotFound):
 		return status.Error(codes.NotFound, err.Error())
 	default:
+		trace.SpanFromContext(ctx).RecordError(err) // ログは interceptor の 1 行に任せ、原因はトレースで追う
 		return status.Error(codes.Internal, "internal error")
 	}
 }
