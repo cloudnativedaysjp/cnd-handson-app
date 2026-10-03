@@ -42,25 +42,34 @@ func (s *TaskService) Get(ctx context.Context, id uuid.UUID) (*model.Task, error
 	return task, err
 }
 
-func (s *TaskService) List(ctx context.Context, f repository.Filter, page, pageSize int32) ([]*model.Task, int32, error) {
-	return s.repo.List(ctx, f, page, pageSize)
+func (s *TaskService) List(ctx context.Context, req *taskpb.ListTasksRequest) ([]*model.Task, int32, error) {
+	ids, err := parseOptionalIDs(req.GetColumnId(), req.GetAssigneeId(), req.GetProjectId())
+	if err != nil {
+		return nil, 0, err
+	}
+	f := repository.Filter{ColumnID: ids[0], AssigneeID: ids[1], ProjectID: ids[2]}
+	return s.repo.List(ctx, f, req.GetPage(), req.GetPageSize())
 }
 
-func (s *TaskService) Create(ctx context.Context, title, description, status string, columnID, assigneeID, projectID uuid.UUID) (*model.Task, error) {
-	if title == "" {
+func (s *TaskService) Create(ctx context.Context, req *taskpb.CreateTaskRequest) (*model.Task, error) {
+	if req.GetTitle() == "" {
 		return nil, fmt.Errorf("%w: title is required", ErrInvalidArgument)
+	}
+	ids, err := parseOptionalIDs(req.GetColumnId(), req.GetAssigneeId(), req.GetProjectId())
+	if err != nil {
+		return nil, err
 	}
 	now := time.Now()
 	task := &model.Task{
 		ID:          uuid.New(),
-		Title:       title,
-		Description: description,
-		Status:      status,
+		Title:       req.GetTitle(),
+		Description: req.GetDescription(),
+		Status:      req.GetStatus(),
 		Start_time:  now,
 		End_time:    now,
-		Column_id:   columnID,
-		Assignee_id: assigneeID,
-		Project_id:  projectID,
+		Column_id:   ids[0],
+		Assignee_id: ids[1],
+		Project_id:  ids[2],
 	}
 	if err := s.repo.Create(ctx, task); err != nil {
 		return nil, err
@@ -82,15 +91,15 @@ func (s *TaskService) Update(ctx context.Context, id uuid.UUID, req *taskpb.Task
 		case "status":
 			task.Status = req.GetStatus()
 		case "column_id":
-			if task.Column_id, err = ParseOptionalUUID(req.GetColumnId()); err != nil {
+			if task.Column_id, err = parseOptionalUUID(req.GetColumnId()); err != nil {
 				return nil, err
 			}
 		case "assignee_id":
-			if task.Assignee_id, err = ParseOptionalUUID(req.GetAssigneeId()); err != nil {
+			if task.Assignee_id, err = parseOptionalUUID(req.GetAssigneeId()); err != nil {
 				return nil, err
 			}
 		case "project_id":
-			if task.Project_id, err = ParseOptionalUUID(req.GetProjectId()); err != nil {
+			if task.Project_id, err = parseOptionalUUID(req.GetProjectId()); err != nil {
 				return nil, err
 			}
 		default:
@@ -112,8 +121,19 @@ func (s *TaskService) Delete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
-// ParseOptionalUUID は空文字を uuid.Nil（未指定）として扱う
-func ParseOptionalUUID(s string) (uuid.UUID, error) {
+func parseOptionalIDs(ss ...string) ([]uuid.UUID, error) {
+	ids := make([]uuid.UUID, len(ss))
+	for i, s := range ss {
+		var err error
+		if ids[i], err = parseOptionalUUID(s); err != nil {
+			return nil, err
+		}
+	}
+	return ids, nil
+}
+
+// parseOptionalUUID は空文字を uuid.Nil（未指定）として扱う
+func parseOptionalUUID(s string) (uuid.UUID, error) {
 	if s == "" {
 		return uuid.Nil, nil
 	}
