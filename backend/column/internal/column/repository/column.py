@@ -1,111 +1,58 @@
-from sqlalchemy.orm import Session
 from typing import Optional
-from internal.column.model.column import ColumnModel
 from uuid import UUID
+
+from sqlalchemy import func, select
+from sqlalchemy.orm import sessionmaker
+
+from internal.column.model.column import ColumnModel
 
 
 class ColumnRepository:
-    def __init__(self, db: Session):
-        """ColumnRepositoryの初期化
-        Args:
-            db: SQLAlchemyのセッション
-        """
-        self.db = db
+    """リクエストごとにセッションを開く（gRPC はスレッドプールで並行に呼ぶため共有しない）"""
 
-    def create(self, name: str, board_id: UUID) -> Optional[ColumnModel]:
-        """Columnの生成
-        Args:
-            name: Columnの名前
-            board_id: BoardのID
-        """
-        try:
-            new_column = ColumnModel(name=name, board_id=board_id)
-            self.db.add(new_column)
-            self.db.commit()
-            self.db.refresh(new_column)
-            return new_column
-        except Exception as e:
-            self.db.rollback()
-            print(f"Error creating column: {e}")
-            return None
+    def __init__(self, sessions: sessionmaker):
+        self.sessions = sessions
 
-    def get_by_id(self, column_id: str) -> Optional[ColumnModel]:
-        """Columnの取得
-        Args:
-            column_id: ColumnのID
-        """
-        try:
-            column = (
-                self.db.query(ColumnModel).filter(ColumnModel.id == column_id).first()
-            )
-            return column
-        except Exception as e:
-            print(f"Error fetching column by ID: {e}")
-            return None
+    def create(self, name: str, board_id: Optional[UUID]) -> ColumnModel:
+        with self.sessions.begin() as s:
+            column = ColumnModel(name=name, board_id=board_id)
+            s.add(column)
+        return column
 
-    def update(self, column: ColumnModel) -> Optional[ColumnModel]:
-        """Columnの更新
-        Args:
-            column: Columnのインスタンス
-        """
-        try:
-            self.db.add(column)
-            self.db.commit()
-            self.db.refresh(column)
-            return column
-        except Exception as e:
-            self.db.rollback()
-            print(f"Error updating column: {e}")
-            return None
+    def get(self, column_id: UUID) -> Optional[ColumnModel]:
+        with self.sessions() as s:
+            return s.get(ColumnModel, column_id)
 
-    def delete(self, column: ColumnModel) -> bool:
-        """Columnの削除
-        Args:
-            column: Columnのインスタンス
-        """
-        try:
-            self.db.delete(column)
-            self.db.commit()
-            return True
-        except Exception as e:
-            self.db.rollback()
-            print(f"Error deleting column: {e}")
-            return False
+    def update(
+        self, column_id: UUID, name: str, board_id: Optional[UUID]
+    ) -> Optional[ColumnModel]:
+        with self.sessions.begin() as s:
+            column = s.get(ColumnModel, column_id)
+            if column is None:
+                return None
+            if name:
+                column.name = name
+            if board_id is not None:
+                column.board_id = board_id
+        return column
+
+    def delete(self, column_id: UUID) -> bool:
+        with self.sessions.begin() as s:
+            column = s.get(ColumnModel, column_id)
+            if column is None:
+                return False
+            s.delete(column)
+        return True
 
     def list(
-        self, board_id: UUID, page: int, page_size: int
-    ) -> Optional[list[ColumnModel]]:
-        """Columnの一覧取得
-        Args:
-            board_id: BoardのID
-            page: ページ番号
-            page_size: ページサイズ
-        """
-        try:
-            columns = (
-                self.db.query(ColumnModel)
-                .filter(ColumnModel.board_id == board_id)
-                .offset(max((page - 1), 0) * page_size)
-                .limit(page_size)
-                .all()
-            )
-            return columns
-        except Exception as e:
-            print(f"Error fetching columns: {e}")
-            return None
-
-    def total_count(self, board_id: UUID) -> int:
-        """Columnの総数取得
-        Args:
-            board_id: BoardのID
-        """
-        try:
-            total = (
-                self.db.query(ColumnModel)
-                .filter(ColumnModel.board_id == str(board_id))
-                .count()
-            )
-            return total
-        except Exception as e:
-            print(f"Error fetching total count of columns: {e}")
-            return 0
+        self, board_id: Optional[UUID], page: int, page_size: int
+    ) -> tuple[list[ColumnModel], int]:
+        """board_id が None なら全件。page / page_size が 0 以下ならページングしない"""
+        query = select(ColumnModel)
+        if board_id is not None:
+            query = query.where(ColumnModel.board_id == board_id)
+        with self.sessions() as s:
+            total = s.scalar(select(func.count()).select_from(query.subquery()))
+            if page > 0 and page_size > 0:
+                query = query.offset((page - 1) * page_size).limit(page_size)
+            return list(s.scalars(query.order_by(ColumnModel.name))), total
