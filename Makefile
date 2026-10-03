@@ -23,6 +23,7 @@ gen:
 lint:
 	$(BUF) lint
 	@for s in idp project task; do $(MAKE) -C backend/$$s lint || exit 1; done
+	docker build -f bff/Dockerfile --target lint .
 	go vet ./pkg/...
 	@for s in $(PY_SERVICES); do $(MAKE) -C backend/$$s lint || exit 1; done
 
@@ -46,6 +47,7 @@ e2e:
 
 # Contract tests for #65 services. CI runs only the services listed in e2e/contract-enabled.txt.
 # Addresses come from env (defaults in e2e/tests/contract/lib/config.ts).
-# SVC="idp project" で担当サービスの契約テストだけを実行する（ファイル名で絞り込む）
+# SVC="idp project" で担当サービスの契約テストだけを実行する。
+# playwright はパス全体に部分一致させるので、worktree 名に当たらないよう spec ファイルのパスで渡す
 contract:
-	$(PNPM) install --frozen-lockfile --filter e2e && cd e2e && $(PNPM) exec playwright install chromium && $(PNPM) test:contract $(SVC)
+	$(PNPM) install --frozen-lockfile --filter e2e && cd e2e && $(PNPM) exec playwright install chromium && $(PNPM) test:contract $(patsubst %,tests/contract/%.spec.ts,$(SVC))
