@@ -14,7 +14,7 @@ from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.exporter.prometheus import PrometheusMetricReader
-from opentelemetry.instrumentation.grpc import GrpcInstrumentorServer, filters
+from opentelemetry.instrumentation.grpc import filters, server_interceptor
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
@@ -29,7 +29,7 @@ HEALTH_PREFIX = "/grpc.health.v1.Health/"
 
 
 def setup() -> Callable[..., None]:
-    """provider と propagator を設定し、/metrics を公開して gRPC サーバーを計装する。
+    """provider と propagator を設定し、/metrics を公開する。
     endpoint・service name は OTEL_* の env から SDK が解決する。返す関数で終了処理をする"""
     resource = Resource.create()
     # 終了処理は shutdown() の期限付きのものだけにする（atexit で再び詰まらせない）
@@ -49,8 +49,6 @@ def setup() -> Callable[..., None]:
         CompositePropagator([TraceContextTextMapPropagator(), W3CBaggagePropagator()])
     )
     start_http_server(METRICS_PORT)
-    # grpc.server() を差し替えるので、サーバーを作る前に呼ぶ
-    GrpcInstrumentorServer(filter_=filters.negate(filters.health_check())).instrument()
 
     def shutdown(timeout: float = 3.0) -> None:
         # collector が落ちているとエクスポートの再試行で止まらないので、期限で打ち切る
@@ -98,6 +96,12 @@ def go_code(code: grpc.StatusCode) -> str:
     return special.get(code) or "".join(w.capitalize() for w in code.name.split("_"))
 
 
+def server_interceptors(log: logging.Logger) -> list[grpc.ServerInterceptor]:
+    """計装（スパン）を外側、リクエストログを内側に置く。ログに trace_id を入れるため"""
+    tracing = server_interceptor(filter_=filters.negate(filters.health_check()))
+    return [tracing, RequestLog(log)]
+
+
 class RequestLog(grpc.ServerInterceptor):
     """リクエストごとに rpc.method と code を 1 行出す（health check は除く）"""
 
@@ -106,8 +110,13 @@ class RequestLog(grpc.ServerInterceptor):
 
     def intercept_service(self, continuation, details):
         handler = continuation(details)
-        streaming = handler is None or handler.unary_unary is None
-        if streaming or details.method.startswith(HEALTH_PREFIX):
+        if details.method.startswith(HEALTH_PREFIX):
+            return handler
+        if handler is None:
+            fields = {"rpc.method": details.method, "code": "Unimplemented"}
+            self.log.info("rpc", extra={"fields": fields})
+            return None
+        if handler.unary_unary is None:
             return handler
         inner = handler.unary_unary
 
