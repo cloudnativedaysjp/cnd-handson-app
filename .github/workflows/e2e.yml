@@ -75,7 +75,7 @@ jobs:
         with:
           source: .
           files: docker-compose.yaml
-          targets: user-service,session-service,role-service,project-service,frontend
+          targets: user-service,session-service,idp-service,role-service,project-service,frontend
           load: true
           set: |
             frontend.tags=${{ github.event.repository.name }}-frontend
@@ -83,6 +83,8 @@ jobs:
             user-service.cache-to=type=gha,mode=max,scope=user-service
             session-service.cache-from=type=gha,scope=session-service
             session-service.cache-to=type=gha,mode=max,scope=session-service
+            idp-service.cache-from=type=gha,scope=idp-service
+            idp-service.cache-to=type=gha,mode=max,scope=idp-service
             role-service.cache-from=type=gha,scope=role-service
             role-service.cache-to=type=gha,mode=max,scope=role-service
             project-service.cache-from=type=gha,scope=project-service
