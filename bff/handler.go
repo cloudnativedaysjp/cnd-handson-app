@@ -19,12 +19,17 @@ func newHandler(log *slog.Logger, color, webDir string) http.Handler {
 	}
 	web := http.FileServer(http.Dir(webDir))
 	route("GET /", func(w http.ResponseWriter, r *http.Request) {
-		// /projects/1 などの画面の URL は react-router が解決するため、ファイルが無ければ index.html を返す
-		if _, err := os.Stat(filepath.Join(webDir, filepath.Clean(r.URL.Path))); err != nil {
+		fi, err := os.Stat(filepath.Join(webDir, filepath.Clean(r.URL.Path)))
+		switch {
+		case err == nil && !fi.IsDir():
+			web.ServeHTTP(w, r)
+		// /projects/1 などの画面の URL は react-router が解決する。ディレクトリも一覧を出さず index.html にする
+		case filepath.Ext(r.URL.Path) == "":
 			http.ServeFile(w, r, filepath.Join(webDir, "index.html"))
-			return
+		// 無いアセットは 404 にする。HTML を返すとブラウザが JS として読んで分かりにくく壊れる
+		default:
+			http.NotFound(w, r)
 		}
-		web.ServeHTTP(w, r)
 	})
 	route("GET /color", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")

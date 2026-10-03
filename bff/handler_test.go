@@ -48,16 +48,28 @@ func TestWebFallsBackToIndex(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "index.html"), []byte("index"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(dir, "app.js"), []byte("js"), 0o600); err != nil {
+	if err := os.Mkdir(filepath.Join(dir, "assets"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "assets", "app.js"), []byte("js"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	h := newHandler(telemetry.NewLogger(io.Discard), "blue", dir)
 
-	for path, want := range map[string]string{"/": "index", "/app.js": "js", "/projects/1": "index"} {
+	for path, want := range map[string]struct {
+		code int
+		body string
+	}{
+		"/":                  {http.StatusOK, "index"},
+		"/projects/1":        {http.StatusOK, "index"},
+		"/assets/":           {http.StatusOK, "index"},
+		"/assets/app.js":     {http.StatusOK, "js"},
+		"/assets/missing.js": {http.StatusNotFound, "404 page not found\n"},
+	} {
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
-		if rec.Code != http.StatusOK || rec.Body.String() != want {
-			t.Errorf("%s: got %d %q, want %q", path, rec.Code, rec.Body.String(), want)
+		if rec.Code != want.code || rec.Body.String() != want.body {
+			t.Errorf("%s: got %d %q, want %d %q", path, rec.Code, rec.Body.String(), want.code, want.body)
 		}
 	}
 }
