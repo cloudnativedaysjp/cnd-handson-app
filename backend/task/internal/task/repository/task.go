@@ -1,65 +1,76 @@
 package repository
 
 import (
+	"context"
+	"errors"
+
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/model"
-	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/pkg/db"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
-func GetTaskByID(task_id uuid.UUID) (*model.Task, error) {
+var ErrNotFound = errors.New("not found")
+
+type Filter struct {
+	ColumnID   uuid.UUID
+	AssigneeID uuid.UUID
+}
+
+type TaskRepository struct {
+	db *gorm.DB
+}
+
+func NewTaskRepository(db *gorm.DB) *TaskRepository {
+	return &TaskRepository{db: db}
+}
+
+func (r *TaskRepository) Get(ctx context.Context, id uuid.UUID) (*model.Task, error) {
 	var task model.Task
-	if err := db.DB.Where("id = ?", task_id).First(&task).Error; err != nil {
+	err := r.db.WithContext(ctx).Where("id = ?", id).First(&task).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
 		return nil, err
 	}
 	return &task, nil
 }
 
-func List(column_id uuid.UUID, assignee_id uuid.UUID, page int32, page_size int32) ([]*model.Task, int32, error) {
+// List は uuid.Nil の条件を無視し、新しい順に返す。page / pageSize が 0 以下なら全件
+func (r *TaskRepository) List(ctx context.Context, f Filter, page, pageSize int32) ([]*model.Task, int32, error) {
+	query := r.db.WithContext(ctx).Model(&model.Task{})
+	if f.ColumnID != uuid.Nil {
+		query = query.Where("column_id = ?", f.ColumnID)
+	}
+	if f.AssigneeID != uuid.Nil {
+		query = query.Where("assignee_id = ?", f.AssigneeID)
+	}
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if page > 0 && pageSize > 0 {
+		query = query.Offset(int((page - 1) * pageSize)).Limit(int(pageSize))
+	}
 	var tasks []*model.Task
-	var totalCount int64
-
-	query := db.DB.Model(&model.Task{})
-	if column_id != uuid.Nil {
-		query = query.Where("column_id = ?", column_id)
-	}
-	if assignee_id != uuid.Nil {
-		query = query.Where("assignee_id = ?", assignee_id)
-	}
-	// カウントを取得
-	if err := query.Count(&totalCount).Error; err != nil {
+	if err := query.Order("start_time DESC").Find(&tasks).Error; err != nil {
 		return nil, 0, err
 	}
-
-	if page > 0 && page_size > 0 {
-		query = query.Offset(int((page - 1) * page_size)).Limit(int(page_size))
-	}
-
-	query = query.Order("start_time DESC")
-
-	if err := query.Find(&tasks).Error; err != nil {
-		return nil, 0, err
-	}
-
-	return tasks, int32(totalCount), nil
+	return tasks, int32(total), nil
 }
 
-func Create(task *model.Task) error {
-	if err := db.DB.Create(task).Error; err != nil {
-		return err
-	}
-	return nil
+func (r *TaskRepository) Create(ctx context.Context, task *model.Task) error {
+	return r.db.WithContext(ctx).Create(task).Error
 }
 
-func Update(task *model.Task) error {
-	if err := db.DB.Save(task).Error; err != nil {
-		return err
-	}
-	return nil
+func (r *TaskRepository) Update(ctx context.Context, task *model.Task) error {
+	return r.db.WithContext(ctx).Save(task).Error
 }
 
-func Delete(task_id uuid.UUID) error {
-	if err := db.DB.Delete(&model.Task{}, task_id).Error; err != nil {
-		return err
+func (r *TaskRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	res := r.db.WithContext(ctx).Delete(&model.Task{}, id)
+	if res.Error == nil && res.RowsAffected == 0 {
+		return ErrNotFound
 	}
-	return nil
+	return res.Error
 }

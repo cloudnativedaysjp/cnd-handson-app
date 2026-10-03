@@ -59,6 +59,41 @@ services:
         start_interval: 1s
         timeout: 3s
         retries: 40
+    task-migrate:
+      build:
+        context: .
+        dockerfile: backend/task/Dockerfile
+        target: bin
+      image: task:latest
+      env_file:
+        - .env
+      entrypoint: ["/task-service", "migrate"]
+      depends_on:
+        db:
+          condition: service_healthy
+    task-service:
+      build:
+        context: .
+        dockerfile: backend/task/Dockerfile
+        target: bin
+      image: task:latest
+      ports:
+        - "50055:50051"
+      env_file:
+        - .env
+      entrypoint: ["/task-service", "server"]
+      healthcheck:
+        test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
+        interval: 3s
+        start_period: 30s
+        start_interval: 1s
+        timeout: 3s
+        retries: 20
+      depends_on:
+        task-migrate:
+          condition: service_completed_successfully
+        db:
+          condition: service_healthy
     project-migrate:
       build:
         context: .
