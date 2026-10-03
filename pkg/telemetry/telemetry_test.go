@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"log/slog"
 	"net/http"
 	"strings"
 	"testing"
@@ -45,6 +44,12 @@ func TestLoggerWritesConventionKeys(t *testing.T) {
 	assert.Equal(t, span.SpanContext().SpanID().String(), m["span_id"])
 	_, err := time.Parse(time.RFC3339, m["time"].(string))
 	assert.NoError(t, err)
+
+	log.Info("no span")
+	m = lastLine(t, &buf)
+	assert.Contains(t, m, "trace_id")
+	assert.Contains(t, m, "span_id")
+	assert.Equal(t, "", m["trace_id"])
 }
 
 func TestLogUnaryLogsMethodAndCode(t *testing.T) {
@@ -67,7 +72,6 @@ func TestLogUnaryLogsMethodAndCode(t *testing.T) {
 func TestSetupServesMetricsWithoutCollector(t *testing.T) {
 	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:1")
 	t.Setenv("OTEL_METRICS_EXPORTER", "otlp")
-	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
 
 	start := time.Now()
 	shutdown, err := Setup(context.Background())
