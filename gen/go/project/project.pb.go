@@ -805,6 +805,87 @@ func (x *ProjectColumn) GetName() string {
 	return ""
 }
 
+// --- CheckProjectAccess ---
+type CheckProjectAccessRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckProjectAccessRequest) Reset() {
+	*x = CheckProjectAccessRequest{}
+	mi := &file_project_project_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckProjectAccessRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckProjectAccessRequest) ProtoMessage() {}
+
+func (x *CheckProjectAccessRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_project_project_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckProjectAccessRequest.ProtoReflect.Descriptor instead.
+func (*CheckProjectAccessRequest) Descriptor() ([]byte, []int) {
+	return file_project_project_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CheckProjectAccessRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+type CheckProjectAccessResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckProjectAccessResponse) Reset() {
+	*x = CheckProjectAccessResponse{}
+	mi := &file_project_project_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckProjectAccessResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckProjectAccessResponse) ProtoMessage() {}
+
+func (x *CheckProjectAccessResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_project_project_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckProjectAccessResponse.ProtoReflect.Descriptor instead.
+func (*CheckProjectAccessResponse) Descriptor() ([]byte, []int) {
+	return file_project_project_proto_rawDescGZIP(), []int{16}
+}
+
 var File_project_project_proto protoreflect.FileDescriptor
 
 const file_project_project_proto_rawDesc = "" +
@@ -858,7 +939,11 @@ const file_project_project_proto_rawDesc = "" +
 	"\acolumns\x18\x01 \x03(\v2\x16.project.ProjectColumnR\acolumns\"3\n" +
 	"\rProjectColumn\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name2\xbd\x04\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\":\n" +
+	"\x19CheckProjectAccessRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\"\x1c\n" +
+	"\x1aCheckProjectAccessResponse2\x9c\x05\n" +
 	"\x0eProjectService\x12H\n" +
 	"\rCreateProject\x12\x1d.project.CreateProjectRequest\x1a\x18.project.ProjectResponse\x12H\n" +
 	"\rUpdateProject\x12\x1d.project.UpdateProjectRequest\x1a\x18.project.ProjectResponse\x12B\n" +
@@ -867,7 +952,8 @@ const file_project_project_proto_rawDesc = "" +
 	"\fListProjects\x12\x1c.project.ListProjectsRequest\x1a\x1d.project.ListProjectsResponse\x12N\n" +
 	"\rDeleteProject\x12\x1d.project.DeleteProjectRequest\x1a\x1e.project.DeleteProjectResponse\x12W\n" +
 	"\x10ListProjectTasks\x12 .project.ListProjectTasksRequest\x1a!.project.ListProjectTasksResponse\x12]\n" +
-	"\x12ListProjectColumns\x12\".project.ListProjectColumnsRequest\x1a#.project.ListProjectColumnsResponseBGZEgithub.com/cloudnativedaysjp/cnd-handson-app/gen/go/project;projectpbb\x06proto3"
+	"\x12ListProjectColumns\x12\".project.ListProjectColumnsRequest\x1a#.project.ListProjectColumnsResponse\x12]\n" +
+	"\x12CheckProjectAccess\x12\".project.CheckProjectAccessRequest\x1a#.project.CheckProjectAccessResponseBGZEgithub.com/cloudnativedaysjp/cnd-handson-app/gen/go/project;projectpbb\x06proto3"
 
 var (
 	file_project_project_proto_rawDescOnce sync.Once
@@ -881,7 +967,7 @@ func file_project_project_proto_rawDescGZIP() []byte {
 	return file_project_project_proto_rawDescData
 }
 
-var file_project_project_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_project_project_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_project_project_proto_goTypes = []any{
 	(*CreateProjectRequest)(nil),       // 0: project.CreateProjectRequest
 	(*UpdateProjectRequest)(nil),       // 1: project.UpdateProjectRequest
@@ -898,12 +984,14 @@ var file_project_project_proto_goTypes = []any{
 	(*ListProjectColumnsRequest)(nil),  // 12: project.ListProjectColumnsRequest
 	(*ListProjectColumnsResponse)(nil), // 13: project.ListProjectColumnsResponse
 	(*ProjectColumn)(nil),              // 14: project.ProjectColumn
-	(*timestamppb.Timestamp)(nil),      // 15: google.protobuf.Timestamp
+	(*CheckProjectAccessRequest)(nil),  // 15: project.CheckProjectAccessRequest
+	(*CheckProjectAccessResponse)(nil), // 16: project.CheckProjectAccessResponse
+	(*timestamppb.Timestamp)(nil),      // 17: google.protobuf.Timestamp
 }
 var file_project_project_proto_depIdxs = []int32{
 	5,  // 0: project.ListProjectsResponse.projects:type_name -> project.Project
-	15, // 1: project.Project.created_at:type_name -> google.protobuf.Timestamp
-	15, // 2: project.Project.updated_at:type_name -> google.protobuf.Timestamp
+	17, // 1: project.Project.created_at:type_name -> google.protobuf.Timestamp
+	17, // 2: project.Project.updated_at:type_name -> google.protobuf.Timestamp
 	5,  // 3: project.ProjectResponse.project:type_name -> project.Project
 	11, // 4: project.ListProjectTasksResponse.tasks:type_name -> project.ProjectTask
 	14, // 5: project.ListProjectColumnsResponse.columns:type_name -> project.ProjectColumn
@@ -914,15 +1002,17 @@ var file_project_project_proto_depIdxs = []int32{
 	7,  // 10: project.ProjectService.DeleteProject:input_type -> project.DeleteProjectRequest
 	9,  // 11: project.ProjectService.ListProjectTasks:input_type -> project.ListProjectTasksRequest
 	12, // 12: project.ProjectService.ListProjectColumns:input_type -> project.ListProjectColumnsRequest
-	6,  // 13: project.ProjectService.CreateProject:output_type -> project.ProjectResponse
-	6,  // 14: project.ProjectService.UpdateProject:output_type -> project.ProjectResponse
-	6,  // 15: project.ProjectService.GetProject:output_type -> project.ProjectResponse
-	4,  // 16: project.ProjectService.ListProjects:output_type -> project.ListProjectsResponse
-	8,  // 17: project.ProjectService.DeleteProject:output_type -> project.DeleteProjectResponse
-	10, // 18: project.ProjectService.ListProjectTasks:output_type -> project.ListProjectTasksResponse
-	13, // 19: project.ProjectService.ListProjectColumns:output_type -> project.ListProjectColumnsResponse
-	13, // [13:20] is the sub-list for method output_type
-	6,  // [6:13] is the sub-list for method input_type
+	15, // 13: project.ProjectService.CheckProjectAccess:input_type -> project.CheckProjectAccessRequest
+	6,  // 14: project.ProjectService.CreateProject:output_type -> project.ProjectResponse
+	6,  // 15: project.ProjectService.UpdateProject:output_type -> project.ProjectResponse
+	6,  // 16: project.ProjectService.GetProject:output_type -> project.ProjectResponse
+	4,  // 17: project.ProjectService.ListProjects:output_type -> project.ListProjectsResponse
+	8,  // 18: project.ProjectService.DeleteProject:output_type -> project.DeleteProjectResponse
+	10, // 19: project.ProjectService.ListProjectTasks:output_type -> project.ListProjectTasksResponse
+	13, // 20: project.ProjectService.ListProjectColumns:output_type -> project.ListProjectColumnsResponse
+	16, // 21: project.ProjectService.CheckProjectAccess:output_type -> project.CheckProjectAccessResponse
+	14, // [14:22] is the sub-list for method output_type
+	6,  // [6:14] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name
 	6,  // [6:6] is the sub-list for extension extendee
 	0,  // [0:6] is the sub-list for field type_name
@@ -939,7 +1029,7 @@ func file_project_project_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_project_project_proto_rawDesc), len(file_project_project_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -39,7 +39,7 @@ func (s *ProjectServiceServer) GetProject(ctx context.Context, req *projectpb.Ge
 }
 
 func (s *ProjectServiceServer) ListProjects(ctx context.Context, req *projectpb.ListProjectsRequest) (*projectpb.ListProjectsResponse, error) {
-	projects, err := s.svc.List(ctx, req.GetOwnerId())
+	projects, err := s.svc.List(ctx)
 	if err != nil {
 		return nil, toStatus(ctx, err)
 	}
@@ -95,6 +95,13 @@ func (s *ProjectServiceServer) ListProjectColumns(ctx context.Context, req *proj
 	return res, nil
 }
 
+func (s *ProjectServiceServer) CheckProjectAccess(ctx context.Context, req *projectpb.CheckProjectAccessRequest) (*projectpb.CheckProjectAccessResponse, error) {
+	if err := s.svc.CheckAccess(ctx, req.GetProjectId()); err != nil {
+		return nil, toStatus(ctx, err)
+	}
+	return &projectpb.CheckProjectAccessResponse{}, nil
+}
+
 func toProto(p *model.Project) *projectpb.Project {
 	return &projectpb.Project{
 		Id:          p.ID.String(),
@@ -112,6 +119,8 @@ func toStatus(ctx context.Context, err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, service.ErrNotFound):
 		return status.Error(codes.NotFound, err.Error())
+	case errors.Is(err, service.ErrUnauthenticated):
+		return status.Error(codes.Unauthenticated, err.Error())
 	case status.Code(err) == codes.Unavailable || status.Code(err) == codes.DeadlineExceeded:
 		return err // 下流（task）の障害はそのまま伝える
 	default:
