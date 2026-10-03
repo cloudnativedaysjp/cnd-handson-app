@@ -1,3 +1,5 @@
+import os
+
 import grpc
 import argparse  # argparseをインポート
 from typing import Any
@@ -56,12 +58,24 @@ def create_Request(
         raise ValueError("Invalid command")
 
 
+class UserID(grpc.UnaryUnaryClientInterceptor):
+    """column は x-user-id を必須にしている。既定は契約テストの demo ユーザー"""
+
+    user_id = os.getenv("COLUMN_USER_ID", "00000000-0000-4000-8000-000000000071")
+
+    def intercept_unary_unary(self, continuation, details, request):
+        metadata = [*(details.metadata or []), ("x-user-id", self.user_id)]
+        return continuation(details._replace(metadata=metadata), request)
+
+
 def run(server_address: str, command: str, arguments: list[str]):
     # サーバーのアドレスとポートを指定
     # gRPCチャンネルを作成
     with grpc.insecure_channel(server_address) as channel:
         # スタブを作成
-        stub = column_pb2_grpc.ColumnServiceStub(channel)
+        stub = column_pb2_grpc.ColumnServiceStub(
+            grpc.intercept_channel(channel, UserID())
+        )
         # コマンドに応じたリクエストを生成
         response = create_Request(stub, command, arguments)
 
