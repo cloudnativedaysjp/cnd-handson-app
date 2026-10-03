@@ -3,7 +3,6 @@ package main
 import (
 	"cmp"
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -15,6 +14,7 @@ import (
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/repository"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/service"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/pkg/db"
+	columnpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/column"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
 	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/telemetry"
@@ -56,19 +56,16 @@ func runServer() error {
 	if err != nil {
 		return fmt.Errorf("database: %w", err)
 	}
-	taskAddr := os.Getenv("TASK_ADDR")
-	if taskAddr == "" {
-		return errors.New("TASK_ADDR is required")
-	}
-	// trace context と x-user-id を task に引き継ぐ
-	clientOpts := append(telemetry.ClientOptions(),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(userid.Forward()))
-	taskConn, err := grpc.NewClient(taskAddr, clientOpts...)
+	taskConn, err := dial("TASK_ADDR")
 	if err != nil {
-		return fmt.Errorf("task client: %w", err)
+		return err
 	}
 	defer func() { _ = taskConn.Close() }()
+	columnConn, err := dial("COLUMN_ADDR")
+	if err != nil {
+		return err
+	}
+	defer func() { _ = columnConn.Close() }()
 
 	lis, err := net.Listen("tcp", ":"+cmp.Or(os.Getenv("PORT"), "50051"))
 	if err != nil {
@@ -80,6 +77,7 @@ func runServer() error {
 	svc := service.NewProjectService(
 		repository.NewProjectRepository(conn),
 		repository.NewTaskRepository(taskpb.NewTaskServiceClient(taskConn)),
+		repository.NewColumnRepository(columnpb.NewColumnServiceClient(columnConn)),
 	)
 	projectpb.RegisterProjectServiceServer(grpcServer, handler.NewProjectServiceServer(svc))
 	healthSrv := health.NewServer()
@@ -91,6 +89,17 @@ func runServer() error {
 	slog.Info("listening", "grpc", lis.Addr().String())
 
 	return telemetry.WaitAndStop(5*time.Second, serveErr, telemetry.GRPCStop(grpcServer), shutdownTelemetry)
+}
+
+// dial は addrEnv の接続先に、trace context と x-user-id を引き継ぐ client で接続する
+func dial(addrEnv string) (*grpc.ClientConn, error) {
+	addr := os.Getenv(addrEnv)
+	if addr == "" {
+		return nil, fmt.Errorf("%s is required", addrEnv)
+	}
+	return grpc.NewClient(addr, append(telemetry.ClientOptions(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(userid.Forward()))...)
 }
 
 func runMigrate() error {
