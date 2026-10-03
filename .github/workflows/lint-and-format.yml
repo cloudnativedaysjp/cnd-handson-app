@@ -48,20 +48,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-          service: [project, user, session, idp, task, telemetry]
+          service: [project, idp, task]
           include:
             - service: project
               path: backend/project
-            - service: user
-              path: backend/user
-            - service: session
-              path: backend/session
             - service: idp
               path: backend/idp
             - service: task
               path: backend/task
-            - service: telemetry
-              path: pkg/telemetry
   
     steps:
       - name: Checkout code
@@ -95,12 +89,10 @@ jobs:
       runs-on: ubuntu-latest
       strategy:
         matrix:
-            service: [column, role]
+            service: [column]
             include:
               - service: column
                 path: backend/column
-              - service: role
-                path: backend/role
 
       steps:
         - name: Checkout code

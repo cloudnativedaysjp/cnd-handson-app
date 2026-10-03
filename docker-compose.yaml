@@ -1,83 +1,5 @@
 services:
   
-    user-migrate:
-      build:
-        context: .
-        dockerfile: backend/user/Dockerfile
-        target: bin
-        platforms:
-          - linux/amd64
-      image: user:latest
-      env_file:
-        - .env
-      entrypoint: ["/user-service", "migrate"]
-      platform: linux/amd64
-      depends_on:
-        db:
-          condition: service_healthy
-    user-service:
-      build:
-        context: .
-        dockerfile: backend/user/Dockerfile
-        target: bin
-        platforms:
-          - linux/amd64
-      image: user:latest
-      ports:
-        - "50051:50051"
-      env_file:
-        - .env
-      entrypoint: ["/user-service", "server"]
-      healthcheck:
-        test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
-        interval: 3s
-        timeout: 3s
-        retries: 20
-      platform: linux/amd64
-      depends_on:
-        user-migrate:
-          condition: service_completed_successfully
-        db:
-          condition: service_healthy
-    session-migrate:
-      build:
-        context: .
-        dockerfile: backend/session/Dockerfile
-        target: bin
-        platforms:
-          - linux/amd64
-      image: session:latest
-      env_file:
-        - .env
-      entrypoint: ["/session-service", "migrate"]      
-      platform: linux/amd64
-      depends_on:
-        db:
-          condition: service_healthy
-    session-service:
-      build:
-        context: .
-        dockerfile: backend/session/Dockerfile
-        target: bin
-        platforms:
-          - linux/amd64
-      image: session:latest
-      ports:
-        - "50052:50051"
-      env_file:
-        - .env
-      entrypoint: ["/session-service", "server"]      
-      healthcheck:
-        test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
-        interval: 3s
-        timeout: 3s
-        retries: 20
-      platform: linux/amd64
-      depends_on:
-        session-migrate:
-          condition: service_completed_successfully
-        db:
-          condition: service_healthy
     idp-migrate:
       build:
         context: .
@@ -93,11 +15,6 @@ services:
       depends_on:
         db:
           condition: service_healthy
-        # user / session と同じテーブルを作るため、同時に AutoMigrate すると衝突する（#131 で外す）
-        user-migrate:
-          condition: service_completed_successfully
-        session-migrate:
-          condition: service_completed_successfully
     idp-service:
       build:
         context: .
@@ -107,8 +24,8 @@ services:
           - linux/amd64
       image: idp:latest
       ports:
-        # 50051 は user が使っているため、user を外す #131 まで仮のポート
-        - "50057:50051"
+        - "50051:50051"
+        - "8082:8080"
       env_file:
         - .env
       entrypoint: ["/idp-service", "server"]
@@ -139,39 +56,6 @@ services:
         interval: 3s
         timeout: 3s
         retries: 40
-    role-migrate:
-      build:
-        context: ./backend/role
-        dockerfile: Dockerfile
-      image: role:latest
-      env_file:
-        - .env
-      entrypoint: ["python3", "./cmd/server/main.py", "migrate"]      
-      platform: linux/amd64
-      depends_on:
-        db:
-          condition: service_healthy
-    role-service:
-      build:
-        context: ./backend/role
-        dockerfile: Dockerfile
-      image: role:latest
-      ports:
-        - "50054:50051"
-      env_file:
-        - .env
-      entrypoint: ["python3", "./cmd/server/main.py", "server"]
-      healthcheck:
-        test: ["CMD", "python3", "-c", "import socket; socket.create_connection(('127.0.0.1', 50051), 2)"]
-        interval: 3s
-        timeout: 3s
-        retries: 20
-      platform: linux/amd64
-      depends_on:
-        role-migrate:
-          condition: service_completed_successfully
-        db:
-          condition: service_healthy
     project-migrate:
       build:
         context: .

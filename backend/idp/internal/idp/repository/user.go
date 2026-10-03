@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/idp/internal/idp/model"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -24,9 +25,17 @@ func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 	return err
 }
 
+func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
+	return r.first(ctx, "id = ?", id)
+}
+
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	return r.first(ctx, "email = ?", email)
+}
+
+func (r *userRepository) first(ctx context.Context, query string, arg any) (*model.User, error) {
 	var user model.User
-	err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
+	err := r.db.WithContext(ctx).Where(query, arg).First(&user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrNotFound
 	}

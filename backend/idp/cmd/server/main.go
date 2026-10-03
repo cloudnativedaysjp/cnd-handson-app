@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/idp/internal/idp/handler"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/idp/internal/idp/model"
@@ -40,7 +43,11 @@ func runServer() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	issuer, err := token.NewHS256Issuer([]byte(os.Getenv("JWT_SECRET_KEY")))
+	key, err := token.ParsePrivateKey(os.Getenv("IDP_SIGNING_KEY"))
+	if err != nil {
+		log.Fatalf("Invalid IDP_SIGNING_KEY: %v", err)
+	}
+	issuer, err := token.NewRS256Issuer(key, os.Getenv("IDP_ISS"), os.Getenv("IDP_AUD"))
 	if err != nil {
 		log.Fatalf("Failed to set up token issuer: %v", err)
 	}
@@ -55,12 +62,33 @@ func runServer() {
 	}
 
 	grpcServer := grpc.NewServer()
-	svc := service.NewIdpService(repository.NewUserRepository(conn), issuer)
+	svc := service.NewIdpService(
+		repository.NewUserRepository(conn),
+		repository.NewRoleRepository(conn),
+		repository.NewRefreshTokenRepository(conn),
+		issuer,
+	)
 	idppb.RegisterIdpServiceServer(grpcServer, handler.NewIdpServiceServer(svc))
 
 	healthSrv := health.NewServer()
 	healthpb.RegisterHealthServer(grpcServer, healthSrv)
 	healthSrv.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
+
+	httpPort := os.Getenv("HTTP_PORT")
+	if httpPort == "" {
+		httpPort = "8080"
+	}
+	httpServer := &http.Server{
+		Addr:              ":" + httpPort,
+		Handler:           handler.NewHTTPHandler(issuer.PublicKey(), issuer.KeyID(), os.Getenv("IDP_ISS")),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+	go func() {
+		log.Printf("HTTP server listening on port %s", httpPort)
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to serve HTTP: %v", err)
+		}
+	}()
 
 	log.Printf("gRPC server listening on port %s", port)
 	if err := grpcServer.Serve(lis); err != nil {
@@ -73,8 +101,11 @@ func runMigrate() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	if err := db.Migrate(conn, &model.User{}); err != nil {
+	if err := db.Migrate(conn, &model.Role{}, &model.User{}, &model.RefreshToken{}); err != nil {
 		log.Fatalf("Migration failed: %v", err)
+	}
+	if err := seed(context.Background(), conn); err != nil {
+		log.Fatalf("Seed failed: %v", err)
 	}
 	log.Println("Migration completed")
 }

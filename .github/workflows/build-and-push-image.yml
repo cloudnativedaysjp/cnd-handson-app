@@ -20,7 +20,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [frontend, project, user, session, task, column, role]
+        service: [frontend, project, idp, task, column]
         include:
           - service: frontend
             context: frontend
@@ -28,21 +28,15 @@ jobs:
           - service: project
             context: .
             file: backend/project/Dockerfile
-          - service: user
+          - service: idp
             context: .
-            file: backend/user/Dockerfile
-          - service: session
-            context: .
-            file: backend/session/Dockerfile
+            file: backend/idp/Dockerfile
           - service: task
             context: .
             file: backend/task/Dockerfile
           - service: column
             context: backend/column
             file: backend/column/Dockerfile
-          - service: role
-            context: backend/role
-            file: backend/role/Dockerfile
     
     steps:
       - name: Checkout code

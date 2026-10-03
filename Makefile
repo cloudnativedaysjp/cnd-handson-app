@@ -2,8 +2,8 @@ BUF_VERSION := 1.57.0
 # 版が違う buf や未設定の mise シムでは生成結果が CI とずれるため、版が一致するときだけ PATH の buf を使う
 BUF ?= $(shell [ "$$(buf --version 2>/dev/null)" = "$(BUF_VERSION)" ] && echo buf || echo go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION))
 UP_BUILD ?= --build
-GO_SERVICES := user session idp project task
-PY_SERVICES := role column
+GO_SERVICES := idp project task
+PY_SERVICES := column
 PNPM := pnpm
 
 .PHONY: gen lint up down clean e2e contract
@@ -22,14 +22,15 @@ gen:
 # Requires: go, docker (Go services are linted via their Dockerfile lint target).
 lint:
 	$(BUF) lint
-	@for s in user session idp task; do $(MAKE) -C backend/$$s lint || exit 1; done
+	@for s in idp task; do $(MAKE) -C backend/$$s lint || exit 1; done
 	cd backend/project && go vet ./...  # project has no Docker lint target
 	go vet ./pkg/...
 	@for s in $(PY_SERVICES); do $(MAKE) -C backend/$$s lint || exit 1; done
 
 # 既知の署名鍵で起動させないため、JWT の鍵は生成する
 .env:
-	sed "s/^JWT_SECRET_KEY=$$/JWT_SECRET_KEY=$$(openssl rand -hex 32)/" .env.example > $@
+	sed -e "s|^IDP_SIGNING_KEY=$$|IDP_SIGNING_KEY=$$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 2>/dev/null | base64 | tr -d '\n')|" \
+		.env.example > $@
 
 up: .env
 	docker compose up -d $(UP_BUILD) --wait --wait-timeout 300

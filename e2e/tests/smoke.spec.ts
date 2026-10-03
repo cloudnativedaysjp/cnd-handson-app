@@ -9,7 +9,7 @@ test("frontend page loads", async ({ page }) => {
 });
 
 // Only the services implemented in docker-compose.yaml; contract tests come in #71.
-const grpcPorts = { user: 50051, session: 50052, project: 50053, role: 50054 };
+const grpcPorts = { idp: 50051, project: 50053 };
 
 for (const [name, port] of Object.entries(grpcPorts)) {
   test(`${name} gRPC port is reachable`, async () => {
