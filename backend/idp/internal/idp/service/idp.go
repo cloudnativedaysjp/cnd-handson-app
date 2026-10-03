@@ -85,7 +85,7 @@ func (s *IdpService) Login(ctx context.Context, email, password string) (*Tokens
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) != nil {
 		return nil, ErrInvalidCredentials
 	}
-	return s.issueTokens(ctx, user)
+	return s.issueTokens(ctx, user, "")
 }
 
 // Refresh はリフレッシュトークンを使い捨てにし、新しい組を返す
@@ -115,10 +115,11 @@ func (s *IdpService) Refresh(ctx context.Context, refreshToken string) (*Tokens,
 	if err != nil {
 		return nil, err
 	}
-	return s.issueTokens(ctx, user)
+	return s.issueTokens(ctx, user, stored.Token)
 }
 
-func (s *IdpService) issueTokens(ctx context.Context, user *model.User) (*Tokens, error) {
+// prevHash が空でなければ、その行がまだ残っているときだけ置き換える（同じトークンの並行利用を 1 回に絞る）
+func (s *IdpService) issueTokens(ctx context.Context, user *model.User, prevHash string) (*Tokens, error) {
 	roles, err := s.roleNames(ctx, user)
 	if err != nil {
 		return nil, err
@@ -127,7 +128,18 @@ func (s *IdpService) issueTokens(ctx context.Context, user *model.User) (*Tokens
 	if err != nil {
 		return nil, err
 	}
-	refresh, err := s.newRefreshToken(ctx, user.ID)
+	refresh, row, err := newRefreshToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+	if prevHash == "" {
+		err = s.refresh.Save(ctx, row)
+	} else {
+		var ok bool
+		if ok, err = s.refresh.Rotate(ctx, prevHash, row); err == nil && !ok {
+			err = ErrInvalidCredentials
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -147,23 +159,16 @@ func (s *IdpService) roleNames(ctx context.Context, user *model.User) ([]string,
 }
 
 // トークンは "<user_id>.<secret>"。user_id で行を引き、secret を bcrypt で照合する
-func (s *IdpService) newRefreshToken(ctx context.Context, userID uuid.UUID) (string, error) {
+func newRefreshToken(userID uuid.UUID) (string, *model.RefreshToken, error) {
 	buf := make([]byte, 32)
 	if _, err := rand.Read(buf); err != nil {
-		return "", err
+		return "", nil, err
 	}
 	secret := base64.RawURLEncoding.EncodeToString(buf)
 	hash, err := bcrypt.GenerateFromPassword([]byte(secret), bcrypt.DefaultCost)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	err = s.refresh.Save(ctx, &model.RefreshToken{
-		UserID: userID,
-		Token:  string(hash),
-		Exp:    time.Now().Add(refreshTokenTTL).Unix(),
-	})
-	if err != nil {
-		return "", err
-	}
-	return userID.String() + "." + secret, nil
+	row := &model.RefreshToken{UserID: userID, Token: string(hash), Exp: time.Now().Add(refreshTokenTTL).Unix()}
+	return userID.String() + "." + secret, row, nil
 }

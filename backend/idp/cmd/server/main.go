@@ -67,7 +67,8 @@ func runServer() error {
 	if err != nil {
 		return err
 	}
-	httpLis, err := net.Listen("tcp", ":"+envOr("HTTP_PORT", "8080"))
+	// HTTP は conventions どおり 8080 固定（compose・manifest の転送先と揃える）
+	httpLis, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		return err
 	}

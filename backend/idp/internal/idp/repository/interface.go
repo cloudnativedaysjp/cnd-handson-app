@@ -23,6 +23,8 @@ type RefreshTokenRepository interface {
 	// Save はユーザーの既存のトークンを置き換える
 	Save(ctx context.Context, token *model.RefreshToken) error
 	Get(ctx context.Context, userID uuid.UUID) (*model.RefreshToken, error)
+	// Rotate はハッシュが prevHash のままの行だけを next に置き換え、置き換えたかを返す
+	Rotate(ctx context.Context, prevHash string, next *model.RefreshToken) (bool, error)
 }
 
 type RoleRepository interface {
