@@ -9,6 +9,7 @@ import (
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/model"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/repository"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
+	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 	"github.com/google/uuid"
 )
 
@@ -20,12 +21,17 @@ type Repository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
-type ProjectService struct {
-	repo Repository
+type Tasks interface {
+	ListByProject(ctx context.Context, projectID uuid.UUID) ([]*taskpb.Task, error)
 }
 
-func NewProjectService(repo Repository) *ProjectService {
-	return &ProjectService{repo: repo}
+type ProjectService struct {
+	repo  Repository
+	tasks Tasks
+}
+
+func NewProjectService(repo Repository, tasks Tasks) *ProjectService {
+	return &ProjectService{repo: repo, tasks: tasks}
 }
 
 func (s *ProjectService) Create(ctx context.Context, req *projectpb.CreateProjectRequest) (*model.Project, error) {
@@ -107,6 +113,15 @@ func (s *ProjectService) Delete(ctx context.Context, id string) error {
 		return ErrNotFound
 	}
 	return err
+}
+
+// ListTasks はプロジェクトがあることを確かめてから、task サービスに問い合わせる
+func (s *ProjectService) ListTasks(ctx context.Context, projectID string) ([]*taskpb.Task, error) {
+	p, err := s.Get(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return s.tasks.ListByProject(ctx, p.ID)
 }
 
 func ParseID(s string) (uuid.UUID, error) {
