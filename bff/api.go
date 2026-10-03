@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	idppb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/idp"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/userid"
 	"google.golang.org/grpc/codes"
@@ -15,7 +16,22 @@ import (
 )
 
 // registerAPI は frontend 向けの REST API。タスクと列も project 経由で取り、入口からの gRPC の呼び先を project に絞る
-func registerAPI(route func(string, http.HandlerFunc), projects projectpb.ProjectServiceClient, verify verifyFunc) {
+func registerAPI(route func(string, http.HandlerFunc), idp idppb.IdpServiceClient, projects projectpb.ProjectServiceClient, verify verifyFunc) {
+	// ブラウザは gRPC を呼べないので、入口が idp の Login を中継する。refresh token は使わないので返さない
+	route("POST /api/login", func(w http.ResponseWriter, r *http.Request) {
+		var body struct{ Email, Password string }
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<10)).Decode(&body); err != nil {
+			writeError(w, http.StatusBadRequest)
+			return
+		}
+		resp, err := idp.Login(r.Context(), &idppb.LoginRequest{Email: body.Email, Password: body.Password})
+		if err != nil {
+			writeError(w, httpStatus(status.Code(err)))
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{"accessToken": resp.GetAccessToken()})
+	})
 	api := func(pattern string, call func(ctx context.Context, r *http.Request) (proto.Message, error)) {
 		route(pattern, func(w http.ResponseWriter, r *http.Request) {
 			token, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")

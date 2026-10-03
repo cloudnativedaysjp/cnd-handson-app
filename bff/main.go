@@ -4,6 +4,7 @@ package main
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -12,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	idppb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/idp"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/telemetry"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/userid"
@@ -44,7 +46,7 @@ func run() error {
 	if !ok {
 		return fmt.Errorf("VARIANT must be legacy or modern, got %q", variant)
 	}
-	env, err := requireEnv("PROJECT_ADDR", "IDP_JWKS_URL", "IDP_ISS", "IDP_AUD")
+	env, err := requireEnv("PROJECT_ADDR", "IDP_ADDR", "IDP_JWKS_URL", "IDP_ISS", "IDP_AUD")
 	if err != nil {
 		return err
 	}
@@ -53,6 +55,11 @@ func run() error {
 		grpc.WithUnaryInterceptor(userid.Forward()))...)
 	if err != nil {
 		return fmt.Errorf("project client: %w", err)
+	}
+	idpConn, err := grpc.NewClient(env["IDP_ADDR"], append(telemetry.ClientOptions(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))...)
+	if err != nil {
+		return fmt.Errorf("idp client: %w", err)
 	}
 	shutdownTelemetry, err := telemetry.Setup(context.Background())
 	if err != nil {
@@ -64,7 +71,7 @@ func run() error {
 	}
 	srv := &http.Server{
 		Handler: newHandler(slog.Default().With("variant", variant, "color", color), color, webDir,
-			projectpb.NewProjectServiceClient(conn), newVerifier(env["IDP_JWKS_URL"], env["IDP_ISS"], env["IDP_AUD"])),
+			idppb.NewIdpServiceClient(idpConn), projectpb.NewProjectServiceClient(conn), newVerifier(env["IDP_JWKS_URL"], env["IDP_ISS"], env["IDP_AUD"])),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
@@ -73,7 +80,7 @@ func run() error {
 	slog.Info("listening", "http", lis.Addr().String(), "variant", variant)
 
 	return telemetry.WaitAndStop(5*time.Second, serveErr, srv.Shutdown,
-		func(context.Context) error { return conn.Close() }, shutdownTelemetry)
+		func(context.Context) error { return errors.Join(conn.Close(), idpConn.Close()) }, shutdownTelemetry)
 }
 
 func requireEnv(keys ...string) (map[string]string, error) {

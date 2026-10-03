@@ -4,20 +4,30 @@ import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { login } from "../features/sessions/slice";
+import { api } from "../utils/api";
 
 const Login: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [failed, setFailed] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!email.trim() || !password) return;
 
-    dispatch(login({ email }));
-    navigate("/");
+    try {
+      const { accessToken } = await api<{ accessToken: string }>("/api/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      dispatch(login({ token: accessToken }));
+      navigate("/");
+    } catch {
+      setFailed(true);
+    }
   };
 
   return (
@@ -42,6 +52,7 @@ const Login: React.FC = () => {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            slotProps={{ htmlInput: { "data-testid": "login-email" } }}
           />
           <TextField
             label="パスワード"
@@ -49,8 +60,19 @@ const Login: React.FC = () => {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            slotProps={{ htmlInput: { "data-testid": "login-password" } }}
           />
-          <Button type="submit" variant="contained" fullWidth>
+          {failed && (
+            <Typography color="error">
+              メールアドレスかパスワードが違います
+            </Typography>
+          )}
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            data-testid="login-submit"
+          >
             ログイン
           </Button>
         </Box>
