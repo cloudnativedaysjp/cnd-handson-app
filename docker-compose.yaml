@@ -195,6 +195,11 @@ services:
       ports:
         - "8080:8080"
       environment:
+        PROJECT_ADDR: project-service:50051
+        IDP_JWKS_URL: http://idp-service:8080/.well-known/jwks.json
+        # 署名鍵を渡さないよう env_file は使わず、検証に要る値だけ渡す
+        IDP_ISS: ${IDP_ISS}
+        IDP_AUD: ${IDP_AUD}
         OTEL_SERVICE_NAME: handson-legacy
         OTEL_RESOURCE_ATTRIBUTES: service.namespace=handson,app.variant=legacy,app.color=blue
         OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
@@ -217,6 +222,10 @@ services:
       ports:
         - "8081:8080"
       environment:
+        PROJECT_ADDR: project-service:50051
+        IDP_JWKS_URL: http://idp-service:8080/.well-known/jwks.json
+        IDP_ISS: ${IDP_ISS}
+        IDP_AUD: ${IDP_AUD}
         OTEL_SERVICE_NAME: handson-modern
         OTEL_RESOURCE_ATTRIBUTES: service.namespace=handson,app.variant=modern,app.color=green
         OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
