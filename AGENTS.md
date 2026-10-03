@@ -54,6 +54,7 @@ CloudNative Days ハンズオン用カンバンのマイクロサービスデモ
 - Issue の assignee = エージェントに依頼した人。動作確認とレビュー対応はその人が持つ
 - ブランチ名: `feat/{issue番号}-{kebab-slug}`
 - PR は `.github/pull_request_template.md` に沿い、ラベル `ai-authored` を付ける
+- Issue・PR の本文・コメントは `docs/writing.md` の書き方で書く
 - 同じ間違いが 2 回起きたら、コードだけでなく AGENTS.md を直す
 
 ## 入口サービス (handson-legacy / handson-modern)
