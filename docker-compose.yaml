@@ -1,75 +1,5 @@
 services:
   
-    user-migrate:
-      build:
-        context: .
-        dockerfile: backend/user/Dockerfile
-        target: bin
-      image: user:latest
-      env_file:
-        - .env
-      entrypoint: ["/user-service", "migrate"]
-      depends_on:
-        db:
-          condition: service_healthy
-    user-service:
-      build:
-        context: .
-        dockerfile: backend/user/Dockerfile
-        target: bin
-      image: user:latest
-      ports:
-        - "50051:50051"
-      env_file:
-        - .env
-      entrypoint: ["/user-service", "server"]
-      healthcheck:
-        test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
-        interval: 3s
-        start_period: 30s
-        start_interval: 1s
-        timeout: 3s
-        retries: 20
-      depends_on:
-        user-migrate:
-          condition: service_completed_successfully
-        db:
-          condition: service_healthy
-    session-migrate:
-      build:
-        context: .
-        dockerfile: backend/session/Dockerfile
-        target: bin
-      image: session:latest
-      env_file:
-        - .env
-      entrypoint: ["/session-service", "migrate"]      
-      depends_on:
-        db:
-          condition: service_healthy
-    session-service:
-      build:
-        context: .
-        dockerfile: backend/session/Dockerfile
-        target: bin
-      image: session:latest
-      ports:
-        - "50052:50051"
-      env_file:
-        - .env
-      entrypoint: ["/session-service", "server"]      
-      healthcheck:
-        test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
-        interval: 3s
-        start_period: 30s
-        start_interval: 1s
-        timeout: 3s
-        retries: 20
-      depends_on:
-        session-migrate:
-          condition: service_completed_successfully
-        db:
-          condition: service_healthy
     idp-migrate:
       build:
         context: .
@@ -82,11 +12,6 @@ services:
       depends_on:
         db:
           condition: service_healthy
-        # user / session と同じテーブルを作るため、同時に AutoMigrate すると衝突する（#131 で外す）
-        user-migrate:
-          condition: service_completed_successfully
-        session-migrate:
-          condition: service_completed_successfully
     idp-service:
       build:
         context: .
@@ -94,8 +19,7 @@ services:
         target: bin
       image: idp:latest
       ports:
-        # 50051 は user が使っているため、user を外す #131 まで仮のポート
-        - "50057:50051"
+        - "50051:50051"
         - "8082:8080"
       env_file:
         - .env

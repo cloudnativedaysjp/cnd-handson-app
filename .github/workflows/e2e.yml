@@ -75,14 +75,10 @@ jobs:
         with:
           source: .
           files: docker-compose.yaml
-          targets: user-service,session-service,idp-service,project-service,frontend
+          targets: idp-service,project-service,frontend
           load: true
           set: |
             frontend.tags=${{ github.event.repository.name }}-frontend
-            user-service.cache-from=type=gha,scope=user-service
-            user-service.cache-to=type=gha,mode=max,scope=user-service
-            session-service.cache-from=type=gha,scope=session-service
-            session-service.cache-to=type=gha,mode=max,scope=session-service
             idp-service.cache-from=type=gha,scope=idp-service
             idp-service.cache-to=type=gha,mode=max,scope=idp-service
             project-service.cache-from=type=gha,scope=project-service
