@@ -81,6 +81,11 @@ services:
         - "50055:50051"
       env_file:
         - .env
+      environment:
+        OTEL_SERVICE_NAME: handson-task
+        OTEL_RESOURCE_ATTRIBUTES: service.namespace=handson
+        OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+        OTEL_PROPAGATORS: tracecontext,baggage
       entrypoint: ["/task-service", "server"]
       healthcheck:
         test: ["CMD", "/grpc_health_probe", "-addr=:50051"]

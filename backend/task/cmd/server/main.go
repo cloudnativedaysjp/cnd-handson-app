@@ -1,10 +1,13 @@
 package main
 
 import (
+	"cmp"
+	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"os"
+	"time"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/handler"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/model"
@@ -12,6 +15,7 @@ import (
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/service"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/pkg/db"
 	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
+	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/telemetry"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
@@ -22,51 +26,65 @@ func main() {
 		fmt.Println("Usage: task-service [server|migrate]")
 		os.Exit(1)
 	}
+	slog.SetDefault(telemetry.NewLogger(os.Stdout))
+
+	var err error
 	switch os.Args[1] {
 	case "server":
-		runServer()
+		err = runServer()
 	case "migrate":
-		runMigrate()
+		err = runMigrate()
 	default:
-		fmt.Println("Unknown command:", os.Args[1])
+		err = fmt.Errorf("unknown command: %s", os.Args[1])
+	}
+	if err != nil {
+		slog.Error("exit", "err", err)
 		os.Exit(1)
 	}
 }
 
-func runServer() {
+func runServer() error {
+	shutdownTelemetry, err := telemetry.Setup(context.Background())
+	if err != nil {
+		return fmt.Errorf("telemetry: %w", err)
+	}
 	conn, err := db.Open()
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		return fmt.Errorf("database: %w", err)
 	}
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "50051"
-	}
-	lis, err := net.Listen("tcp", ":"+port)
+	lis, err := net.Listen("tcp", ":"+cmp.Or(os.Getenv("PORT"), "50051"))
 	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
+		return err
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(telemetry.ServerOptions(slog.Default())...)
 	svc := service.NewTaskService(repository.NewTaskRepository(conn))
 	taskpb.RegisterTaskServiceServer(grpcServer, handler.NewTaskServiceServer(svc))
 	healthSrv := health.NewServer()
 	healthpb.RegisterHealthServer(grpcServer, healthSrv)
 	healthSrv.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 
-	log.Printf("gRPC server listening on port %s", port)
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
-	}
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil {
+			slog.Error("gRPC server stopped", "err", err)
+		}
+	}()
+	slog.Info("listening", "grpc", lis.Addr().String())
+
+	return telemetry.WaitAndStop(10*time.Second,
+		func(context.Context) error { grpcServer.GracefulStop(); return nil },
+		shutdownTelemetry,
+	)
 }
 
-func runMigrate() {
+func runMigrate() error {
 	conn, err := db.Open()
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		return fmt.Errorf("database: %w", err)
 	}
 	if err := conn.AutoMigrate(&model.Task{}); err != nil {
-		log.Fatalf("Migration failed: %v", err)
+		return fmt.Errorf("migrate: %w", err)
 	}
-	log.Println("Migration completed")
+	slog.Info("migration completed")
+	return nil
 }
