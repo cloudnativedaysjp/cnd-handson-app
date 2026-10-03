@@ -19,7 +19,7 @@ test("create, get and list columns", async () => {
 });
 
 test("list columns of a project via project -> column", async () => {
-  const p = project();
+  const p = client("project/project.proto", "project", "ProjectService", cfg.projectGrpc);
   const { project } = await p("CreateProject", { name: "with columns", owner_id: USER_ID });
   const { column: created } = await column()("CreateColumn", { name: "todo", board_id: project.id });
   const { columns } = await p("ListProjectColumns", { project_id: project.id });

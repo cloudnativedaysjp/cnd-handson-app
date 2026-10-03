@@ -19,6 +19,7 @@ from opentelemetry.instrumentation.grpc import (
     filters,
     server_interceptor,
 )
+from opentelemetry.instrumentation.grpc.grpcext import intercept_channel
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
@@ -102,7 +103,7 @@ def go_code(code: grpc.StatusCode) -> str:
 
 def client_channel(addr: str) -> grpc.Channel:
     """trace context を引き継ぐ client の channel。平文なのは、クラスタ内の暗号化を Istio の mTLS に任せるため"""
-    return grpc.intercept_channel(grpc.insecure_channel(addr), client_interceptor())
+    return intercept_channel(grpc.insecure_channel(addr), client_interceptor())
 
 
 def server_interceptors(log: logging.Logger) -> list[grpc.ServerInterceptor]:
