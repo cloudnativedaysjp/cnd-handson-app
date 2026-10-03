@@ -2,7 +2,10 @@ package handler
 
 import (
 	"context"
+	"errors"
 
+	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/model"
+	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/repository"
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/internal/task/service"
 	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 	"github.com/google/uuid"
@@ -13,146 +16,112 @@ import (
 
 type TaskServiceServer struct {
 	taskpb.UnimplementedTaskServiceServer
+	svc *service.TaskService
 }
 
-// GetTaskはIDに基づいてタスクを取得するgRPCメソッド
+func NewTaskServiceServer(svc *service.TaskService) *TaskServiceServer {
+	return &TaskServiceServer{svc: svc}
+}
+
 func (s *TaskServiceServer) GetTask(ctx context.Context, req *taskpb.GetTaskRequest) (*taskpb.TaskResponse, error) {
-	// タスク取得処理（サービス層に委譲）
-	task_id, err := uuid.Parse(req.GetId())
+	id, err := uuid.Parse(req.GetId())
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid task_id: %v", err)
+		return nil, status.Errorf(codes.InvalidArgument, "invalid id: %v", err)
 	}
-	taskModel, err := service.GetTaskByID(task_id)
+	task, err := s.svc.Get(ctx, id)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to get task: %v", err)
+		return nil, toStatus(err)
 	}
-
-	return &taskpb.TaskResponse{
-		Task: &taskpb.Task{
-			Id:          taskModel.ID.String(),
-			Title:       taskModel.Title,
-			Description: taskModel.Description,
-			Status:      taskModel.Status,
-			StartTime:   timestamppb.New(taskModel.Start_time),
-			EndTime:     timestamppb.New(taskModel.End_time),
-			ColumnId:    taskModel.Column_id.String(),
-			AssigneeId:  taskModel.Assignee_id.String(),
-		},
-	}, nil
+	return &taskpb.TaskResponse{Task: toProto(task)}, nil
 }
 
-// ListTasksはタスクのリストを取得するgRPCメソッド
 func (s *TaskServiceServer) ListTasks(ctx context.Context, req *taskpb.ListTasksRequest) (*taskpb.ListTasksResponse, error) {
-	// タスクリスト取得処理（サービス層に委譲）
-	columnId, err := uuid.Parse(req.GetColumnId())
+	columnID, err := service.ParseOptionalUUID(req.GetColumnId())
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid column_id: %v", err)
+		return nil, toStatus(err)
 	}
-	assigneeId, err := uuid.Parse(req.GetAssigneeId())
+	assigneeID, err := service.ParseOptionalUUID(req.GetAssigneeId())
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid assignee_id: %v", err)
+		return nil, toStatus(err)
 	}
-	tasks, totalCount, err := service.ListTasks(columnId, assigneeId, req.GetPage(), req.GetPageSize())
+	tasks, total, err := s.svc.List(ctx, repository.Filter{ColumnID: columnID, AssigneeID: assigneeID}, req.GetPage(), req.GetPageSize())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to list tasks: %v", err)
+		return nil, toStatus(err)
 	}
-
-	var taskResponses []*taskpb.Task
-	for _, taskModel := range tasks {
-		taskResponses = append(taskResponses, &taskpb.Task{
-			Id:          taskModel.ID.String(),
-			Title:       taskModel.Title,
-			Description: taskModel.Description,
-			Status:      taskModel.Status,
-			StartTime:   timestamppb.New(taskModel.Start_time),
-			EndTime:     timestamppb.New(taskModel.End_time),
-			ColumnId:    taskModel.Column_id.String(),
-			AssigneeId:  taskModel.Assignee_id.String(),
-		})
+	res := &taskpb.ListTasksResponse{TotalCount: total}
+	for _, t := range tasks {
+		res.Tasks = append(res.Tasks, toProto(t))
 	}
-
-	return &taskpb.ListTasksResponse{
-		Tasks:      taskResponses,
-		TotalCount: totalCount,
-	}, nil
+	return res, nil
 }
 
-// CreateTaskは新しいタスクを作成するgRPCメソッド
 func (s *TaskServiceServer) CreateTask(ctx context.Context, req *taskpb.CreateTaskRequest) (*taskpb.TaskResponse, error) {
-	column_id := uuid.Nil
-	if req.GetColumnId() != "" {
-		parsedColumn_id, err := uuid.Parse(req.GetColumnId())
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid column_id: %v", err)
-		}
-		column_id = parsedColumn_id
-	}
-	assignee_id := uuid.Nil
-	if req.GetAssigneeId() != "" {
-		parsedAssignee_id, err := uuid.Parse(req.GetAssigneeId())
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid assignee_id: %v", err)
-		}
-		assignee_id = parsedAssignee_id
-	}
-	// タスク作成処理（サービス層に委譲）
-	taskModel, err := service.CreateTask(req.GetTitle(), req.GetDescription(), req.GetStatus(), column_id, assignee_id)
+	columnID, err := service.ParseOptionalUUID(req.GetColumnId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create task: %v", err)
+		return nil, toStatus(err)
 	}
-
-	return &taskpb.TaskResponse{
-		Task: &taskpb.Task{
-			Id:          taskModel.ID.String(),
-			Title:       taskModel.Title,
-			Description: taskModel.Description,
-			Status:      taskModel.Status,
-			StartTime:   timestamppb.New(taskModel.Start_time),
-			EndTime:     timestamppb.New(taskModel.End_time),
-			ColumnId:    taskModel.Column_id.String(),
-			AssigneeId:  taskModel.Assignee_id.String(),
-		},
-	}, nil
+	assigneeID, err := service.ParseOptionalUUID(req.GetAssigneeId())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	task, err := s.svc.Create(ctx, req.GetTitle(), req.GetDescription(), req.GetStatus(), columnID, assigneeID)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &taskpb.TaskResponse{Task: toProto(task)}, nil
 }
 
-// UpdateTaskは既存のタスクを更新するgRPCメソッド
 func (s *TaskServiceServer) UpdateTask(ctx context.Context, req *taskpb.UpdateTaskRequest) (*taskpb.TaskResponse, error) {
-	task_id, err := uuid.Parse(req.GetId())
+	id, err := uuid.Parse(req.GetId())
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid task_id: %v", err)
+		return nil, status.Errorf(codes.InvalidArgument, "invalid id: %v", err)
 	}
-
-	// タスク更新処理（サービス層に委譲）
-	taskModel, err := service.UpdateTask(task_id, req.GetTask(), req.GetUpdateMask())
+	task, err := s.svc.Update(ctx, id, req.GetTask(), req.GetUpdateMask())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to update task: %v", err)
+		return nil, toStatus(err)
 	}
-	return &taskpb.TaskResponse{Task: &taskpb.Task{
-		Id:          taskModel.ID.String(),
-		Title:       taskModel.Title,
-		Description: taskModel.Description,
-		Status:      taskModel.Status,
-		StartTime:   timestamppb.New(taskModel.Start_time),
-		EndTime:     timestamppb.New(taskModel.End_time),
-		ColumnId:    taskModel.Column_id.String(),
-		AssigneeId:  taskModel.Assignee_id.String(),
-	}}, nil
-
+	return &taskpb.TaskResponse{Task: toProto(task)}, nil
 }
 
-// DeleteTaskはタスクを削除するgRPCメソッド
 func (s *TaskServiceServer) DeleteTask(ctx context.Context, req *taskpb.DeleteTaskRequest) (*taskpb.DeleteTaskResponse, error) {
-	task_id, err := uuid.Parse(req.GetId())
+	id, err := uuid.Parse(req.GetId())
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid task_id: %v", err)
+		return nil, status.Errorf(codes.InvalidArgument, "invalid id: %v", err)
 	}
-	// タスク削除処理（サービス層に委譲）
-	err = service.DeleteTask(task_id)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to delete task: %v", err)
+	if err := s.svc.Delete(ctx, id); err != nil {
+		return nil, toStatus(err)
 	}
+	return &taskpb.DeleteTaskResponse{Success: true}, nil
+}
 
-	return &taskpb.DeleteTaskResponse{
-		Success: true,
-	}, nil
+// 未指定の ID（uuid.Nil）は空文字で返す
+func optionalID(id uuid.UUID) string {
+	if id == uuid.Nil {
+		return ""
+	}
+	return id.String()
+}
+
+func toProto(t *model.Task) *taskpb.Task {
+	return &taskpb.Task{
+		Id:          t.ID.String(),
+		Title:       t.Title,
+		Description: t.Description,
+		Status:      t.Status,
+		StartTime:   timestamppb.New(t.Start_time),
+		EndTime:     timestamppb.New(t.End_time),
+		ColumnId:    optionalID(t.Column_id),
+		AssigneeId:  optionalID(t.Assignee_id),
+	}
+}
+
+func toStatus(err error) error {
+	switch {
+	case errors.Is(err, service.ErrInvalidArgument):
+		return status.Error(codes.InvalidArgument, err.Error())
+	case errors.Is(err, service.ErrNotFound):
+		return status.Error(codes.NotFound, err.Error())
+	default:
+		return status.Error(codes.Internal, "internal error")
+	}
 }
