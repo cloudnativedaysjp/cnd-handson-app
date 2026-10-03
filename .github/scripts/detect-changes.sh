@@ -30,6 +30,6 @@ if has '^(\.github/|mise\.toml$)'; then
 fi
 flag '^(backend/(idp|project|task)/|bff/|pkg/|gen/go/|go\.(mod|sum)$)' go
 flag '^backend/column/' python
-flag '^(frontend/|package\.json$|pnpm-lock\.yaml$|biome\.json$)' ts
+flag '^(frontend/|package\.json$|pnpm-(lock|workspace)\.yaml$|biome\.json$)' ts
 flag '^(proto/|gen/|backend/column/gen/|buf(\.gen)?\.yaml$|Makefile$)' proto
-flag '^(backend/|bff/|frontend/|proto/|gen/|pkg/|e2e/|docker-compose\.yaml$|Makefile$|go\.(mod|sum)$|\.env\.example$)' e2e
+flag '^(backend/|bff/|frontend/|proto/|gen/|pkg/|e2e/|docker-compose\.yaml$|Makefile$|go\.(mod|sum)$|\.env\.example$|package\.json$|pnpm-(lock|workspace)\.yaml$)' e2e
