@@ -16,6 +16,7 @@ import (
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/task/pkg/db"
 	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/telemetry"
+	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/userid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
@@ -57,7 +58,7 @@ func runServer() error {
 		return err
 	}
 
-	opts := append(telemetry.ServerOptions(slog.Default()), grpc.ChainUnaryInterceptor(handler.RequireUserID))
+	opts := append(telemetry.ServerOptions(slog.Default()), grpc.ChainUnaryInterceptor(userid.Require("/task.TaskService/")))
 	grpcServer := grpc.NewServer(opts...)
 	svc := service.NewTaskService(repository.NewTaskRepository(conn))
 	taskpb.RegisterTaskServiceServer(grpcServer, handler.NewTaskServiceServer(svc))

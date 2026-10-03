@@ -65,6 +65,24 @@ func (s *ProjectServiceServer) DeleteProject(ctx context.Context, req *projectpb
 	return &projectpb.DeleteProjectResponse{Success: true}, nil
 }
 
+func (s *ProjectServiceServer) ListProjectTasks(ctx context.Context, req *projectpb.ListProjectTasksRequest) (*projectpb.ListProjectTasksResponse, error) {
+	tasks, err := s.svc.ListTasks(ctx, req.GetProjectId())
+	if err != nil {
+		return nil, toStatus(ctx, err)
+	}
+	res := &projectpb.ListProjectTasksResponse{}
+	for _, t := range tasks {
+		res.Tasks = append(res.Tasks, &projectpb.ProjectTask{
+			Id:        t.GetId(),
+			Title:     t.GetTitle(),
+			Status:    t.GetStatus(),
+			ColumnId:  t.GetColumnId(),
+			ProjectId: t.GetProjectId(),
+		})
+	}
+	return res, nil
+}
+
 func toProto(p *model.Project) *projectpb.Project {
 	return &projectpb.Project{
 		Id:          p.ID.String(),
@@ -82,6 +100,8 @@ func toStatus(ctx context.Context, err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, service.ErrNotFound):
 		return status.Error(codes.NotFound, err.Error())
+	case status.Code(err) == codes.Unavailable || status.Code(err) == codes.DeadlineExceeded:
+		return err // 下流（task）の障害はそのまま伝える
 	default:
 		trace.SpanFromContext(ctx).RecordError(err) // ログは interceptor の 1 行に任せ、原因はトレースで追う
 		return status.Error(codes.Internal, "internal error")
