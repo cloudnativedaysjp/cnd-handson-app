@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net"
 	"net/http"
 	"strings"
 	"testing"
@@ -97,4 +98,13 @@ func TestSetupServesMetricsWithoutCollector(t *testing.T) {
 	stopStart := time.Now()
 	_ = shutdown(ctx)
 	assert.Less(t, time.Since(stopStart), 3*time.Second)
+}
+
+func TestSetupFailsWhenMetricsPortIsTaken(t *testing.T) {
+	ln, err := net.Listen("tcp", metricsAddr)
+	require.NoError(t, err)
+	defer func() { _ = ln.Close() }()
+
+	_, err = Setup(context.Background())
+	assert.Error(t, err)
 }
