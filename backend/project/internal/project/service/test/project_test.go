@@ -10,6 +10,7 @@ import (
 	columnpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/column"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
 	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
+	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/userid"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -80,26 +81,29 @@ func (f *fakeRepo) Delete(_ context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func TestCreateGetListUpdateDelete(t *testing.T) {
-	ctx := context.Background()
-	svc := newService()
-	owner := uuid.NewString()
+// as は user が呼び出し元になる ctx を返す（本番では userid.Require が入れる）
+func as(user string) context.Context {
+	return userid.NewContext(context.Background(), user)
+}
 
-	p, err := svc.Create(ctx, &projectpb.CreateProjectRequest{Name: "p1", Description: "d", OwnerId: owner})
+func TestCreateGetListUpdateDelete(t *testing.T) {
+	owner := uuid.NewString()
+	ctx := as(owner)
+	svc := newService()
+
+	p, err := svc.Create(ctx, &projectpb.CreateProjectRequest{Name: "p1", Description: "d", OwnerId: uuid.NewString()})
 	require.NoError(t, err)
-	_, err = svc.Create(ctx, &projectpb.CreateProjectRequest{Name: "other", OwnerId: uuid.NewString()})
+	assert.Equal(t, owner, p.OwnerID.String(), "the caller owns the project, not the requested owner_id")
+	_, err = svc.Create(as(uuid.NewString()), &projectpb.CreateProjectRequest{Name: "other"})
 	require.NoError(t, err)
 
 	got, err := svc.Get(ctx, p.ID.String())
 	require.NoError(t, err)
 	assert.Equal(t, "p1", got.Name)
 
-	mine, err := svc.List(ctx, owner)
+	mine, err := svc.List(ctx)
 	require.NoError(t, err)
-	assert.Len(t, mine, 1)
-	all, err := svc.List(ctx, "")
-	require.NoError(t, err)
-	assert.Len(t, all, 2)
+	assert.Len(t, mine, 1, "only the caller's projects")
 
 	updated, err := svc.Update(ctx, &projectpb.UpdateProjectRequest{Id: p.ID.String(), Name: "p2"})
 	require.NoError(t, err)
@@ -112,47 +116,64 @@ func TestCreateGetListUpdateDelete(t *testing.T) {
 	assert.ErrorIs(t, svc.Delete(ctx, p.ID.String()), service.ErrNotFound)
 }
 
-func TestRejectsBadInput(t *testing.T) {
-	ctx := context.Background()
+func TestOthersSeeNotFound(t *testing.T) {
+	tasks := &fakeTasks{byProject: map[uuid.UUID][]*taskpb.Task{}}
+	columns := &fakeColumns{byProject: map[uuid.UUID][]*columnpb.Column{}}
+	svc := service.NewProjectService(&fakeRepo{projects: map[uuid.UUID]*model.Project{}}, tasks, columns)
+	p, err := svc.Create(as(uuid.NewString()), &projectpb.CreateProjectRequest{Name: "p"})
+	require.NoError(t, err)
+	id := p.ID.String()
+	other := as(uuid.NewString())
+
+	_, err = svc.Get(other, id)
+	assert.ErrorIs(t, err, service.ErrNotFound)
+	_, err = svc.Update(other, &projectpb.UpdateProjectRequest{Id: id, Name: "x"})
+	assert.ErrorIs(t, err, service.ErrNotFound)
+	assert.ErrorIs(t, svc.Delete(other, id), service.ErrNotFound)
+	_, err = svc.ListTasks(other, id)
+	assert.ErrorIs(t, err, service.ErrNotFound)
+	_, err = svc.ListColumns(other, id)
+	assert.ErrorIs(t, err, service.ErrNotFound)
+	assert.ErrorIs(t, svc.CheckAccess(other, id), service.ErrNotFound)
+	mine, err := svc.List(other)
+	require.NoError(t, err)
+	assert.Empty(t, mine)
+}
+
+func TestRequiresCaller(t *testing.T) {
 	svc := newService()
-	_, err := svc.Create(ctx, &projectpb.CreateProjectRequest{OwnerId: uuid.NewString()})
-	assert.ErrorIs(t, err, service.ErrInvalidArgument)
-	_, err = svc.Create(ctx, &projectpb.CreateProjectRequest{Name: "p", OwnerId: "bad"})
+	_, err := svc.Create(context.Background(), &projectpb.CreateProjectRequest{Name: "p"})
+	assert.ErrorIs(t, err, service.ErrUnauthenticated)
+	_, err = svc.List(context.Background())
+	assert.ErrorIs(t, err, service.ErrUnauthenticated)
+}
+
+func TestRejectsBadInput(t *testing.T) {
+	ctx := as(uuid.NewString())
+	svc := newService()
+	_, err := svc.Create(ctx, &projectpb.CreateProjectRequest{})
 	assert.ErrorIs(t, err, service.ErrInvalidArgument)
 	_, err = svc.Get(ctx, "bad")
 	assert.ErrorIs(t, err, service.ErrInvalidArgument)
-	_, err = svc.List(ctx, "bad")
-	assert.ErrorIs(t, err, service.ErrInvalidArgument)
 }
 
-func TestListTasksRequiresExistingProject(t *testing.T) {
-	ctx := context.Background()
+func TestListTasksAndColumnsForOwner(t *testing.T) {
+	ctx := as(uuid.NewString())
 	tasks := &fakeTasks{byProject: map[uuid.UUID][]*taskpb.Task{}}
-	svc := newServiceWithTasks(tasks)
-	p, err := svc.Create(ctx, &projectpb.CreateProjectRequest{Name: "p", OwnerId: uuid.NewString()})
-	require.NoError(t, err)
-	tasks.byProject[p.ID] = []*taskpb.Task{{Id: "t1", ProjectId: p.ID.String()}}
-
-	got, err := svc.ListTasks(ctx, p.ID.String())
-	require.NoError(t, err)
-	assert.Equal(t, "t1", got[0].GetId())
-
-	_, err = svc.ListTasks(ctx, uuid.NewString())
-	assert.ErrorIs(t, err, service.ErrNotFound)
-}
-
-func TestListColumnsRequiresExistingProject(t *testing.T) {
-	ctx := context.Background()
 	columns := &fakeColumns{byProject: map[uuid.UUID][]*columnpb.Column{}}
-	svc := service.NewProjectService(&fakeRepo{projects: map[uuid.UUID]*model.Project{}}, &fakeTasks{}, columns)
-	p, err := svc.Create(ctx, &projectpb.CreateProjectRequest{Name: "p", OwnerId: uuid.NewString()})
+	svc := service.NewProjectService(&fakeRepo{projects: map[uuid.UUID]*model.Project{}}, tasks, columns)
+	p, err := svc.Create(ctx, &projectpb.CreateProjectRequest{Name: "p"})
 	require.NoError(t, err)
-	columns.byProject[p.ID] = []*columnpb.Column{{Id: "c1", Name: "todo", BoardId: p.ID.String()}}
+	tasks.byProject[p.ID] = []*taskpb.Task{{Id: "t1"}}
+	columns.byProject[p.ID] = []*columnpb.Column{{Id: "c1"}}
 
-	got, err := svc.ListColumns(ctx, p.ID.String())
+	gotTasks, err := svc.ListTasks(ctx, p.ID.String())
 	require.NoError(t, err)
-	assert.Equal(t, "c1", got[0].GetId())
-
-	_, err = svc.ListColumns(ctx, uuid.NewString())
+	assert.Equal(t, "t1", gotTasks[0].GetId())
+	gotColumns, err := svc.ListColumns(ctx, p.ID.String())
+	require.NoError(t, err)
+	assert.Equal(t, "c1", gotColumns[0].GetId())
+	assert.NoError(t, svc.CheckAccess(ctx, p.ID.String()))
+	_, err = svc.ListTasks(ctx, uuid.NewString())
 	assert.ErrorIs(t, err, service.ErrNotFound)
 }

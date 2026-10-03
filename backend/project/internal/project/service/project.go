@@ -11,6 +11,7 @@ import (
 	columnpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/column"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
 	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
+	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/userid"
 	"github.com/google/uuid"
 )
 
@@ -44,7 +45,8 @@ func (s *ProjectService) Create(ctx context.Context, req *projectpb.CreateProjec
 	if req.GetName() == "" {
 		return nil, fmt.Errorf("%w: name is required", ErrInvalidArgument)
 	}
-	ownerID, err := ParseID(req.GetOwnerId())
+	// リクエストの owner_id は使わず、呼び出し元を所有者にする（#184）
+	ownerID, err := caller(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -63,27 +65,30 @@ func (s *ProjectService) Create(ctx context.Context, req *projectpb.CreateProjec
 	return p, nil
 }
 
+// Get は呼び出し元が所有者のときだけプロジェクトを返す。所有者でなければ、存在を隠すため NotFound にする
 func (s *ProjectService) Get(ctx context.Context, id string) (*model.Project, error) {
 	pid, err := ParseID(id)
 	if err != nil {
 		return nil, err
 	}
+	user, err := caller(ctx)
+	if err != nil {
+		return nil, err
+	}
 	p, err := s.repo.Get(ctx, pid)
-	if errors.Is(err, repository.ErrNotFound) {
+	if errors.Is(err, repository.ErrNotFound) || (err == nil && p.OwnerID != user) {
 		return nil, ErrNotFound
 	}
 	return p, err
 }
 
-func (s *ProjectService) List(ctx context.Context, ownerID string) ([]*model.Project, error) {
-	oid := uuid.Nil
-	if ownerID != "" {
-		var err error
-		if oid, err = ParseID(ownerID); err != nil {
-			return nil, err
-		}
+// List は呼び出し元が所有するプロジェクトだけを返す
+func (s *ProjectService) List(ctx context.Context) ([]*model.Project, error) {
+	user, err := caller(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return s.repo.List(ctx, oid)
+	return s.repo.List(ctx, user)
 }
 
 // Update は空でないフィールドだけを書き換える
@@ -110,11 +115,11 @@ func (s *ProjectService) Update(ctx context.Context, req *projectpb.UpdateProjec
 }
 
 func (s *ProjectService) Delete(ctx context.Context, id string) error {
-	pid, err := ParseID(id)
+	p, err := s.Get(ctx, id)
 	if err != nil {
 		return err
 	}
-	err = s.repo.Delete(ctx, pid)
+	err = s.repo.Delete(ctx, p.ID)
 	if errors.Is(err, repository.ErrNotFound) {
 		return ErrNotFound
 	}
@@ -137,6 +142,20 @@ func (s *ProjectService) ListColumns(ctx context.Context, projectID string) ([]*
 		return nil, err
 	}
 	return s.columns.ListByProject(ctx, p.ID)
+}
+
+// CheckAccess は呼び出し元がプロジェクトの所有者かを確かめる。task / column が操作の前に使う
+func (s *ProjectService) CheckAccess(ctx context.Context, projectID string) error {
+	_, err := s.Get(ctx, projectID)
+	return err
+}
+
+func caller(ctx context.Context) (uuid.UUID, error) {
+	id, ok := userid.FromContext(ctx)
+	if !ok {
+		return uuid.Nil, ErrUnauthenticated
+	}
+	return uuid.Parse(id)
 }
 
 func ParseID(s string) (uuid.UUID, error) {

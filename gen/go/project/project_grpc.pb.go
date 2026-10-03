@@ -26,6 +26,7 @@ const (
 	ProjectService_DeleteProject_FullMethodName      = "/project.ProjectService/DeleteProject"
 	ProjectService_ListProjectTasks_FullMethodName   = "/project.ProjectService/ListProjectTasks"
 	ProjectService_ListProjectColumns_FullMethodName = "/project.ProjectService/ListProjectColumns"
+	ProjectService_CheckProjectAccess_FullMethodName = "/project.ProjectService/CheckProjectAccess"
 )
 
 // ProjectServiceClient is the client API for ProjectService service.
@@ -50,6 +51,8 @@ type ProjectServiceClient interface {
 	ListProjectTasks(ctx context.Context, in *ListProjectTasksRequest, opts ...grpc.CallOption) (*ListProjectTasksResponse, error)
 	// プロジェクトに属するカラムの一覧取得（column サービスへ集約）
 	ListProjectColumns(ctx context.Context, in *ListProjectColumnsRequest, opts ...grpc.CallOption) (*ListProjectColumnsResponse, error)
+	// x-user-id がプロジェクトの所有者か確かめる。task / column が操作の前に呼ぶ。所有者でなければ NOT_FOUND
+	CheckProjectAccess(ctx context.Context, in *CheckProjectAccessRequest, opts ...grpc.CallOption) (*CheckProjectAccessResponse, error)
 }
 
 type projectServiceClient struct {
@@ -130,6 +133,16 @@ func (c *projectServiceClient) ListProjectColumns(ctx context.Context, in *ListP
 	return out, nil
 }
 
+func (c *projectServiceClient) CheckProjectAccess(ctx context.Context, in *CheckProjectAccessRequest, opts ...grpc.CallOption) (*CheckProjectAccessResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckProjectAccessResponse)
+	err := c.cc.Invoke(ctx, ProjectService_CheckProjectAccess_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProjectServiceServer is the server API for ProjectService service.
 // All implementations should embed UnimplementedProjectServiceServer
 // for forward compatibility.
@@ -152,6 +165,8 @@ type ProjectServiceServer interface {
 	ListProjectTasks(context.Context, *ListProjectTasksRequest) (*ListProjectTasksResponse, error)
 	// プロジェクトに属するカラムの一覧取得（column サービスへ集約）
 	ListProjectColumns(context.Context, *ListProjectColumnsRequest) (*ListProjectColumnsResponse, error)
+	// x-user-id がプロジェクトの所有者か確かめる。task / column が操作の前に呼ぶ。所有者でなければ NOT_FOUND
+	CheckProjectAccess(context.Context, *CheckProjectAccessRequest) (*CheckProjectAccessResponse, error)
 }
 
 // UnimplementedProjectServiceServer should be embedded to have
@@ -181,6 +196,9 @@ func (UnimplementedProjectServiceServer) ListProjectTasks(context.Context, *List
 }
 func (UnimplementedProjectServiceServer) ListProjectColumns(context.Context, *ListProjectColumnsRequest) (*ListProjectColumnsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListProjectColumns not implemented")
+}
+func (UnimplementedProjectServiceServer) CheckProjectAccess(context.Context, *CheckProjectAccessRequest) (*CheckProjectAccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckProjectAccess not implemented")
 }
 func (UnimplementedProjectServiceServer) testEmbeddedByValue() {}
 
@@ -328,6 +346,24 @@ func _ProjectService_ListProjectColumns_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProjectService_CheckProjectAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckProjectAccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).CheckProjectAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_CheckProjectAccess_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).CheckProjectAccess(ctx, req.(*CheckProjectAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProjectService_ServiceDesc is the grpc.ServiceDesc for ProjectService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -362,6 +398,10 @@ var ProjectService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListProjectColumns",
 			Handler:    _ProjectService_ListProjectColumns_Handler,
+		},
+		{
+			MethodName: "CheckProjectAccess",
+			Handler:    _ProjectService_CheckProjectAccess_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

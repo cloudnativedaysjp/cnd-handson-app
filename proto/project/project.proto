@@ -30,6 +30,9 @@ service ProjectService {
 
   // プロジェクトに属するカラムの一覧取得（column サービスへ集約）
   rpc ListProjectColumns(ListProjectColumnsRequest) returns (ListProjectColumnsResponse);
+
+  // x-user-id がプロジェクトの所有者か確かめる。task / column が操作の前に呼ぶ。所有者でなければ NOT_FOUND
+  rpc CheckProjectAccess(CheckProjectAccessRequest) returns (CheckProjectAccessResponse);
 }
 
 // ================================
@@ -121,3 +124,10 @@ message ProjectColumn {
   string id = 1;
   string name = 2;
 }
+
+// --- CheckProjectAccess ---
+message CheckProjectAccessRequest {
+  string project_id = 1;
+}
+
+message CheckProjectAccessResponse {}
