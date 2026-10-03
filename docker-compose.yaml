@@ -119,7 +119,14 @@ services:
         - "50056:50051"
       env_file:
         - .env
+      environment:
+        OTEL_SERVICE_NAME: handson-column
+        OTEL_RESOURCE_ATTRIBUTES: service.namespace=handson
+        OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+        OTEL_PROPAGATORS: tracecontext,baggage
       entrypoint: ["python", "./cmd/server/main.py", "server"]
+      # gRPC の猶予 5 秒 + telemetry の終了 3 秒が収まるようにする
+      stop_grace_period: 15s
       healthcheck:
         test: ["CMD", "/grpc_health_probe", "-addr=:50051"]
         interval: 3s

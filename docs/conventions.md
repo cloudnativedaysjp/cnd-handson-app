@@ -5,7 +5,7 @@
 ## 計測の約束（入口を含む全サービス）
 - OTLP は `http/protobuf`（4318）。`OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`
 - endpoint はコードに書かず SDK の env 解決に任せる。gRPC exporter（4317）は使わない
-- `OTEL_SERVICE_NAME` = デプロイ名（`handson-legacy` / `handson-modern` / `handson-idp` / `handson-project` / `handson-task`）。コードに書かず env で渡す
+- `OTEL_SERVICE_NAME` = デプロイ名（`handson-legacy` / `handson-modern` / `handson-idp` / `handson-project` / `handson-task` / `handson-column`）。コードに書かず env で渡す
 - `OTEL_RESOURCE_ATTRIBUTES` に `service.namespace=handson`。入口は `app.variant` / `app.color` も付ける
 - 伝播: `OTEL_PROPAGATORS=tracecontext,baggage`。起動時に TextMapPropagator を設定する
 - gRPC は otelgrpc の stats handler（server / client 両方）
