@@ -67,6 +67,7 @@ message ListTasksRequest {
     string assignee_id = 2; // 担当者ID
     int32 page = 3; // ページ番号
     int32 page_size = 4; // ページサイズ
+    string project_id = 5; // プロジェクトID（project の ListProjectTasks から使う）
 }
 
 message CreateTaskRequest {

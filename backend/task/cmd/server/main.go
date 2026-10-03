@@ -57,7 +57,8 @@ func runServer() error {
 		return err
 	}
 
-	grpcServer := grpc.NewServer(telemetry.ServerOptions(slog.Default())...)
+	opts := append(telemetry.ServerOptions(slog.Default()), grpc.ChainUnaryInterceptor(handler.RequireUserID))
+	grpcServer := grpc.NewServer(opts...)
 	svc := service.NewTaskService(repository.NewTaskRepository(conn))
 	taskpb.RegisterTaskServiceServer(grpcServer, handler.NewTaskServiceServer(svc))
 	healthSrv := health.NewServer()

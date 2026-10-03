@@ -46,7 +46,7 @@ func (s *TaskService) List(ctx context.Context, f repository.Filter, page, pageS
 	return s.repo.List(ctx, f, page, pageSize)
 }
 
-func (s *TaskService) Create(ctx context.Context, title, description, status string, columnID, assigneeID uuid.UUID) (*model.Task, error) {
+func (s *TaskService) Create(ctx context.Context, title, description, status string, columnID, assigneeID, projectID uuid.UUID) (*model.Task, error) {
 	if title == "" {
 		return nil, fmt.Errorf("%w: title is required", ErrInvalidArgument)
 	}
@@ -60,6 +60,7 @@ func (s *TaskService) Create(ctx context.Context, title, description, status str
 		End_time:    now,
 		Column_id:   columnID,
 		Assignee_id: assigneeID,
+		Project_id:  projectID,
 	}
 	if err := s.repo.Create(ctx, task); err != nil {
 		return nil, err
@@ -86,6 +87,10 @@ func (s *TaskService) Update(ctx context.Context, id uuid.UUID, req *taskpb.Task
 			}
 		case "assignee_id":
 			if task.Assignee_id, err = ParseOptionalUUID(req.GetAssigneeId()); err != nil {
+				return nil, err
+			}
+		case "project_id":
+			if task.Project_id, err = ParseOptionalUUID(req.GetProjectId()); err != nil {
 				return nil, err
 			}
 		default:

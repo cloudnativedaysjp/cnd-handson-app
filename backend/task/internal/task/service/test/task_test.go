@@ -35,6 +35,9 @@ func (f *fakeRepo) List(_ context.Context, flt repository.Filter, _, _ int32) ([
 		if flt.ColumnID != uuid.Nil && t.Column_id != flt.ColumnID {
 			continue
 		}
+		if flt.ProjectID != uuid.Nil && t.Project_id != flt.ProjectID {
+			continue
+		}
 		out = append(out, t)
 	}
 	return out, int32(len(out)), nil
@@ -56,7 +59,7 @@ func TestCreateGetListDelete(t *testing.T) {
 	ctx := context.Background()
 	svc := service.NewTaskService(newFake())
 
-	created, err := svc.Create(ctx, "t1", "d", "todo", uuid.Nil, uuid.Nil)
+	created, err := svc.Create(ctx, "t1", "d", "todo", uuid.Nil, uuid.Nil, uuid.Nil)
 	require.NoError(t, err)
 
 	got, err := svc.Get(ctx, created.ID)
@@ -75,14 +78,14 @@ func TestCreateGetListDelete(t *testing.T) {
 }
 
 func TestCreateRequiresTitle(t *testing.T) {
-	_, err := service.NewTaskService(newFake()).Create(context.Background(), "", "", "", uuid.Nil, uuid.Nil)
+	_, err := service.NewTaskService(newFake()).Create(context.Background(), "", "", "", uuid.Nil, uuid.Nil, uuid.Nil)
 	assert.ErrorIs(t, err, service.ErrInvalidArgument)
 }
 
 func TestUpdateAppliesMaskedFields(t *testing.T) {
 	ctx := context.Background()
 	svc := service.NewTaskService(newFake())
-	created, err := svc.Create(ctx, "t1", "d", "todo", uuid.Nil, uuid.Nil)
+	created, err := svc.Create(ctx, "t1", "d", "todo", uuid.Nil, uuid.Nil, uuid.Nil)
 	require.NoError(t, err)
 	col := uuid.New()
 
@@ -106,4 +109,20 @@ func TestParseOptionalUUID(t *testing.T) {
 	assert.Equal(t, uuid.Nil, id)
 	_, err = service.ParseOptionalUUID("bad")
 	assert.ErrorIs(t, err, service.ErrInvalidArgument)
+}
+
+func TestListFiltersByProject(t *testing.T) {
+	ctx := context.Background()
+	svc := service.NewTaskService(newFake())
+	p1, p2 := uuid.New(), uuid.New()
+	in1, err := svc.Create(ctx, "in p1", "", "todo", uuid.Nil, uuid.Nil, p1)
+	require.NoError(t, err)
+	_, err = svc.Create(ctx, "in p2", "", "todo", uuid.Nil, uuid.Nil, p2)
+	require.NoError(t, err)
+
+	tasks, total, err := svc.List(ctx, repository.Filter{ProjectID: p1}, 0, 0)
+	require.NoError(t, err)
+	assert.Equal(t, int32(1), total)
+	assert.Equal(t, in1.ID, tasks[0].ID)
+	assert.Equal(t, p1, tasks[0].Project_id)
 }

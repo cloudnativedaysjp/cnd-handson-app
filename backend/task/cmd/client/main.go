@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"flag"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
@@ -25,6 +27,8 @@ func main() {
 	command := os.Args[1]
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// task は x-user-id を必須にしている。既定は契約テストの demo ユーザー
+	ctx = metadata.AppendToOutgoingContext(ctx, "x-user-id", cmp.Or(os.Getenv("TASK_USER_ID"), "00000000-0000-4000-8000-000000000071"))
 	defer cancel()
 
 	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))

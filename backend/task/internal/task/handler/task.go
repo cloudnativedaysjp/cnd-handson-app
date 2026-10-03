@@ -45,7 +45,12 @@ func (s *TaskServiceServer) ListTasks(ctx context.Context, req *taskpb.ListTasks
 	if err != nil {
 		return nil, toStatus(ctx, err)
 	}
-	tasks, total, err := s.svc.List(ctx, repository.Filter{ColumnID: columnID, AssigneeID: assigneeID}, req.GetPage(), req.GetPageSize())
+	projectID, err := service.ParseOptionalUUID(req.GetProjectId())
+	if err != nil {
+		return nil, toStatus(ctx, err)
+	}
+	f := repository.Filter{ColumnID: columnID, AssigneeID: assigneeID, ProjectID: projectID}
+	tasks, total, err := s.svc.List(ctx, f, req.GetPage(), req.GetPageSize())
 	if err != nil {
 		return nil, toStatus(ctx, err)
 	}
@@ -65,7 +70,11 @@ func (s *TaskServiceServer) CreateTask(ctx context.Context, req *taskpb.CreateTa
 	if err != nil {
 		return nil, toStatus(ctx, err)
 	}
-	task, err := s.svc.Create(ctx, req.GetTitle(), req.GetDescription(), req.GetStatus(), columnID, assigneeID)
+	projectID, err := service.ParseOptionalUUID(req.GetProjectId())
+	if err != nil {
+		return nil, toStatus(ctx, err)
+	}
+	task, err := s.svc.Create(ctx, req.GetTitle(), req.GetDescription(), req.GetStatus(), columnID, assigneeID, projectID)
 	if err != nil {
 		return nil, toStatus(ctx, err)
 	}
@@ -113,6 +122,7 @@ func toProto(t *model.Task) *taskpb.Task {
 		EndTime:     timestamppb.New(t.End_time),
 		ColumnId:    optionalID(t.Column_id),
 		AssigneeId:  optionalID(t.Assignee_id),
+		ProjectId:   optionalID(t.Project_id),
 	}
 }
 
