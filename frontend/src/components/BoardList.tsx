@@ -7,7 +7,7 @@ import {
   Typography,
 } from "@mui/material";
 import type React from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import type { Board } from "../features/boards/types";
 import type { RootState } from "../store";
@@ -17,7 +17,6 @@ import MoreMenu, { type MoreMenuOption } from "./MoreMenu";
 const BoardList: React.FC = () => {
   const navigate = useNavigate();
   const boards = useSelector((state: RootState) => state.boards.boards);
-  const dispatch = useDispatch();
   const handleBoardClick = (board: Board) => {
     navigate(`/boards/${board.id}`);
   };

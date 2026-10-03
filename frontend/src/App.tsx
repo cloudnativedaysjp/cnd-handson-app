@@ -1,5 +1,4 @@
-import React from "react";
-import { Provider, useSelector } from "react-redux";
+import { Provider } from "react-redux";
 import {
   Navigate,
   Route,
@@ -16,7 +15,6 @@ import ProjectForm from "./components/ProjectForm";
 import ProjectList from "./components/ProjectList";
 import TaskEditPage from "./components/TaskEditPage";
 import NewTaskPage from "./components/TaskNewPage";
-import type { Project } from "./features/projects/types";
 import { store } from "./store";
 
 function App() {

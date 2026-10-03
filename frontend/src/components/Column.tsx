@@ -24,7 +24,6 @@ const Column: React.FC<ColumnProps> = ({
   tasks,
   onUpdateColumnName,
   onDeleteColumn,
-  onAdd,
   initiallyEditing = false,
 }) => {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });

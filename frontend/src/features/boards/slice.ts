@@ -1,5 +1,4 @@
 import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
-import { v4 as uuidv4 } from "uuid";
 import type { Board } from "./types";
 function generateId(): string {
   return Math.random().toString(36).substr(2, 9);
