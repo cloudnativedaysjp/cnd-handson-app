@@ -2,7 +2,7 @@ BUF_VERSION := 1.57.0
 # 版が違う buf や未設定の mise シムでは生成結果が CI とずれるため、版が一致するときだけ PATH の buf を使う
 BUF ?= $(shell [ "$$(buf --version 2>/dev/null)" = "$(BUF_VERSION)" ] && echo buf || echo go run github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION))
 UP_BUILD ?= --build
-GO_SERVICES := user session project task
+GO_SERVICES := user session idp project task
 PY_SERVICES := role column
 PNPM := pnpm
 
@@ -22,7 +22,7 @@ gen:
 # Requires: go, docker (Go services are linted via their Dockerfile lint target).
 lint:
 	$(BUF) lint
-	@for s in user session task; do $(MAKE) -C backend/$$s lint || exit 1; done
+	@for s in user session idp task; do $(MAKE) -C backend/$$s lint || exit 1; done
 	cd backend/project && go vet ./...  # project has no Docker lint target
 	go vet ./pkg/...
 	@for s in $(PY_SERVICES); do $(MAKE) -C backend/$$s lint || exit 1; done
