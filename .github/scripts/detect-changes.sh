@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# 変更されたファイルから、走らせるジョブの種類を判定し、key=true|false を出力する
+# 変更されたファイルから、走らせるジョブの種類を判定し、key=true|false を出力する。
+# ワークフローは結果でジョブを if で飛ばす（skipped は必須チェックでも合格扱い）。fetch-depth 0 で checkout してから呼ぶ
 set -euo pipefail
 
 keys="go python ts proto e2e"

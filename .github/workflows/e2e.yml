@@ -29,7 +29,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - id: changes
-        uses: ./.github/actions/changes
+        run: .github/scripts/detect-changes.sh >> "$GITHUB_OUTPUT"
 
   buf-lint:
     name: buf lint
