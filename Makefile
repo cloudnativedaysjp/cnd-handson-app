@@ -23,6 +23,7 @@ gen:
 lint:
 	$(BUF) lint
 	@for s in idp project task; do $(MAKE) -C backend/$$s lint || exit 1; done
+	docker build -f bff/Dockerfile --target lint .
 	go vet ./pkg/...
 	@for s in $(PY_SERVICES); do $(MAKE) -C backend/$$s lint || exit 1; done
 
