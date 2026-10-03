@@ -46,7 +46,8 @@ func (f *fakeUsers) GetByEmail(_ context.Context, email string) (*model.User, er
 }
 
 type fakeRefresh struct {
-	byUser map[uuid.UUID]*model.RefreshToken
+	byUser       map[uuid.UUID]*model.RefreshToken
+	beforeRotate func()
 }
 
 func (f *fakeRefresh) Save(_ context.Context, t *model.RefreshToken) error {
@@ -59,7 +60,19 @@ func (f *fakeRefresh) Get(_ context.Context, id uuid.UUID) (*model.RefreshToken,
 	if !ok {
 		return nil, repository.ErrNotFound
 	}
-	return t, nil
+	cp := *t
+	return &cp, nil
+}
+
+func (f *fakeRefresh) Rotate(_ context.Context, prevHash string, next *model.RefreshToken) (bool, error) {
+	if f.beforeRotate != nil {
+		f.beforeRotate()
+	}
+	if cur, ok := f.byUser[next.UserID]; !ok || cur.Token != prevHash {
+		return false, nil
+	}
+	f.byUser[next.UserID] = next
+	return true, nil
 }
 
 type fakeRoles struct {
@@ -222,4 +235,22 @@ func TestLoginWithUnknownRoleGivesEmptyRoles(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, f.issuer.lastRoles)
 	assert.Empty(t, f.issuer.lastRoles)
+}
+
+// 同じトークンでの Refresh が並行したとき、照合後に先を越されたら失敗する
+func TestRefreshFailsWhenTokenRotatedConcurrently(t *testing.T) {
+	ctx := context.Background()
+	svc, refresh := newService()
+	_, err := svc.Register(ctx, "alice", "alice@example.com", "secret")
+	require.NoError(t, err)
+	tokens, err := svc.Login(ctx, "alice@example.com", "secret")
+	require.NoError(t, err)
+
+	refresh.beforeRotate = func() {
+		refresh.beforeRotate = nil
+		_, err := svc.Refresh(ctx, tokens.RefreshToken) // 先に完了する側
+		require.NoError(t, err)
+	}
+	_, err = svc.Refresh(ctx, tokens.RefreshToken)
+	assert.ErrorIs(t, err, service.ErrInvalidCredentials)
 }

@@ -33,3 +33,10 @@ func (r *refreshTokenRepository) Get(ctx context.Context, userID uuid.UUID) (*mo
 	}
 	return &t, nil
 }
+
+func (r *refreshTokenRepository) Rotate(ctx context.Context, prevHash string, next *model.RefreshToken) (bool, error) {
+	res := r.db.WithContext(ctx).Model(&model.RefreshToken{}).
+		Where("user_id = ? AND token = ?", next.UserID, prevHash).
+		Updates(map[string]any{"token": next.Token, "exp": next.Exp})
+	return res.RowsAffected == 1, res.Error
+}

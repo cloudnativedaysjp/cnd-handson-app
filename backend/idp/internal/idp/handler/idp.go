@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/idp/internal/idp/service"
 	idppb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/idp"
@@ -22,7 +23,7 @@ func NewIdpServiceServer(svc *service.IdpService) *IdpServiceServer {
 func (s *IdpServiceServer) Register(ctx context.Context, req *idppb.RegisterRequest) (*idppb.RegisterResponse, error) {
 	id, err := s.svc.Register(ctx, req.GetName(), req.GetEmail(), req.GetPassword())
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	return &idppb.RegisterResponse{UserId: id.String()}, nil
 }
@@ -30,7 +31,7 @@ func (s *IdpServiceServer) Register(ctx context.Context, req *idppb.RegisterRequ
 func (s *IdpServiceServer) Login(ctx context.Context, req *idppb.LoginRequest) (*idppb.TokenResponse, error) {
 	t, err := s.svc.Login(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	return toTokenResponse(t), nil
 }
@@ -38,7 +39,7 @@ func (s *IdpServiceServer) Login(ctx context.Context, req *idppb.LoginRequest) (
 func (s *IdpServiceServer) Refresh(ctx context.Context, req *idppb.RefreshRequest) (*idppb.TokenResponse, error) {
 	t, err := s.svc.Refresh(ctx, req.GetRefreshToken())
 	if err != nil {
-		return nil, toStatus(err)
+		return nil, toStatus(ctx, err)
 	}
 	return toTokenResponse(t), nil
 }
@@ -51,7 +52,7 @@ func toTokenResponse(t *service.Tokens) *idppb.TokenResponse {
 	}
 }
 
-func toStatus(err error) error {
+func toStatus(ctx context.Context, err error) error {
 	switch {
 	case errors.Is(err, service.ErrInvalidArgument):
 		return status.Error(codes.InvalidArgument, err.Error())
@@ -60,6 +61,7 @@ func toStatus(err error) error {
 	case errors.Is(err, service.ErrInvalidCredentials):
 		return status.Error(codes.Unauthenticated, err.Error())
 	default:
+		slog.ErrorContext(ctx, "internal error", "err", err)
 		return status.Error(codes.Internal, "internal error")
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -25,25 +24,26 @@ type claims struct {
 
 type RS256Issuer struct {
 	key      *rsa.PrivateKey
-	kid      string
+	jwk      map[string]string
 	issuer   string
 	audience string
-	now      func() time.Time
 }
 
 func NewRS256Issuer(key *rsa.PrivateKey, issuer, audience string) (*RS256Issuer, error) {
 	if issuer == "" || audience == "" {
 		return nil, errors.New("issuer and audience are required")
 	}
-	kid, err := thumbprint(&key.PublicKey)
-	if err != nil {
-		return nil, err
-	}
-	return &RS256Issuer{key: key, kid: kid, issuer: issuer, audience: audience, now: time.Now}, nil
+	b64 := base64.RawURLEncoding.EncodeToString
+	n := b64(key.N.Bytes())
+	e := b64(big.NewInt(int64(key.E)).Bytes())
+	// kid は RFC 7638 の JWK thumbprint（必須メンバーを辞書順に並べた JSON の SHA-256）
+	sum := sha256.Sum256(fmt.Appendf(nil, `{"e":%q,"kty":"RSA","n":%q}`, e, n))
+	jwk := map[string]string{"kty": "RSA", "use": "sig", "alg": "RS256", "kid": b64(sum[:]), "n": n, "e": e}
+	return &RS256Issuer{key: key, jwk: jwk, issuer: issuer, audience: audience}, nil
 }
 
 func (i *RS256Issuer) Issue(user *model.User, roles []string) (string, time.Time, error) {
-	now := i.now()
+	now := time.Now()
 	exp := now.Add(accessTokenTTL)
 	if roles == nil {
 		roles = []string{}
@@ -59,14 +59,13 @@ func (i *RS256Issuer) Issue(user *model.User, roles []string) (string, time.Time
 		Roles: roles,
 	}
 	t := jwt.NewWithClaims(jwt.SigningMethodRS256, c)
-	t.Header["kid"] = i.kid
+	t.Header["kid"] = i.jwk["kid"]
 	signed, err := t.SignedString(i.key)
 	return signed, exp, err
 }
 
-func (i *RS256Issuer) PublicKey() *rsa.PublicKey { return &i.key.PublicKey }
-
-func (i *RS256Issuer) KeyID() string { return i.kid }
+// JWK は JWKS に載せる公開鍵
+func (i *RS256Issuer) JWK() map[string]string { return i.jwk }
 
 // ParsePrivateKey は base64 でエンコードした PEM（PKCS#1 / PKCS#8）を読む
 func ParsePrivateKey(b64 string) (*rsa.PrivateKey, error) {
@@ -91,23 +90,3 @@ func ParsePrivateKey(b64 string) (*rsa.PrivateKey, error) {
 	}
 	return rsaKey, nil
 }
-
-// kid は RFC 7638 の JWK thumbprint。鍵を差し替えると kid も変わる
-func thumbprint(pub *rsa.PublicKey) (string, error) {
-	b, err := json.Marshal(struct {
-		E   string `json:"e"`
-		Kty string `json:"kty"`
-		N   string `json:"n"`
-	}{
-		E:   b64url(big.NewInt(int64(pub.E)).Bytes()),
-		Kty: "RSA",
-		N:   b64url(pub.N.Bytes()),
-	})
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256(b)
-	return b64url(sum[:]), nil
-}
-
-func b64url(b []byte) string { return base64.RawURLEncoding.EncodeToString(b) }

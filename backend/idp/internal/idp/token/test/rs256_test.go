@@ -54,11 +54,11 @@ func TestIssueSignsRS256WithRegisteredClaims(t *testing.T) {
 		jwt.RegisteredClaims
 		Roles []string `json:"roles"`
 	}{}
-	parsed, err := jwt.ParseWithClaims(signed, claims, func(*jwt.Token) (any, error) { return issuer.PublicKey(), nil },
+	parsed, err := jwt.ParseWithClaims(signed, claims, func(*jwt.Token) (any, error) { return &key.PublicKey, nil },
 		jwt.WithValidMethods([]string{"RS256"}), jwt.WithIssuer("http://idp.test"), jwt.WithAudience("handson"), jwt.WithExpirationRequired())
 	require.NoError(t, err)
-	assert.Equal(t, issuer.KeyID(), parsed.Header["kid"])
-	assert.NotEmpty(t, issuer.KeyID())
+	assert.Equal(t, issuer.JWK()["kid"], parsed.Header["kid"])
+	assert.NotEmpty(t, issuer.JWK()["kid"])
 	assert.Equal(t, user.ID.String(), claims.Subject)
 	assert.Equal(t, exp.Unix(), claims.ExpiresAt.Unix())
 	assert.Equal(t, []string{"member"}, claims.Roles)
@@ -73,7 +73,7 @@ func TestIssueAlwaysIncludesRolesClaim(t *testing.T) {
 	signed, _, err := issuer.Issue(&model.User{ID: uuid.New()}, nil)
 	require.NoError(t, err)
 	mc := jwt.MapClaims{}
-	_, err = jwt.ParseWithClaims(signed, mc, func(*jwt.Token) (any, error) { return issuer.PublicKey(), nil })
+	_, err = jwt.ParseWithClaims(signed, mc, func(*jwt.Token) (any, error) { return &key.PublicKey, nil })
 	require.NoError(t, err)
 	assert.Equal(t, []any{}, mc["roles"])
 }

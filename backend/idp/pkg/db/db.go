@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/telemetry"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -13,8 +14,12 @@ func Open() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	sqlDB, err := telemetry.OpenPostgres(dsn)
+	if err != nil {
+		return nil, err
+	}
 	// TranslateError で一意制約違反を gorm.ErrDuplicatedKey として受け取る
-	return gorm.Open(postgres.Open(dsn), &gorm.Config{TranslateError: true})
+	return gorm.Open(postgres.New(postgres.Config{Conn: sqlDB}), &gorm.Config{TranslateError: true})
 }
 
 func buildDSN() (string, error) {
