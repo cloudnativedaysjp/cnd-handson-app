@@ -7,6 +7,11 @@ on:
 permissions:
   contents: read
 
+# 同じ PR / ブランチへの連続 push では古い実行を止め、ランナー待ちを減らす
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   GO_VERSION: 1.24.3
   PYTHON_VERSION: 3.12
@@ -36,19 +41,10 @@ jobs:
         working-directory: ${{ matrix.service }}
         run: pnpm test
 
+  # 単一モジュールなので go test ./... 1 回で全サービスと pkg を通す
   go-test:
     name: Go Test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [project, idp, task]
-        include:
-          - service: project
-            path: backend/project
-          - service: idp
-            path: backend/idp
-          - service: task
-            path: backend/task
 
     steps:
       - name: Checkout code
@@ -62,25 +58,17 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
 
-      - name: Install dependencies
-        working-directory: ./${{ matrix.path }}
-        run: go mod download
-      
       - name: Test
-        working-directory: ./${{ matrix.path }}
         env:
           CGO_ENABLED: 0
-        run: go test ./... -v
+        run: go test ./...
   
   python-test:
     name: Python Test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [column]
-        include:
-          - service: column
-            path: backend/column
+    defaults:
+      run:
+        working-directory: backend/column
 
     steps:
       - name: Checkout code
@@ -95,10 +83,7 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        working-directory: ./${{ matrix.path }}
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Test
-        working-directory: ./${{ matrix.path }}
         run: pytest
