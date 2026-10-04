@@ -53,4 +53,9 @@ class ColumnRepository:
             total = s.scalar(select(func.count()).select_from(query.subquery()))
             if page > 0 and page_size > 0:
                 query = query.offset((page - 1) * page_size).limit(page_size)
-            return list(s.scalars(query.order_by(ColumnModel.name))), total
+            return (
+                list(
+                    s.scalars(query.order_by(ColumnModel.created_at, ColumnModel.name))
+                ),
+                total,
+            )

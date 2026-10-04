@@ -13,8 +13,11 @@ import (
 	"strings"
 	"time"
 
+	columnpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/column"
 	idppb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/idp"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
+	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
+	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/grpcclient"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/telemetry"
 	"github.com/cloudnativedaysjp/cnd-handson-app/pkg/userid"
 	"google.golang.org/grpc"
@@ -61,6 +64,14 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("idp client: %w", err)
 	}
+	taskConn, err := grpcclient.Dial("TASK_ADDR")
+	if err != nil {
+		return fmt.Errorf("task client: %w", err)
+	}
+	columnConn, err := grpcclient.Dial("COLUMN_ADDR")
+	if err != nil {
+		return fmt.Errorf("column client: %w", err)
+	}
 	shutdownTelemetry, err := telemetry.Setup(context.Background())
 	if err != nil {
 		return fmt.Errorf("telemetry: %w", err)
@@ -71,7 +82,7 @@ func run() error {
 	}
 	srv := &http.Server{
 		Handler: newHandler(slog.Default().With("variant", variant, "color", color), color, webDir,
-			idppb.NewIdpServiceClient(idpConn), projectpb.NewProjectServiceClient(conn), newVerifier(env["IDP_JWKS_URL"], env["IDP_ISS"], env["IDP_AUD"])),
+			idppb.NewIdpServiceClient(idpConn), projectpb.NewProjectServiceClient(conn), taskpb.NewTaskServiceClient(taskConn), columnpb.NewColumnServiceClient(columnConn), newVerifier(env["IDP_JWKS_URL"], env["IDP_ISS"], env["IDP_AUD"])),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
