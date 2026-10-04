@@ -180,6 +180,24 @@ postgres:
 
 handson-legacy と handson-modern は、版をビルド時に埋め込むので、版ごとに別のイメージになります。main に merge すると、CI が `latest`（版の名前）と `sha-<コミット>` のタグで公開します。
 
+## イメージの署名を確かめる
+
+CI は、公開したイメージに cosign で署名します。鍵は使わず、GitHub の OIDC で署名します。署名には、作った workflow とブランチが記録されます。
+
+main の workflow で作ったイメージかどうかは、次のように確かめます。ブランチから push されたイメージは、この検証に落ちます。
+
+```bash
+cosign verify ghcr.io/cloudnativedaysjp/cnd-handson-app/handson:legacy \
+  --certificate-identity https://github.com/cloudnativedaysjp/cnd-handson-app/.github/workflows/build-and-push-image.yml@refs/heads/main \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+イメージには、依存の一覧（SBOM）と、ビルドの来歴（provenance）も付いています。
+
+```bash
+docker buildx imagetools inspect ghcr.io/cloudnativedaysjp/cnd-handson-app/handson:legacy --format '{{ json .SBOM }}'
+```
+
 ## 秘密の値
 
 `handson-secrets` に次の 3 つが入ります。
