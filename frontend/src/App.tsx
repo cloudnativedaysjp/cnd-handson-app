@@ -8,7 +8,7 @@ import {
 import BoardForm from "./components/BoardForm";
 import BoardList from "./components/BoardList";
 import Borad from "./components/Borad";
-import { LegacyProject, LegacyProjectList } from "./components/Legacy";
+import { LegacyProject, LegacyProjectList, legacy } from "./components/Legacy";
 import Login from "./components/Login";
 import Logout from "./components/Logout";
 import PrivateLayout from "./components/PrivateLayout";
@@ -17,9 +17,6 @@ import ProjectList from "./components/ProjectList";
 import TaskEditPage from "./components/TaskEditPage";
 import NewTaskPage from "./components/TaskNewPage";
 import { store } from "./store";
-
-// 入口のイメージはビルド時の VARIANT で legacy / modern を切り替える。bff/Dockerfile が VITE_VARIANT に渡す
-const legacy = import.meta.env.VITE_VARIANT === "legacy";
 
 function App() {
   return (

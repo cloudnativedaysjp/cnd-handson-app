@@ -11,10 +11,14 @@ import {
   Typography,
 } from "@mui/material";
 import type React from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { setSelectedProject } from "../features/projects/slice";
+import { setProjects, setSelectedProject } from "../features/projects/slice";
+import type { Project } from "../features/projects/types";
 import type { RootState } from "../store";
+import { api } from "../utils/api";
+import { legacy } from "./Legacy";
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -27,22 +31,35 @@ const Header: React.FC = () => {
     (state: RootState) => state.session.isLoggedIn,
   );
 
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    api<{ projects: Project[] }>("/api/projects")
+      .then((res) => dispatch(setProjects(res.projects)))
+      // 一覧が取れなくても画面は使えるので、メニューを空のままにする
+      .catch(() => {});
+  }, [dispatch, isLoggedIn]);
+
   if (!isLoggedIn) return null;
 
   const handleProjectChange = (event: SelectChangeEvent) => {
     const id = event.target.value as string;
     dispatch(setSelectedProject(id));
-    navigate("/boards");
+    // modern のボード画面は #139 で作る
+    navigate(legacy ? `/projects/${id}` : "/boards");
   };
 
   return (
     <AppBar position="static">
       <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Box
-          sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
-          onClick={() => navigate("/")}
-        >
-          <Typography variant="h6">My Kanban App</Typography>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          {/* 枠に付けると、選択メニューのクリックも portal 越しに届いて / に戻ってしまう */}
+          <Typography
+            variant="h6"
+            sx={{ cursor: "pointer" }}
+            onClick={() => navigate("/")}
+          >
+            My Kanban App
+          </Typography>
 
           <FormControl variant="standard" sx={{ minWidth: 200, marginLeft: 4 }}>
             <InputLabel id="project-select-label" sx={{ color: "#fff" }}>
@@ -71,15 +88,13 @@ const Header: React.FC = () => {
           <Button color="inherit" onClick={() => navigate("/")}>
             Projects
           </Button>
-          <Button color="inherit" onClick={() => navigate("/boards")}>
-            Boards
-          </Button>
-          <Button
-            color="inherit"
-            onClick={() => {
-              navigate("/login");
-            }}
-          >
+          {/* board は無くなり、プロジェクトがその役をする（#110）。modern の画面は #139 で作り直す */}
+          {!legacy && (
+            <Button color="inherit" onClick={() => navigate("/boards")}>
+              Boards
+            </Button>
+          )}
+          <Button color="inherit" onClick={() => navigate("/logout")}>
             Logout
           </Button>
         </Box>

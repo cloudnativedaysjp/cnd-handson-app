@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { Provider } from "react-redux";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { expect, test, vi } from "vitest";
+import { store } from "../store";
 import { api } from "../utils/api";
 import { LegacyProject } from "./Legacy";
 
@@ -27,12 +29,15 @@ test("legacy project: lists, creates and updates tasks", async () => {
     };
   });
   render(
-    <MemoryRouter initialEntries={["/projects/p1"]}>
-      <Routes>
-        <Route path="/projects/:id" element={<LegacyProject />} />
-      </Routes>
-    </MemoryRouter>,
+    <Provider store={store}>
+      <MemoryRouter initialEntries={["/projects/p1"]}>
+        <Routes>
+          <Route path="/projects/:id" element={<LegacyProject />} />
+        </Routes>
+      </MemoryRouter>
+    </Provider>,
   );
+  expect(store.getState().projects.selectedId).toBe("p1");
 
   expect(await screen.findByText("first")).toBeInTheDocument();
   expect(screen.getAllByText("backlog")).toHaveLength(2);

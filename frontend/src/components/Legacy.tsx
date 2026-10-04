@@ -1,6 +1,8 @@
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 import { Link, useParams } from "react-router-dom";
+import { setSelectedProject } from "../features/projects/slice";
 import type { Project } from "../features/projects/types";
 import { api } from "../utils/api";
 
@@ -38,6 +40,9 @@ const h1: React.CSSProperties = {
   borderBottom: "2px solid #808080",
   margin: "0 0 12px",
 };
+
+// 入口のイメージはビルド時の VARIANT で legacy / modern を切り替える。bff/Dockerfile が VITE_VARIANT に渡す
+export const legacy = import.meta.env.VITE_VARIANT === "legacy";
 
 export const LegacyProjectList: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -88,10 +93,16 @@ export const LegacyProjectList: React.FC = () => {
 
 export const LegacyProject: React.FC = () => {
   const { id = "" } = useParams();
+  const dispatch = useDispatch();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [columns, setColumns] = useState<Column[]>([]);
   const [title, setTitle] = useState("");
   const [error, setError] = useState("");
+
+  // ヘッダーの選択メニューに、表示中のプロジェクトを出す
+  useEffect(() => {
+    dispatch(setSelectedProject(id));
+  }, [dispatch, id]);
 
   useEffect(() => {
     const load = async () => {
