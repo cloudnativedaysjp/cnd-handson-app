@@ -24,6 +24,7 @@ postgres:
   enabled: true
   image: postgres:17
   storage: 1Gi
+  # host と port は enabled=false のときだけ使う。chart の Postgres は 5432 で待ち受ける
   host: ""
   port: 5432
   database: handson

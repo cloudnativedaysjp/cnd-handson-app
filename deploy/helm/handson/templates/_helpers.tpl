@@ -13,7 +13,7 @@ env:
   - name: DB_HOST
     value: {{ ternary "handson-postgres" $v.postgres.host $v.postgres.enabled | quote }}
   - name: DB_PORT
-    value: {{ $v.postgres.port | quote }}
+    value: {{ ternary 5432 $v.postgres.port $v.postgres.enabled | quote }}
   - name: DB_DB
     value: {{ $v.postgres.database | quote }}
   - name: DB_USER
