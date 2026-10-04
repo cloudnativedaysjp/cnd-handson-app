@@ -76,3 +76,15 @@ entry:
     hosts:
       legacy: legacy.example.com
       modern: modern.example.com
+  # Gateway API の HTTPRoute で入口を出す。版ごとの重みで振り分ける
+  gateway:
+    enabled: false
+    # true なら Gateway も作る。false なら parentRefs の既存の Gateway につなぐ
+    create: true
+    className: cilium
+    parentRefs: []
+    # 空ならホスト名で絞らない
+    hostnames: []
+    weights:
+      legacy: 100
+      modern: 0
