@@ -145,7 +145,7 @@ postgres:
 | 値 | 既定 | 意味 |
 |---|---|---|
 | `image.registry` | `ghcr.io/cloudnativedaysjp/cnd-handson-app` | イメージの取得元 |
-| `image.tag` | `latest` | handson-legacy / handson-modern 以外のイメージのタグ |
+| `image.tag` | `latest` | イメージのタグ。`sha-<コミット>` にすると、全サービスを同じコミットのイメージにそろえられる |
 | `image.pullPolicy` | `IfNotPresent` | |
 | `otel.endpoint` | `""` | OTLP（http/protobuf）の送り先。空なら送らない。送れなくてもサービスは止まらない |
 | `serviceMonitor.enabled` | `false` | `/metrics` を集める ServiceMonitor を作る |
@@ -171,6 +171,15 @@ postgres:
 | `entry.gateway.weights` | legacy 100、modern 0 | 版ごとの重み |
 | `services` | idp、project、task、column | サービスごとのコマンドと環境変数。ふつうは変えない |
 
+## イメージのタグ
+
+| サービス | `image.tag` が `latest` のとき | それ以外のとき |
+|---|---|---|
+| idp、project、task、column | `<サービス名>:latest` | `<サービス名>:<image.tag>` |
+| handson-legacy / handson-modern | `handson:legacy` / `handson:modern` | `handson:legacy-<image.tag>` / `handson:modern-<image.tag>` |
+
+handson-legacy と handson-modern は、版をビルド時に埋め込むので、版ごとに別のイメージになります。main に merge すると、CI が `latest`（版の名前）と `sha-<コミット>` のタグで公開します。
+
 ## 秘密の値
 
 `handson-secrets` に次の 3 つが入ります。
@@ -193,7 +202,7 @@ for s in idp project task column; do
   docker tag "${s}:latest" "$REG/${s}:dev" && kind load docker-image "$REG/${s}:dev" --name handson-app
 done
 for v in legacy modern; do
-  docker tag "handson:${v}" "$REG/handson:${v}" && kind load docker-image "$REG/handson:${v}" --name handson-app
+  docker tag "handson:${v}" "$REG/handson:${v}-dev" && kind load docker-image "$REG/handson:${v}-dev" --name handson-app
 done
 helm install handson deploy/helm/handson -n handson --create-namespace --set image.tag=dev
 ```
@@ -225,4 +234,3 @@ kubectl -n handson delete pvc -l app=handson-postgres
 ## 今の制限
 
 - ghcr のイメージは非公開なので、認証なしでは pull できません。公開されるまでは、手元のイメージを使います。
-- handson-legacy / handson-modern のイメージのタグは、版の名前（`legacy` / `modern`）で固定です。`image.tag` は効きません。
