@@ -8,6 +8,15 @@ otel:
   # OTLP（http/protobuf）の送り先。空なら送らない。送れなくてもサービスは止まらない
   endpoint: ""
 
+# Prometheus Operator が /metrics（9464）を集める ServiceMonitor を作る
+serviceMonitor:
+  enabled: false
+
+secret:
+  # false なら handson-secrets を作らず、先に作ってある同じ名前の Secret を使う。
+  # Argo CD は helm template で描画するので lookup が効かず、生成した値が同期のたびに変わる。そのときは false にする
+  create: true
+
 idp:
   # JWT の iss / aud。入口が検証に同じ値を使う
   iss: http://handson-idp:8080
@@ -52,3 +61,18 @@ services:
       PROJECT_ADDR: handson-project:50051
     # gRPC の猶予 5 秒と telemetry の終了 3 秒が収まるようにする
     terminationGracePeriodSeconds: 15
+
+# 入口。イメージは <registry>/handson:<版>（版は VARIANT でビルド時に決まる）
+entry:
+  variants:
+    legacy:
+      color: blue
+    modern:
+      color: green
+  ingress:
+    enabled: false
+    className: nginx
+    # 版ごとのホスト名
+    hosts:
+      legacy: legacy.example.com
+      modern: modern.example.com
