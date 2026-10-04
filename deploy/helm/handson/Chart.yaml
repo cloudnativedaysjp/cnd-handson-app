@@ -1,0 +1,6 @@
+apiVersion: v2
+name: handson
+description: CloudNative Days ハンズオン用カンバンのマイクロサービス一式
+type: application
+version: 0.1.0
+appVersion: latest

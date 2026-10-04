@@ -1,0 +1,70 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: handson-postgres
+  labels:
+    app: handson-postgres
+spec:
+  selector:
+    app: handson-postgres
+  ports:
+    - name: postgres
+      port: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: handson-postgres
+  labels:
+    app: handson-postgres
+spec:
+  serviceName: handson-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: handson-postgres
+  template:
+    metadata:
+      labels:
+        app: handson-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.image }}
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.database | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.user | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: handson-secrets
+                  key: DB_PASSWORD
+            # ボリュームの直下には lost+found があり、initdb が空でないと判断して失敗する
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            periodSeconds: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.postgres.storage }}
+{{- end }}
