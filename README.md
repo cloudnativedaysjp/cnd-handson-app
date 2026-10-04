@@ -30,7 +30,7 @@
 | column（`backend/column`） | Python | タスクの状態 |
 
 - サービスどうしは gRPC で話します。proto は `proto/` にあります。
-- どのサービスも、トレースとメトリクスを OpenTelemetry で出します。フロントエンドから DB まで、1 本のトレースでつながります。
+- BFF とバックエンドのサービスは、トレースとメトリクスを OpenTelemetry で出します。ブラウザからのリクエストを受けた BFF から DB まで、1 本のトレースでつながります。
 
 ## 手元で動かす
 
@@ -46,6 +46,8 @@ make down              # 止める。データは残る。消すなら make clea
 - legacy: http://localhost:8080
 - modern: http://localhost:8081
 - ユーザー: `demo@example.com` / `demo-password`
+  - DB を初めて作ったときに、一度だけ作られます。
+  - DB が残っている状態で `.env` の値を変えても、変わりません。
 
 http://localhost:5173 は、frontend の開発サーバーです。API に繋がらないので、ログインは 8080 か 8081 から行います。
 

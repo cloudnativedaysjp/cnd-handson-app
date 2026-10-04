@@ -29,6 +29,8 @@
 
 ## 入れる
 
+handson-legacy / handson-modern のイメージは、まだ ghcr に公開していません。公開されるまでは、先に「手元のイメージで kind に入れる」の手順でイメージを用意します。
+
 ```bash
 helm install handson deploy/helm/handson -n handson --create-namespace
 kubectl -n handson wait --for=condition=Ready pod --all --timeout=300s
@@ -233,4 +235,4 @@ kubectl -n handson delete pvc -l app=handson-postgres
 
 ## 今の制限
 
-- ghcr のイメージは非公開なので、認証なしでは pull できません。公開されるまでは、手元のイメージを使います。
+- handson-legacy / handson-modern のイメージは、まだ ghcr に公開していません。公開されるまでは、手元のイメージを使います。ほかのサービスのイメージは公開していて、認証なしで pull できます。
