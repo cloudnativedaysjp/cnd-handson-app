@@ -6,8 +6,8 @@
 
 | 名前 | 役割 | ポート |
 |---|---|---|
-| `handson-legacy` | 入口。表形式の画面と REST API（color: blue） | `http` 8080、`metrics` 9464 |
-| `handson-modern` | 入口。カンバンの画面と REST API（color: green） | `http` 8080、`metrics` 9464 |
+| `handson-legacy` | フロントエンド。表形式の画面と REST API（color: blue） | `http` 8080、`metrics` 9464 |
+| `handson-modern` | フロントエンド。カンバンの画面と REST API（color: green） | `http` 8080、`metrics` 9464 |
 | `handson-idp` | ログインと JWT の発行。JWKS を HTTP で返す | `grpc` 50051、`http` 8080、`metrics` 9464 |
 | `handson-project` | プロジェクト。タスクと状態の一覧をまとめる | `grpc` 50051、`metrics` 9464 |
 | `handson-task` | タスク | `grpc` 50051、`metrics` 9464 |
@@ -34,7 +34,7 @@ helm install handson deploy/helm/handson -n handson --create-namespace
 kubectl -n handson wait --for=condition=Ready pod --all --timeout=300s
 ```
 
-画面を開くには、入口を port-forward します。
+画面を開くには、handson-legacy を port-forward します。
 
 ```bash
 kubectl -n handson port-forward svc/handson-legacy 8080:8080
@@ -145,12 +145,12 @@ postgres:
 | 値 | 既定 | 意味 |
 |---|---|---|
 | `image.registry` | `ghcr.io/cloudnativedaysjp/cnd-handson-app` | イメージの取得元 |
-| `image.tag` | `latest` | 入口以外のイメージのタグ |
+| `image.tag` | `latest` | handson-legacy / handson-modern 以外のイメージのタグ |
 | `image.pullPolicy` | `IfNotPresent` | |
 | `otel.endpoint` | `""` | OTLP（http/protobuf）の送り先。空なら送らない。送れなくてもサービスは止まらない |
 | `serviceMonitor.enabled` | `false` | `/metrics` を集める ServiceMonitor を作る |
 | `secret.create` | `true` | `handson-secrets` を作る。`false` なら先に作った Secret を使う |
-| `idp.iss` / `idp.aud` | `http://handson-idp:8080` / `handson` | JWT の iss と aud。入口も検証に同じ値を使う |
+| `idp.iss` / `idp.aud` | `http://handson-idp:8080` / `handson` | JWT の iss と aud。handson-legacy / handson-modern も検証に同じ値を使う |
 | `idp.signingKey` | `""` | JWT の署名鍵。base64 の PEM。空なら生成する |
 | `idp.demo.email` / `idp.demo.password` | `demo@example.com` / `demo-password` | デモユーザー。どちらかを空にすると作らない |
 | `postgres.enabled` | `true` | chart の Postgres を作る |
@@ -159,11 +159,11 @@ postgres:
 | `postgres.host` / `postgres.port` | `""` / `5432` | 外の DB の接続先。`enabled: false` のときだけ使う |
 | `postgres.database` / `postgres.user` | `handson` / `handson` | |
 | `postgres.password` | `""` | 空なら生成する |
-| `entry.variants` | legacy（blue）、modern（green） | 入口の版と、ログやトレースに付ける color |
-| `entry.ingress.enabled` | `false` | 入口の Ingress を作る |
+| `entry.variants` | legacy（blue）、modern（green） | フロントエンドの版と、ログやトレースに付ける color |
+| `entry.ingress.enabled` | `false` | handson-legacy / handson-modern の Ingress を作る |
 | `entry.ingress.className` | `nginx` | |
 | `entry.ingress.hosts` | `legacy.example.com` / `modern.example.com` | 版ごとのホスト名 |
-| `entry.gateway.enabled` | `false` | 入口の HTTPRoute を作る |
+| `entry.gateway.enabled` | `false` | handson-legacy / handson-modern の HTTPRoute を作る |
 | `entry.gateway.create` | `true` | Gateway も作る。`false` なら `parentRefs` の Gateway につなぐ |
 | `entry.gateway.className` | `cilium` | chart が作る Gateway の GatewayClass |
 | `entry.gateway.parentRefs` | `[]` | `create: false` のときにつなぐ Gateway |
@@ -225,4 +225,4 @@ kubectl -n handson delete pvc -l app=handson-postgres
 ## 今の制限
 
 - ghcr のイメージは非公開なので、認証なしでは pull できません。公開されるまでは、手元のイメージを使います。
-- 入口のイメージのタグは、版の名前（`legacy` / `modern`）で固定です。`image.tag` は入口には効きません。
+- handson-legacy / handson-modern のイメージのタグは、版の名前（`legacy` / `modern`）で固定です。`image.tag` は効きません。

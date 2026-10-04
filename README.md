@@ -4,7 +4,7 @@
 
 ## どんなアプリか
 
-マイクロサービスで作ったタスク管理（カンバン）です。入口には 2 つの版があります。ハンズオンの canary やトラフィック分割の実演で、どちらに届いたかを見分けられます。
+マイクロサービスで作ったタスク管理（カンバン）です。フロントエンドには 2 つの版があります。ハンズオンの canary やトラフィック分割の実演で、どちらに届いたかを見分けられます。
 
 | 版 | 画面 | color |
 |---|---|---|
@@ -16,21 +16,21 @@
 ## 構成
 
 ```
-ブラウザ → 入口（legacy / modern） → project → task   → Postgres
+ブラウザ → handson-legacy / handson-modern → project → task   → Postgres
                  │                     └→ column → Postgres
                  └→ idp（ログイン） → Postgres
 ```
 
 | サービス | 言語 | 役割 |
 |---|---|---|
-| 入口（`bff/`、`frontend/`） | Go、React | 画面と REST API。JWT を検証し、利用者の ID を下流に渡す |
+| フロントエンド（`bff/`、`frontend/`）。handson-legacy と handson-modern | Go、React | 画面と REST API。JWT を検証し、利用者の ID を下流に渡す |
 | idp（`backend/idp`） | Go | ログインと JWT の発行 |
 | project（`backend/project`） | Go | プロジェクト。タスクと状態の一覧をまとめる。所有者かどうかを確かめる |
 | task（`backend/task`） | Go | タスク |
 | column（`backend/column`） | Python | タスクの状態 |
 
 - サービスどうしは gRPC で話します。proto は `proto/` にあります。
-- どのサービスも、トレースとメトリクスを OpenTelemetry で出します。入口から DB まで、1 本のトレースでつながります。
+- どのサービスも、トレースとメトリクスを OpenTelemetry で出します。フロントエンドから DB まで、1 本のトレースでつながります。
 
 ## 手元で動かす
 
@@ -41,13 +41,13 @@ make e2e               # 動作を確かめる
 make down              # 止める。データは残る。消すなら make clean
 ```
 
-起動したら、入口を開いてログインします。
+起動したら、フロントエンドを開いてログインします。
 
 - legacy: http://localhost:8080
 - modern: http://localhost:8081
 - ユーザー: `demo@example.com` / `demo-password`
 
-http://localhost:5173 は、frontend の開発サーバーです。API に繋がらないので、ログインは入口から行います。
+http://localhost:5173 は、frontend の開発サーバーです。API に繋がらないので、ログインは 8080 か 8081 から行います。
 
 ### トレースを見る
 
