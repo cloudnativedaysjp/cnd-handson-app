@@ -262,7 +262,8 @@ services:
       image: grafana/otel-lgtm:0.11.10
       profiles: [otel]
       ports:
-        - "3001:3000"
+        # Grafana は匿名でも管理者として入れるので、手元からだけ開けるようにする
+        - "127.0.0.1:3001:3000"
 volumes:
   postgres-data:
 
