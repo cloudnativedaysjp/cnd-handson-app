@@ -24,6 +24,8 @@ make down              # 停止（データは残る。消すなら make clean�
 
 起動後、http://localhost:5173 で画面を確認できます（現在は開発中の frontend）。
 
+トレースを見るときは `COMPOSE_PROFILES=otel make up` で起動します。http://localhost:3001 の Grafana を開き、Explore で Tempo を選ぶとトレースが見られます。
+
 ## 参加する方へ
 
 [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。

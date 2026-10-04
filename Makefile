@@ -37,11 +37,12 @@ lint:
 up: .env
 	docker compose up -d $(UP_BUILD) --wait --wait-timeout 300
 
+# profile で起動した otel-lgtm も残さず止める
 down: .env
-	docker compose down
+	docker compose --profile '*' down
 
 clean: .env
-	docker compose down -v
+	docker compose --profile '*' down -v
 
 # Requires: node and pnpm (mise locally, corepack in CI) and a running stack (`make up`).
 e2e:
