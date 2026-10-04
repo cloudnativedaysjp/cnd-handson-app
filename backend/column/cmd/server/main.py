@@ -8,6 +8,7 @@ from concurrent import futures
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+from sqlalchemy import text
 
 from column import column_pb2_grpc
 from internal.column.handler.column import ColumnHandler
@@ -58,6 +59,14 @@ def serve() -> None:
 def migrate() -> None:
     engine = make_engine(build_db_url())
     Base.metadata.create_all(engine)
+    # create_all は既存のテーブルに列を足さないので、前からあるボリュームには自分で足す
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "ALTER TABLE columns ADD COLUMN IF NOT EXISTS created_at"
+                " TIMESTAMPTZ NOT NULL DEFAULT now()"
+            )
+        )
     engine.dispose()
     log.info("migration completed")
 

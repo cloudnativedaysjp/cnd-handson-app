@@ -18,7 +18,7 @@ import (
 func TestColorLogsOneLineWithTrace(t *testing.T) {
 	otel.SetTracerProvider(sdktrace.NewTracerProvider())
 	var buf bytes.Buffer
-	h := newHandler(telemetry.NewLogger(&buf).With("variant", "legacy", "color", "blue"), "blue", t.TempDir(), nil, nil, nil, nil)
+	h := newHandler(telemetry.NewLogger(&buf).With("variant", "legacy", "color", "blue"), "blue", t.TempDir(), nil, nil, nil, nil, nil)
 
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/color", nil))
@@ -54,7 +54,7 @@ func TestWebFallsBackToIndex(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "assets", "app.js"), []byte("js"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	h := newHandler(telemetry.NewLogger(io.Discard), "blue", dir, nil, nil, nil, nil)
+	h := newHandler(telemetry.NewLogger(io.Discard), "blue", dir, nil, nil, nil, nil, nil)
 
 	for path, want := range map[string]struct {
 		code int

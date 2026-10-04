@@ -8,7 +8,13 @@ import {
 import BoardForm from "./components/BoardForm";
 import BoardList from "./components/BoardList";
 import Borad from "./components/Borad";
-import { LegacyProject, LegacyProjectList, legacy } from "./components/Legacy";
+import {
+  LegacyColumns,
+  LegacyProject,
+  LegacyProjectList,
+  LegacyTask,
+  legacy,
+} from "./components/Legacy";
 import Login from "./components/Login";
 import Logout from "./components/Logout";
 import PrivateLayout from "./components/PrivateLayout";
@@ -32,6 +38,11 @@ function App() {
               element={legacy ? <LegacyProjectList /> : <ProjectList />}
             />
             <Route path="/projects/:id" element={<LegacyProject />} />
+            <Route
+              path="/projects/:id/tasks/:taskId"
+              element={<LegacyTask />}
+            />
+            <Route path="/projects/:id/columns" element={<LegacyColumns />} />
             <Route path="/projects/new" element={<ProjectForm />} />
             <Route path="/projects/edit/:id" element={<ProjectForm />} />
             <Route path="/boards/:id" element={<Borad />} />

@@ -1,0 +1,234 @@
+/* legacy 版の画面。2000 年代の社内 Web 業務システムの見た目にする。.legacy の外には効かせない */
+.legacy {
+  --desk: #e9ebee;
+  --paper: #ffffff;
+  --navy: #1f3a68;
+  --head: #dce3ee;
+  --rule: #9aa3ae;
+  --ink: #1a1a1a;
+  --link: #0645ad;
+  --error: #b00020;
+
+  min-height: 100vh;
+  background: var(--desk);
+  color: var(--ink);
+  font-family: Meiryo, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: left;
+}
+
+.legacy a {
+  color: var(--link);
+}
+
+.legacy :focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 1px;
+}
+
+.legacy-band {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 16px;
+  background: var(--navy);
+  color: #fff;
+}
+
+.legacy-band strong {
+  font-size: 14px;
+}
+
+.legacy-band .legacy-screen-id {
+  font-variant-numeric: tabular-nums;
+}
+
+.legacy-band button {
+  margin-left: 16px;
+}
+
+.legacy-menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  padding: 4px 16px;
+  background: var(--head);
+  border-bottom: 1px solid var(--rule);
+}
+
+.legacy-menu a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.legacy-main {
+  max-width: 960px;
+  padding: 12px 16px 32px;
+}
+
+.legacy-crumbs {
+  margin: 0 0 8px;
+}
+
+.legacy h1 {
+  margin: 0 0 12px;
+  padding-bottom: 2px;
+  border-bottom: 2px solid var(--navy);
+  font-size: 15px;
+}
+
+.legacy h2 {
+  margin: 20px 0 8px;
+  font-size: 13px;
+}
+
+.legacy-panel {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+}
+
+.legacy table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--paper);
+  font-variant-numeric: tabular-nums;
+}
+
+.legacy th,
+.legacy td {
+  padding: 3px 8px;
+  border: 1px solid var(--rule);
+  vertical-align: middle;
+}
+
+.legacy thead th,
+.legacy .legacy-form th {
+  background: var(--head);
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+.legacy .legacy-form th {
+  width: 8em;
+}
+
+.legacy .legacy-num {
+  width: 3em;
+  text-align: right;
+}
+
+.legacy .legacy-date {
+  width: 9.5em;
+  white-space: nowrap;
+}
+
+.legacy-required {
+  margin-left: 6px;
+  color: var(--error);
+  font-size: 11px;
+}
+
+.legacy input[type="text"],
+.legacy textarea,
+.legacy select {
+  font: inherit;
+  padding: 1px 4px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.legacy input[type="text"] {
+  width: 20em;
+  max-width: 100%;
+}
+
+.legacy textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.legacy button {
+  font: inherit;
+  padding: 1px 12px;
+  border: 1px solid #5b6470;
+  background: #f3f4f6;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.legacy button.legacy-primary {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: #fff;
+}
+
+.legacy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.legacy-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+}
+
+.legacy-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.legacy-counts button {
+  border-right-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.legacy-counts li:last-child button {
+  border-right-width: 1px;
+}
+
+.legacy-counts button[aria-pressed="true"] {
+  background: var(--paper);
+  font-weight: bold;
+  border-bottom: 2px solid var(--navy);
+}
+
+.legacy-note {
+  margin: 4px 0;
+}
+
+.legacy-error {
+  margin: 0 0 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--error);
+  background: #fff;
+  color: var(--error);
+}
+
+.legacy-confirm {
+  color: var(--error);
+}
+
+/* 狭い画面では表を横にスクロールさせ、ページ全体ははみ出させない */
+.legacy-scroll {
+  overflow-x: auto;
+}
+
+@media (max-width: 600px) {
+  .legacy-band .legacy-screen-id {
+    display: none;
+  }
+}

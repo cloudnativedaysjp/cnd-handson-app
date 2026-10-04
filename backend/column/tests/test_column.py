@@ -143,3 +143,12 @@ def test_handler_keeps_status_of_project_errors():
     with pytest.raises(PermissionError) as e:
         call(None, None, FakeContext([]))
     assert e.value.args[0] == grpc.StatusCode.UNAVAILABLE
+
+
+def test_lists_columns_in_creation_order(service, projects):
+    board = uuid.uuid4()
+    projects.allowed.add(board)
+    for name in ("todo", "doing", "done"):
+        service.create(name, str(board))
+    columns, _ = service.list(str(board), 0, 0)
+    assert [c.name for c in columns] == ["todo", "doing", "done"]

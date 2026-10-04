@@ -18,7 +18,6 @@ import { setProjects, setSelectedProject } from "../features/projects/slice";
 import type { Project } from "../features/projects/types";
 import type { RootState } from "../store";
 import { api } from "../utils/api";
-import { legacy } from "./Legacy";
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -44,8 +43,7 @@ const Header: React.FC = () => {
   const handleProjectChange = (event: SelectChangeEvent) => {
     const id = event.target.value as string;
     dispatch(setSelectedProject(id));
-    // modern のボード画面は #139 で作る
-    navigate(legacy ? `/projects/${id}` : "/boards");
+    navigate("/boards");
   };
 
   return (
@@ -88,12 +86,9 @@ const Header: React.FC = () => {
           <Button color="inherit" onClick={() => navigate("/")}>
             Projects
           </Button>
-          {/* board は無くなり、プロジェクトがその役をする（#110）。modern の画面は #139 で作り直す */}
-          {!legacy && (
-            <Button color="inherit" onClick={() => navigate("/boards")}>
-              Boards
-            </Button>
-          )}
+          <Button color="inherit" onClick={() => navigate("/boards")}>
+            Boards
+          </Button>
           <Button color="inherit" onClick={() => navigate("/logout")}>
             Logout
           </Button>

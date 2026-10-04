@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	columnpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/column"
 	idppb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/idp"
 	projectpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/project"
 	taskpb "github.com/cloudnativedaysjp/cnd-handson-app/gen/go/task"
@@ -30,6 +31,12 @@ const testUser = "0b6f6d6e-4b1a-4c3e-9a35-3f1f6c1d2e01"
 type fakeProjects struct {
 	projectpb.ProjectServiceClient
 	gotUser string
+	created *projectpb.CreateProjectRequest
+}
+
+func (f *fakeProjects) CreateProject(_ context.Context, req *projectpb.CreateProjectRequest, _ ...grpc.CallOption) (*projectpb.ProjectResponse, error) {
+	f.created = req
+	return &projectpb.ProjectResponse{Project: &projectpb.Project{Id: "p3", Name: req.GetName()}}, nil
 }
 
 func (f *fakeProjects) ListProjects(ctx context.Context, _ *projectpb.ListProjectsRequest, _ ...grpc.CallOption) (*projectpb.ListProjectsResponse, error) {
@@ -45,6 +52,16 @@ type fakeTasks struct {
 	taskpb.TaskServiceClient
 	created *taskpb.CreateTaskRequest
 	updated *taskpb.UpdateTaskRequest
+	deleted string
+}
+
+func (f *fakeTasks) GetTask(_ context.Context, req *taskpb.GetTaskRequest, _ ...grpc.CallOption) (*taskpb.TaskResponse, error) {
+	return &taskpb.TaskResponse{Task: &taskpb.Task{Id: req.GetId(), Description: "details"}}, nil
+}
+
+func (f *fakeTasks) DeleteTask(_ context.Context, req *taskpb.DeleteTaskRequest, _ ...grpc.CallOption) (*taskpb.DeleteTaskResponse, error) {
+	f.deleted = req.GetId()
+	return &taskpb.DeleteTaskResponse{Success: true}, nil
 }
 
 func (f *fakeTasks) CreateTask(_ context.Context, req *taskpb.CreateTaskRequest, _ ...grpc.CallOption) (*taskpb.TaskResponse, error) {
@@ -54,7 +71,29 @@ func (f *fakeTasks) CreateTask(_ context.Context, req *taskpb.CreateTaskRequest,
 
 func (f *fakeTasks) UpdateTask(_ context.Context, req *taskpb.UpdateTaskRequest, _ ...grpc.CallOption) (*taskpb.TaskResponse, error) {
 	f.updated = req
-	return &taskpb.TaskResponse{Task: &taskpb.Task{Id: req.GetId(), Status: req.GetTask().GetStatus()}}, nil
+	return &taskpb.TaskResponse{Task: &taskpb.Task{Id: req.GetId(), ColumnId: req.GetTask().GetColumnId()}}, nil
+}
+
+type fakeColumns struct {
+	columnpb.ColumnServiceClient
+	created *columnpb.CreateColumnRequest
+	updated *columnpb.UpdateColumnRequest
+	deleted string
+}
+
+func (f *fakeColumns) UpdateColumn(_ context.Context, req *columnpb.UpdateColumnRequest, _ ...grpc.CallOption) (*columnpb.ColumnResponse, error) {
+	f.updated = req
+	return &columnpb.ColumnResponse{Column: &columnpb.Column{Id: req.GetId(), Name: req.GetName()}}, nil
+}
+
+func (f *fakeColumns) DeleteColumn(_ context.Context, req *columnpb.DeleteColumnRequest, _ ...grpc.CallOption) (*columnpb.DeleteColumnResponse, error) {
+	f.deleted = req.GetId()
+	return &columnpb.DeleteColumnResponse{Success: true}, nil
+}
+
+func (f *fakeColumns) CreateColumn(_ context.Context, req *columnpb.CreateColumnRequest, _ ...grpc.CallOption) (*columnpb.ColumnResponse, error) {
+	f.created = req
+	return &columnpb.ColumnResponse{Column: &columnpb.Column{Id: "c1", Name: req.GetName(), BoardId: req.GetBoardId()}}, nil
 }
 
 func TestAPI(t *testing.T) {
@@ -90,7 +129,8 @@ func TestAPI(t *testing.T) {
 
 	projects := &fakeProjects{}
 	tasks := &fakeTasks{}
-	h := newHandler(telemetry.NewLogger(io.Discard), "blue", t.TempDir(), nil, projects, tasks, newVerifier(jwksSrv.URL, "iss", "aud"))
+	columns := &fakeColumns{}
+	h := newHandler(telemetry.NewLogger(io.Discard), "blue", t.TempDir(), nil, projects, tasks, columns, newVerifier(jwksSrv.URL, "iss", "aud"))
 
 	for name, tc := range map[string]struct {
 		path, auth string
@@ -133,13 +173,38 @@ func TestAPI(t *testing.T) {
 	if rec := call(http.MethodGet, "/api/projects", ""); !strings.Contains(rec.Body.String(), `"name":"demo"`) {
 		t.Errorf("body = %s", rec.Body.String())
 	}
-	if rec := call(http.MethodPost, "/api/projects/p1/tasks", `{"title":"t","status":"todo"}`); rec.Code != http.StatusOK ||
-		tasks.created.GetProjectId() != "p1" || tasks.created.GetTitle() != "t" || tasks.created.GetStatus() != "todo" {
+	if rec := call(http.MethodPost, "/api/projects/p1/tasks", `{"title":"t","columnId":"c1"}`); rec.Code != http.StatusOK ||
+		tasks.created.GetProjectId() != "p1" || tasks.created.GetTitle() != "t" || tasks.created.GetColumnId() != "c1" {
 		t.Errorf("create: %d %s %v", rec.Code, rec.Body.String(), tasks.created)
 	}
-	if rec := call(http.MethodPatch, "/api/tasks/t1", `{"status":"done"}`); rec.Code != http.StatusOK ||
-		tasks.updated.GetId() != "t1" || tasks.updated.GetTask().GetStatus() != "done" || tasks.updated.GetUpdateMask().GetPaths()[0] != "status" {
+	if rec := call(http.MethodPatch, "/api/tasks/t1", `{"columnId":"c2"}`); rec.Code != http.StatusOK ||
+		tasks.updated.GetId() != "t1" || tasks.updated.GetTask().GetColumnId() != "c2" || tasks.updated.GetUpdateMask().GetPaths()[0] != "column_id" {
 		t.Errorf("update: %d %s %v", rec.Code, rec.Body.String(), tasks.updated)
+	}
+	if rec := call(http.MethodPost, "/api/projects/p1/columns", `{"name":"doing"}`); rec.Code != http.StatusOK ||
+		columns.created.GetBoardId() != "p1" || columns.created.GetName() != "doing" {
+		t.Errorf("create column: %d %s %v", rec.Code, rec.Body.String(), columns.created)
+	}
+	if rec := call(http.MethodPatch, "/api/tasks/t1", `{"title":"t2","description":""}`); rec.Code != http.StatusOK ||
+		strings.Join(tasks.updated.GetUpdateMask().GetPaths(), ",") != "title,description" || tasks.updated.GetTask().GetTitle() != "t2" {
+		t.Errorf("update fields: %d %v", rec.Code, tasks.updated)
+	}
+	if rec := call(http.MethodGet, "/api/tasks/t1", ""); !strings.Contains(rec.Body.String(), `"description":"details"`) {
+		t.Errorf("get task: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := call(http.MethodDelete, "/api/tasks/t1", ""); rec.Code != http.StatusOK || tasks.deleted != "t1" {
+		t.Errorf("delete task: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := call(http.MethodPost, "/api/projects", `{"name":"new","description":"d"}`); rec.Code != http.StatusOK ||
+		projects.created.GetName() != "new" || projects.created.GetOwnerId() != "" {
+		t.Errorf("create project: %d %v", rec.Code, projects.created)
+	}
+	if rec := call(http.MethodPatch, "/api/columns/c1", `{"name":"renamed"}`); rec.Code != http.StatusOK ||
+		columns.updated.GetId() != "c1" || columns.updated.GetName() != "renamed" {
+		t.Errorf("update column: %d %v", rec.Code, columns.updated)
+	}
+	if rec := call(http.MethodDelete, "/api/columns/c1", ""); rec.Code != http.StatusOK || columns.deleted != "c1" {
+		t.Errorf("delete column: %d %s", rec.Code, rec.Body.String())
 	}
 	if rec := call(http.MethodPatch, "/api/tasks/t1", "not json"); rec.Code != http.StatusBadRequest {
 		t.Errorf("bad body: got %d", rec.Code)
@@ -156,7 +221,7 @@ func (fakeIdp) Login(_ context.Context, req *idppb.LoginRequest, _ ...grpc.CallO
 }
 
 func TestLogin(t *testing.T) {
-	h := newHandler(telemetry.NewLogger(io.Discard), "blue", t.TempDir(), fakeIdp{}, nil, nil, nil)
+	h := newHandler(telemetry.NewLogger(io.Discard), "blue", t.TempDir(), fakeIdp{}, nil, nil, nil, nil)
 	for body, want := range map[string]struct {
 		code int
 		body string
