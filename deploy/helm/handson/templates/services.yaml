@@ -1,0 +1,75 @@
+{{- range $key, $svc := .Values.services }}
+{{- $name := printf "handson-%s" $key }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    app: {{ $name }}
+spec:
+  selector:
+    app: {{ $name }}
+  ports:
+    - name: grpc
+      port: 50051
+    {{- if $svc.http }}
+    - name: http
+      port: 8080
+    {{- end }}
+    - name: metrics
+      port: 9464
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    app: {{ $name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+    spec:
+      terminationGracePeriodSeconds: {{ $svc.terminationGracePeriodSeconds | default 30 }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      {{- /* migrate は server と分けて実行する（docs/conventions.md）。DB が起動するまでは失敗して再試行される */}}
+      initContainers:
+        - name: migrate
+          {{- include "handson.container" (dict "root" $ "key" $key "svc" $svc "name" $name) | nindent 10 }}
+          args: ["migrate"]
+      containers:
+        - name: server
+          {{- include "handson.container" (dict "root" $ "key" $key "svc" $svc "name" $name) | nindent 10 }}
+          args: ["server"]
+          ports:
+            - name: grpc
+              containerPort: 50051
+            {{- if $svc.http }}
+            - name: http
+              containerPort: 8080
+            {{- end }}
+            - name: metrics
+              containerPort: 9464
+          readinessProbe:
+            grpc:
+              port: 50051
+            periodSeconds: 3
+          livenessProbe:
+            grpc:
+              port: 50051
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+{{- end }}

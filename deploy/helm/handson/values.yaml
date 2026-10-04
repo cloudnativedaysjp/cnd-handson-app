@@ -1,0 +1,54 @@
+# 全サービスのイメージは <registry>/<サービス名>:<tag>
+image:
+  registry: ghcr.io/cloudnativedaysjp/cnd-handson-app
+  tag: latest
+  pullPolicy: IfNotPresent
+
+otel:
+  # OTLP（http/protobuf）の送り先。空なら送らない。送れなくてもサービスは止まらない
+  endpoint: ""
+
+idp:
+  # JWT の iss / aud。入口が検証に同じ値を使う
+  iss: http://handson-idp:8080
+  aud: handson
+  # base64 の PEM。空なら install 時に生成し、upgrade では引き継ぐ
+  signingKey: ""
+  # migrate が作るデモユーザー。email か password を空にすると作らない
+  demo:
+    email: demo@example.com
+    password: demo-password
+
+postgres:
+  # false なら chart の Postgres を作らず、host の DB を使う
+  enabled: true
+  image: postgres:17
+  storage: 1Gi
+  # host と port は enabled=false のときだけ使う。chart の Postgres は 5432 で待ち受ける
+  host: ""
+  port: 5432
+  database: handson
+  user: handson
+  # 空なら install 時に生成し、upgrade では引き継ぐ
+  password: ""
+
+# Deployment 名とサービス名は handson-<キー>。イメージ名は <キー>
+services:
+  idp:
+    command: ["/idp-service"]
+    http: true
+  project:
+    command: ["/project-service"]
+    env:
+      TASK_ADDR: handson-task:50051
+      COLUMN_ADDR: handson-column:50051
+  task:
+    command: ["/task-service"]
+    env:
+      PROJECT_ADDR: handson-project:50051
+  column:
+    command: ["python", "./cmd/server/main.py"]
+    env:
+      PROJECT_ADDR: handson-project:50051
+    # gRPC の猶予 5 秒と telemetry の終了 3 秒が収まるようにする
+    terminationGracePeriodSeconds: 15
