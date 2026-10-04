@@ -1,5 +1,5 @@
 [tools]
-go = "1.24.3"      # go.mod の最大値。これ未満だと toolchain の自動取得が走る
+go = "1.25.14"      # go.mod の最大値。これ未満だと toolchain の自動取得が走る
 python = "3.12.13" # backend/column の Dockerfile は 3.12-slim (パッチ未固定)。3.12 系の具体版
 node = "24.21.0"   # CI・Dockerfile と揃える
 pnpm = "10.6.5"    # ルートの packageManager

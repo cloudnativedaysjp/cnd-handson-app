@@ -1,5 +1,5 @@
 # Build context is the repo root (single Go module): docker build -f backend/idp/Dockerfile .
-FROM --platform=${BUILDPLATFORM} golang:1.24.3-alpine3.21 AS base
+FROM --platform=${BUILDPLATFORM} golang:1.25.14-alpine3.23 AS base
 WORKDIR /src
 ENV CGO_ENABLED=0
 ENV GOFLAGS="-mod=readonly"
@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,sharing=locked \
     --mount=type=cache,target=/root/.cache/go-build,sharing=locked \
     mkdir /out && go test -v -coverprofile=/out/cover.out ./backend/idp/...
 
-FROM golangci/golangci-lint:v2.1.6-alpine AS lint-base
+FROM golangci/golangci-lint:v2.14.0-alpine AS lint-base
 
 FROM base AS lint
 ENV GOLANGCI_LINT_CACHE="/root/.cache/golangci-lint"
