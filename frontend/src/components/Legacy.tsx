@@ -59,7 +59,7 @@ const useProjectData = (id: string) => {
         setColumns(c.columns);
       })
       .catch(() =>
-        setError("タスクと列を読み込めませんでした。再読み込みしてください"),
+        setError("タスクと状態を読み込めませんでした。再読み込みしてください"),
       )
       .finally(() => setLoaded(true));
   }, [id]);
@@ -123,9 +123,9 @@ const Frame: React.FC<{
             </Link>
             <Link
               to={`/projects/${project.id}/columns`}
-              aria-current={current("COL-010")}
+              aria-current={current("STS-010")}
             >
-              列の設定
+              状態の設定
             </Link>
           </>
         )}
@@ -162,10 +162,10 @@ const StandardColumnsButton: React.FC<{
     onClick={() =>
       createStandardColumns(projectId)
         .then(onCreated)
-        .catch(() => onError("列を作成できませんでした"))
+        .catch(() => onError("状態を作成できませんでした"))
     }
   >
-    標準の列（{STANDARD_COLUMNS.join("・")}）を作成
+    標準の状態（{STANDARD_COLUMNS.join("・")}）を作成
   </button>
 );
 
@@ -284,7 +284,7 @@ export const LegacyProjectList: React.FC = () => {
   );
 };
 
-// 列で絞り込むときの値。"" はすべて、NONE は列に入っていないタスク
+// 状態で絞り込むときの値。"" はすべて、NONE は状態が未設定のタスク
 const NONE = "__none__";
 
 export const LegacyProject: React.FC = () => {
@@ -311,7 +311,7 @@ export const LegacyProject: React.FC = () => {
     try {
       const { task } = await api<{ task: Task }>(`/api/projects/${id}/tasks`, {
         method: "POST",
-        // 件名だけで登録したタスクは、先頭の列に入れる
+        // 件名だけで登録したタスクは、先頭の状態に入れる
         body: JSON.stringify({ title, columnId: columns[0]?.id ?? "" }),
       });
       setTasks((ts) => [...ts, task]);
@@ -351,7 +351,7 @@ export const LegacyProject: React.FC = () => {
       {loaded && columns.length === 0 && (
         <div className="legacy-panel">
           <p className="legacy-note">
-            このプロジェクトには列がありません。列がタスクの状態になります。
+            このプロジェクトには状態がありません。先に状態を用意してください。
           </p>
           <div className="legacy-actions">
             <StandardColumnsButton
@@ -359,7 +359,7 @@ export const LegacyProject: React.FC = () => {
               onCreated={setColumns}
               onError={setError}
             />
-            <Link to={`/projects/${id}/columns`}>列を自分で設定する</Link>
+            <Link to={`/projects/${id}/columns`}>状態を自分で設定する</Link>
           </div>
         </div>
       )}
@@ -691,7 +691,7 @@ export const LegacyColumns: React.FC = () => {
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) {
-      setError("列名を入力してください");
+      setError("状態名を入力してください");
       return;
     }
     try {
@@ -700,7 +700,7 @@ export const LegacyColumns: React.FC = () => {
       setNewName("");
       setError("");
     } catch {
-      setError("列を追加できませんでした");
+      setError("状態を追加できませんでした");
     }
   };
 
@@ -715,7 +715,7 @@ export const LegacyColumns: React.FC = () => {
       setColumns((cs) => cs.map((c) => (c.id === columnId ? column : c)));
       setError("");
     } catch {
-      setError("列名を変更できませんでした");
+      setError("状態名を変更できませんでした");
     }
   };
 
@@ -726,28 +726,28 @@ export const LegacyColumns: React.FC = () => {
       setConfirming("");
       setError("");
     } catch {
-      setError("列を削除できませんでした");
+      setError("状態を削除できませんでした");
     }
   };
 
   return (
     <Frame
-      screenId="COL-010"
-      title="列の設定"
+      screenId="STS-010"
+      title="状態の設定"
       project={{ id, name: projectName }}
       crumbs={[
         { label: "プロジェクト一覧", to: "/" },
         { label: projectName || "プロジェクト", to: `/projects/${id}` },
-        { label: "列の設定" },
+        { label: "状態の設定" },
       ]}
       error={error}
     >
       <p className="legacy-note">
-        列はタスクの状態です。タスク一覧では、ここに並んだ順に表示します。
+        タスク一覧では、ここに並んだ順に状態を表示します。
       </p>
       {loaded && columns.length === 0 && (
         <div className="legacy-panel">
-          <p className="legacy-note">列がありません。</p>
+          <p className="legacy-note">状態がありません。</p>
           <StandardColumnsButton
             projectId={id}
             onCreated={setColumns}
@@ -761,7 +761,7 @@ export const LegacyColumns: React.FC = () => {
             <thead>
               <tr>
                 <th className="legacy-num">順</th>
-                <th>列名</th>
+                <th>状態名</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -773,7 +773,7 @@ export const LegacyColumns: React.FC = () => {
                     <div className="legacy-row">
                       <input
                         type="text"
-                        aria-label={`${c.name} の列名`}
+                        aria-label={`${c.name} の状態名`}
                         value={names[c.id] ?? c.name}
                         onChange={(e) =>
                           setNames({ ...names, [c.id]: e.target.value })
@@ -788,7 +788,7 @@ export const LegacyColumns: React.FC = () => {
                     {confirming === c.id ? (
                       <div className="legacy-row">
                         <span className="legacy-confirm">
-                          この列のタスクは「未設定」になります。
+                          この状態のタスクは「未設定」になります。
                         </span>
                         <button type="button" onClick={() => remove(c.id)}>
                           削除する
@@ -809,9 +809,9 @@ export const LegacyColumns: React.FC = () => {
           </table>
         </div>
       )}
-      <h2>列の追加</h2>
+      <h2>状態の追加</h2>
       <form className="legacy-row" onSubmit={add}>
-        <label htmlFor="column-name">列名</label>
+        <label htmlFor="column-name">状態名</label>
         <input
           id="column-name"
           type="text"

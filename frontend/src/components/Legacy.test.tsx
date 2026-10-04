@@ -101,7 +101,7 @@ test("task list: filters by column, registers into the first column, moves a tas
 test("task list: offers the standard columns when the project has none", async () => {
   columns = [];
   show("/projects/p1");
-  fireEvent.click(await screen.findByRole("button", { name: /標準の列/ }));
+  fireEvent.click(await screen.findByRole("button", { name: /標準の状態/ }));
   expect(
     await screen.findByRole("button", { name: "作業中 0件" }),
   ).toBeInTheDocument();
@@ -140,7 +140,7 @@ test("task detail: saves the form and deletes after confirming", async () => {
 
 test("column settings: renames and deletes after confirming", async () => {
   show("/projects/p1/columns");
-  fireEvent.change(await screen.findByLabelText("未着手 の列名"), {
+  fireEvent.change(await screen.findByLabelText("未着手 の状態名"), {
     target: { value: "待ち" },
   });
   fireEvent.click(screen.getAllByRole("button", { name: "変更" })[0]);
@@ -150,7 +150,7 @@ test("column settings: renames and deletes after confirming", async () => {
   expect(screen.getByText(/未設定」になります/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "削除する" }));
   await vi.waitFor(() =>
-    expect(screen.queryByLabelText("完了 の列名")).not.toBeInTheDocument(),
+    expect(screen.queryByLabelText("完了 の状態名")).not.toBeInTheDocument(),
   );
   called("/api/columns/c2", "DELETE");
 });
