@@ -1,0 +1,117 @@
+{{- range $variant, $cfg := .Values.entry.variants }}
+{{- $name := printf "handson-%s" $variant }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    app: {{ $name }}
+    app.kubernetes.io/part-of: handson
+spec:
+  selector:
+    app: {{ $name }}
+  ports:
+    - name: http
+      port: 8080
+    - name: metrics
+      port: 9464
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    app: {{ $name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: entry
+          image: {{ printf "%s/handson:%s" $.Values.image.registry $variant }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: metrics
+              containerPort: 9464
+          {{- /* 署名鍵は渡さず、検証に要る値だけ渡す */}}
+          env:
+            - name: PROJECT_ADDR
+              value: handson-project:50051
+            - name: TASK_ADDR
+              value: handson-task:50051
+            - name: COLUMN_ADDR
+              value: handson-column:50051
+            - name: IDP_ADDR
+              value: handson-idp:50051
+            - name: IDP_JWKS_URL
+              value: http://handson-idp:8080/.well-known/jwks.json
+            - name: IDP_ISS
+              value: {{ $.Values.idp.iss | quote }}
+            - name: IDP_AUD
+              value: {{ $.Values.idp.aud | quote }}
+            - name: OTEL_SERVICE_NAME
+              value: {{ $name }}
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: {{ printf "service.namespace=handson,app.variant=%s,app.color=%s" $variant $cfg.color }}
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: http/protobuf
+            - name: OTEL_PROPAGATORS
+              value: tracecontext,baggage
+            {{- with $.Values.otel.endpoint }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ . | quote }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+{{- if $.Values.entry.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $name }}
+spec:
+  ingressClassName: {{ $.Values.entry.ingress.className }}
+  rules:
+    - host: {{ index $.Values.entry.ingress.hosts $variant }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $name }}
+                port:
+                  name: http
+{{- end }}
+{{- end }}

@@ -1,0 +1,42 @@
+{{- with .Values.entry.gateway }}
+{{- if .enabled }}
+{{- if .create }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: handson
+spec:
+  gatewayClassName: {{ .className }}
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+{{- end }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: handson-entry
+spec:
+  parentRefs:
+    {{- if .create }}
+    - name: handson
+    {{- else }}
+    {{- toYaml .parentRefs | nindent 4 }}
+    {{- end }}
+  {{- with .hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    - backendRefs:
+        {{- range $variant, $weight := .weights }}
+        - name: handson-{{ $variant }}
+          port: 8080
+          weight: {{ $weight }}
+        {{- end }}
+{{- end }}
+{{- end }}

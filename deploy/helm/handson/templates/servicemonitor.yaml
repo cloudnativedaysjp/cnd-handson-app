@@ -1,0 +1,12 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: handson
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: handson
+  endpoints:
+    - port: metrics
+{{- end }}
