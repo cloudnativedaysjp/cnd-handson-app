@@ -192,6 +192,10 @@ func TestAPI(t *testing.T) {
 	if rec := call(http.MethodGet, "/api/tasks/t1", ""); !strings.Contains(rec.Body.String(), `"description":"details"`) {
 		t.Errorf("get task: %d %s", rec.Code, rec.Body.String())
 	}
+	long := strings.Repeat("あ", 2000)
+	if rec := call(http.MethodPatch, "/api/tasks/t1", `{"description":"`+long+`"}`); rec.Code != http.StatusOK || tasks.updated.GetTask().GetDescription() != long {
+		t.Errorf("long description: %d", rec.Code)
+	}
 	if rec := call(http.MethodDelete, "/api/tasks/t1", ""); rec.Code != http.StatusOK || tasks.deleted != "t1" {
 		t.Errorf("delete task: %d %s", rec.Code, rec.Body.String())
 	}

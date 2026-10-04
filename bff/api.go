@@ -132,7 +132,7 @@ func registerAPI(route func(string, http.HandlerFunc), idp idppb.IdpServiceClien
 
 // decode は JSON の本文を読む。読めなければ 400 になるよう InvalidArgument を返す
 func decode(r *http.Request, v any) error {
-	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<10)).Decode(v); err != nil {
+	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<16)).Decode(v); err != nil {
 		return status.Error(codes.InvalidArgument, "invalid body")
 	}
 	return nil

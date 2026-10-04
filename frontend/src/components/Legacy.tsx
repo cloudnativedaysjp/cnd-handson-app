@@ -650,7 +650,7 @@ export const LegacyTask: React.FC = () => {
                 保存
               </button>
               <Link to={`/projects/${id}`}>タスク一覧に戻る</Link>
-              {saved && <span role="status">保存しました</span>}
+              {saved && <output>保存しました</output>}
             </div>
           </form>
 
