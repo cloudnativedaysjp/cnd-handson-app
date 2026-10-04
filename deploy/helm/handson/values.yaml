@@ -14,7 +14,7 @@ idp:
   aud: handson
   # base64 の PEM。空なら install 時に生成し、upgrade では引き継ぐ
   signingKey: ""
-  # migrate が作るデモユーザー。email を空にすると作らない
+  # migrate が作るデモユーザー。email か password を空にすると作らない
   demo:
     email: demo@example.com
     password: demo-password
