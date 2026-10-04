@@ -21,6 +21,7 @@ kubectl -n handson wait --for=condition=Ready pod --all --timeout=300s
 | `image.registry` / `image.tag` | イメージの取得元 |
 | `postgres.enabled=false` と `postgres.host` | chart の Postgres を使わず、外の DB に繋ぐ |
 | `entry.ingress.enabled` と `entry.ingress.hosts` | 入口の Ingress を作る。ホスト名は版ごとに決める |
+| `entry.gateway.enabled` と `entry.gateway.weights` | Gateway API の HTTPRoute で入口を出す。版ごとの重みで振り分ける。`entry.gateway.create=false` なら、`parentRefs` の既存の Gateway につなぐ |
 | `serviceMonitor.enabled` | Prometheus Operator が `/metrics` を集める ServiceMonitor を作る |
 | `secret.create=false` | Secret を作らず、先に作った `handson-secrets` を使う。Argo CD で入れるときに使う |
 
