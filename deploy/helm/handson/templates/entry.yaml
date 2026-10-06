@@ -39,7 +39,8 @@ spec:
           type: RuntimeDefault
       containers:
         - name: entry
-          image: {{ printf "%s/handson:%s" $.Values.image.registry $variant }}
+          {{- $tag := ternary $variant (printf "%s-%s" $variant $.Values.image.tag) (eq $.Values.image.tag "latest") }}
+          image: {{ printf "%s/handson:%s" $.Values.image.registry $tag }}
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
           securityContext:
             allowPrivilegeEscalation: false

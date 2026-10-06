@@ -20,23 +20,28 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [frontend, project, idp, task, column]
         include:
-          - service: frontend
-            context: .
-            file: frontend/Dockerfile
-          - service: project
+          - image: project
             context: .
             file: backend/project/Dockerfile
-          - service: idp
+          - image: idp
             context: .
             file: backend/idp/Dockerfile
-          - service: task
+          - image: task
             context: .
             file: backend/task/Dockerfile
-          - service: column
+          - image: column
             context: backend/column
             file: backend/column/Dockerfile
+          # フロントエンドは版（VARIANT）をビルド時に埋め込むので、版ごとにビルドしてタグで分ける
+          - image: handson
+            context: .
+            file: bff/Dockerfile
+            variant: legacy
+          - image: handson
+            context: .
+            file: bff/Dockerfile
+            variant: modern
     
     steps:
       - name: Checkout code
@@ -54,12 +59,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push ${{ matrix.service }} Docker image
+      - name: Build and push ${{ matrix.image }} ${{ matrix.variant }} Docker image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.file }}
+          build-args: VARIANT=${{ matrix.variant }}
           push: true
+          # フロントエンドのタグは <版> と <版>-sha-<sha>。ほかは latest と sha-<sha>
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.service }}:latest
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.service }}:sha-${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.image }}:${{ matrix.variant || 'latest' }}
+            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.image }}:${{ matrix.variant && format('{0}-', matrix.variant) || '' }}sha-${{ github.sha }}

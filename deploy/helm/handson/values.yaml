@@ -1,4 +1,5 @@
-# 全サービスのイメージは <registry>/<サービス名>:<tag>
+# イメージは <registry>/<サービス名>:<tag>。
+# handson-legacy / handson-modern は <registry>/handson:<版>（tag が latest のとき）か <registry>/handson:<版>-<tag>
 image:
   registry: ghcr.io/cloudnativedaysjp/cnd-handson-app
   tag: latest
@@ -18,7 +19,7 @@ secret:
   create: true
 
 idp:
-  # JWT の iss / aud。入口が検証に同じ値を使う
+  # JWT の iss / aud。handson-legacy / handson-modern も検証に同じ値を使う
   iss: http://handson-idp:8080
   aud: handson
   # base64 の PEM。空なら install 時に生成し、upgrade では引き継ぐ
@@ -62,7 +63,7 @@ services:
     # gRPC の猶予 5 秒と telemetry の終了 3 秒が収まるようにする
     terminationGracePeriodSeconds: 15
 
-# 入口。イメージは <registry>/handson:<版>（版は VARIANT でビルド時に決まる）
+# フロントエンド（handson-legacy / handson-modern）。版はビルド時の VARIANT で決まる
 entry:
   variants:
     legacy:
@@ -76,7 +77,7 @@ entry:
     hosts:
       legacy: legacy.example.com
       modern: modern.example.com
-  # Gateway API の HTTPRoute で入口を出す。版ごとの重みで振り分ける
+  # Gateway API の HTTPRoute でフロントエンドを出す。版ごとの重みで振り分ける
   gateway:
     enabled: false
     # true なら Gateway も作る。false なら parentRefs の既存の Gateway につなぐ
