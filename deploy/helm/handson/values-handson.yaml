@@ -1,0 +1,18 @@
+# cnd-handson の chapter_cluster-create で作ったクラスタに入れるときの値。
+# 入口は Envoy Gateway の handson-gateway（gateway namespace、listener http、ホストの 80 番）。
+# ingress-nginx は入っていないので、Ingress ではなく HTTPRoute で出す。
+#   helm install handson deploy/helm/handson -n handson --create-namespace -f deploy/helm/handson/values-handson.yaml
+entry:
+  gateway:
+    enabled: true
+    create: false
+    parentRefs:
+      - name: handson-gateway
+        namespace: gateway
+        sectionName: http
+    # app.example.com は chapter_cluster-create のサンプルアプリが使うので、別の名前にする
+    hostnames:
+      - kanban.example.com
+    hosts:
+      legacy: legacy.example.com
+      modern: modern.example.com
