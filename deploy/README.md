@@ -46,9 +46,24 @@ http://localhost:8080 を開き、`demo@example.com` / `demo-password` でログ
 
 ## よく使う設定
 
-### ハンズオンの章と組み合わせる
+### ハンズオンのクラスタに入れる
 
-cnd-handson の章で入れたものに合わせて、次の値を指定します。
+cnd-handson の cluster-create の章で作ったクラスタには、`values-handson.yaml` を使います。この章では、入口が ingress-nginx ではなく Envoy Gateway です。`gateway` namespace の `handson-gateway` に HTTPRoute をつなぎます。
+
+```bash
+helm install handson deploy/helm/handson -n handson --create-namespace -f deploy/helm/handson/values-handson.yaml
+```
+
+| ホスト名 | 送り先 |
+|---|---|
+| `kanban.example.com` | `entry.gateway.weights` の重みで legacy と modern に振り分ける |
+| `legacy.example.com` | handson-legacy だけ |
+| `modern.example.com` | handson-modern だけ |
+
+- Gateway はホストの 80 番で待ち受けます。手元の hosts に、クラスタを動かすマシンの IP とこれらのホスト名を書きます。
+- `app.example.com` は、章のサンプルアプリが使っています。
+
+ほかの章で入れたものと組み合わせるときは、次の値も指定します。
 
 ```yaml
 otel:
@@ -57,13 +72,6 @@ otel:
 serviceMonitor:
   # prometheus の章の kube-prometheus-stack が拾う
   enabled: true
-entry:
-  ingress:
-    # cluster-create の章の ingress-nginx
-    enabled: true
-    hosts:
-      legacy: legacy.example.com
-      modern: modern.example.com
 ```
 
 ### Gateway API で legacy と modern に振り分ける
@@ -169,7 +177,8 @@ postgres:
 | `entry.gateway.create` | `true` | Gateway も作る。`false` なら `parentRefs` の Gateway につなぐ |
 | `entry.gateway.className` | `cilium` | chart が作る Gateway の GatewayClass |
 | `entry.gateway.parentRefs` | `[]` | `create: false` のときにつなぐ Gateway |
-| `entry.gateway.hostnames` | `[]` | HTTPRoute のホスト名。空なら絞らない |
+| `entry.gateway.hostnames` | `[]` | 重みで振り分ける HTTPRoute のホスト名。空なら絞らない |
+| `entry.gateway.hosts` | `{}` | 版ごとのホスト名。指定した版には、その版だけに送る HTTPRoute も作る |
 | `entry.gateway.weights` | legacy 100、modern 0 | 版ごとの重み |
 | `services` | idp、project、task、column | サービスごとのコマンドと環境変数。ふつうは変えない |
 

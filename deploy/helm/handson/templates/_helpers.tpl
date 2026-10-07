@@ -58,3 +58,14 @@ env:
     value: {{ . | quote }}
   {{- end }}
 {{- end -}}
+
+
+{{/* HTTPRoute の parentRefs。create なら chart の Gateway、そうでなければ指定した Gateway */}}
+{{- define "handson.gatewayParentRefs" -}}
+{{- if .create -}}
+- name: handson
+{{- else -}}
+{{- if not .parentRefs }}{{ fail "entry.gateway.create が false のときは entry.gateway.parentRefs が要る" }}{{ end }}
+{{- toYaml .parentRefs }}
+{{- end -}}
+{{- end -}}
