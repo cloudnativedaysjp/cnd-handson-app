@@ -1,0 +1,537 @@
+/* modern 版の画面。軽いカンバン。アクセントは版の color（green）にそろえる。.modern の外には効かせない */
+.modern {
+  --canvas: #f5f7fa;
+  --surface: #ffffff;
+  --ink: #1c2330;
+  --muted: #687082;
+  --line: #e2e6ed;
+  --accent: #0e9f6e;
+  --accent-ink: #0a7a55;
+  --accent-soft: #e6f6ef;
+  --danger: #c2410c;
+  --lane: #eceff4;
+
+  min-height: 100vh;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+    "Noto Sans JP", "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: left;
+}
+
+.modern *,
+.modern *::before,
+.modern *::after {
+  box-sizing: border-box;
+}
+
+.modern a {
+  color: inherit;
+}
+
+.modern :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.modern-bar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 52px;
+  padding: 0 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.modern-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.modern-brand::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.modern-nav {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.modern-nav a {
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.modern-nav a:hover {
+  background: var(--canvas);
+}
+
+.modern-nav a[aria-current="page"] {
+  color: var(--ink);
+  background: var(--canvas);
+  font-weight: 600;
+}
+
+.modern-main {
+  padding: 28px 24px 48px;
+}
+
+.modern-narrow {
+  max-width: 760px;
+}
+
+.modern h1 {
+  margin: 0 0 4px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.modern-lead {
+  margin: 0 0 24px;
+  color: var(--muted);
+}
+
+.modern h2 {
+  margin: 32px 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.modern-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.modern-button:hover {
+  background: var(--canvas);
+}
+
+.modern-button.is-primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.modern-button.is-primary:hover {
+  background: var(--accent-ink);
+}
+
+.modern-button.is-danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.modern-button.is-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.modern-input,
+.modern-textarea,
+.modern-select {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.modern-textarea {
+  height: auto;
+  min-height: 120px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.modern-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.modern-field > span {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.modern-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.modern-row > .modern-input {
+  flex: 1;
+  min-width: 180px;
+  width: auto;
+}
+
+.modern-error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff1eb;
+  color: var(--danger);
+}
+
+.modern-empty {
+  padding: 32px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  text-align: center;
+}
+
+.modern-empty p {
+  margin: 0 0 12px;
+}
+
+/* プロジェクト一覧 */
+.modern-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.modern-list li + li {
+  border-top: 1px solid var(--line);
+}
+
+.modern-list a {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 16px;
+  padding: 14px 18px;
+  text-decoration: none;
+}
+
+.modern-list a:hover {
+  background: var(--canvas);
+}
+
+.modern-list strong {
+  font-weight: 600;
+}
+
+.modern-list small {
+  grid-column: 1;
+  color: var(--muted);
+}
+
+.modern-list time {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 広い画面では、一覧の右に作成欄を置く */
+.modern-projects {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+  max-width: 1120px;
+}
+
+.modern-panel {
+  position: sticky;
+  top: 24px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.modern-panel h2 {
+  margin-top: 0;
+}
+
+@media (max-width: 900px) {
+  .modern-projects {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .modern-panel {
+    position: static;
+  }
+}
+
+/* ボード */
+.modern-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modern-toolbar form {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 260px;
+  max-width: 520px;
+}
+
+.modern-search {
+  width: 220px;
+}
+
+.modern-board {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 12px;
+}
+
+.modern-lane {
+  flex: 0 0 280px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--lane);
+  transition: background-color 0.12s;
+}
+
+.modern-lane.is-over {
+  background: var(--accent-soft);
+}
+
+.modern-lane header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px 10px;
+  font-weight: 600;
+}
+
+.modern-count {
+  min-width: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.modern-cards {
+  display: grid;
+  gap: 8px;
+  min-height: 40px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.modern-card {
+  display: block;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  text-decoration: none;
+  cursor: grab;
+  touch-action: none;
+}
+
+.modern-card.is-dragging {
+  position: relative;
+  z-index: 1;
+  cursor: grabbing;
+  box-shadow: 0 10px 24px rgba(28, 35, 48, 0.16);
+}
+
+.modern-card strong {
+  display: block;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.modern-card small {
+  display: -webkit-box;
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--muted);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.modern-lane-empty {
+  padding: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* タスクの詳細（右から出るパネル） */
+.modern-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: rgba(28, 35, 48, 0.24);
+  cursor: default;
+}
+
+.modern-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 11;
+  width: min(440px, 100%);
+  overflow-y: auto;
+  padding: 20px 24px;
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+  animation: modern-slide 0.18s ease-out;
+}
+
+.modern-drawer header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.modern-meta {
+  margin: 16px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.modern-meta div {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.modern-confirm {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.modern-confirm p {
+  margin: 0 0 10px;
+  color: var(--danger);
+}
+
+@keyframes modern-slide {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modern-drawer {
+    animation: none;
+  }
+
+  .modern-lane {
+    transition: none;
+  }
+}
+
+/* 状態の設定 */
+.modern-statuses {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.modern-statuses li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px;
+}
+
+.modern-statuses li + li {
+  border-top: 1px solid var(--line);
+}
+
+.modern-statuses .modern-input {
+  flex: 1;
+  min-width: 160px;
+  width: auto;
+}
+
+@media (max-width: 600px) {
+  /* メニューを 2 段目に下ろし、ログアウトと重ならないようにする */
+  .modern-bar {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    height: auto;
+    padding: 8px 16px;
+  }
+
+  .modern-bar .modern-button {
+    margin-left: auto;
+  }
+
+  .modern-nav {
+    order: 3;
+    flex-basis: 100%;
+    overflow-x: auto;
+  }
+
+  .modern-main {
+    padding: 20px 16px 40px;
+  }
+
+  .modern-search {
+    width: 100%;
+  }
+}

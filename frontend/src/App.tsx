@@ -5,23 +5,21 @@ import {
   BrowserRouter as Router,
   Routes,
 } from "react-router-dom";
-import BoardForm from "./components/BoardForm";
-import BoardList from "./components/BoardList";
-import Borad from "./components/Borad";
+import { legacy } from "./board";
 import {
   LegacyColumns,
   LegacyProject,
   LegacyProjectList,
   LegacyTask,
-  legacy,
 } from "./components/Legacy";
 import Login from "./components/Login";
 import Logout from "./components/Logout";
+import {
+  ModernBoard,
+  ModernColumns,
+  ModernProjectList,
+} from "./components/Modern";
 import PrivateLayout from "./components/PrivateLayout";
-import ProjectForm from "./components/ProjectForm";
-import ProjectList from "./components/ProjectList";
-import TaskEditPage from "./components/TaskEditPage";
-import NewTaskPage from "./components/TaskNewPage";
 import { store } from "./store";
 
 function App() {
@@ -31,25 +29,25 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/logout" element={<Logout />} />
+          {/* データと URL は 2 つの版で共通。違うのは見せ方だけ */}
           <Route element={<PrivateLayout />}>
-            <Route path="/boards" element={<BoardList />} />
             <Route
               path="/"
-              element={legacy ? <LegacyProjectList /> : <ProjectList />}
+              element={legacy ? <LegacyProjectList /> : <ModernProjectList />}
             />
-            <Route path="/projects/:id" element={<LegacyProject />} />
+            <Route
+              path="/projects/:id"
+              element={legacy ? <LegacyProject /> : <ModernBoard />}
+            />
+            {/* modern はボードの上に詳細のパネルを開く */}
             <Route
               path="/projects/:id/tasks/:taskId"
-              element={<LegacyTask />}
+              element={legacy ? <LegacyTask /> : <ModernBoard />}
             />
-            <Route path="/projects/:id/columns" element={<LegacyColumns />} />
-            <Route path="/projects/new" element={<ProjectForm />} />
-            <Route path="/projects/edit/:id" element={<ProjectForm />} />
-            <Route path="/boards/:id" element={<Borad />} />
-            <Route path="/boards/add" element={<BoardForm />} />
-            <Route path="/boards/edit/:id" element={<BoardForm />} />
-            <Route path="/tasks/new" element={<NewTaskPage />} />
-            <Route path="/tasks/edit/:id" element={<TaskEditPage />} />
+            <Route
+              path="/projects/:id/columns"
+              element={legacy ? <LegacyColumns /> : <ModernColumns />}
+            />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
