@@ -142,7 +142,7 @@ export const ModernProjectList: React.FC = () => {
       <h1>プロジェクト</h1>
       <p className="modern-lead">開くとボードが表示されます。</p>
       <ErrorNote message={error} />
-      <div className="modern-projects">
+      <div className="modern-split">
         <div>
           <ul className="modern-list" data-testid="project-list">
             {projects.map((p) => (
@@ -632,89 +632,98 @@ export const ModernColumns: React.FC = () => {
 
   return (
     <Shell project={{ id, name: projectName }} current="statuses">
-      <div className="modern-narrow">
-        <h1>状態の設定</h1>
-        <p className="modern-lead">
-          {projectName ? `${projectName} の` : ""}
-          ボードには、ここに並んだ順にレーンが表示されます。
-        </p>
-        <ErrorNote message={error} />
-        {loaded && columns.length === 0 && (
-          <div className="modern-empty">
-            <p>状態がまだありません。</p>
-            <StandardColumnsButton
-              projectId={id}
-              onCreated={setColumns}
-              onError={setError}
-            />
-          </div>
-        )}
-        {columns.length > 0 && (
-          <ul className="modern-statuses">
-            {columns.map((c) => (
-              <li key={c.id}>
-                <input
-                  className="modern-input"
-                  aria-label={`${c.name} の名前`}
-                  value={names[c.id] ?? c.name}
-                  onChange={(e) =>
-                    setNames({ ...names, [c.id]: e.target.value })
-                  }
-                />
-                <button
-                  type="button"
-                  className="modern-button"
-                  onClick={() => rename(c.id)}
-                >
-                  名前を保存
-                </button>
-                {confirming === c.id ? (
-                  <>
-                    <button
-                      type="button"
-                      className="modern-button is-danger"
-                      onClick={() => remove(c.id)}
-                    >
-                      削除する
-                    </button>
-                    <button
-                      type="button"
-                      className="modern-button"
-                      onClick={() => setConfirming("")}
-                    >
-                      やめる
-                    </button>
-                  </>
-                ) : (
+      <h1>状態の設定</h1>
+      <p className="modern-lead">
+        {projectName ? `${projectName} の` : ""}
+        ボードには、ここに並んだ順にレーンが表示されます。
+      </p>
+      <ErrorNote message={error} />
+      <div className="modern-split">
+        <div>
+          {loaded && columns.length === 0 && (
+            <div className="modern-empty">
+              <p>状態がまだありません。</p>
+              <StandardColumnsButton
+                projectId={id}
+                onCreated={setColumns}
+                onError={setError}
+              />
+            </div>
+          )}
+          {columns.length > 0 && (
+            <ul className="modern-statuses">
+              {columns.map((c) => (
+                <li key={c.id}>
+                  <input
+                    className="modern-input"
+                    aria-label={`${c.name} の名前`}
+                    value={names[c.id] ?? c.name}
+                    onChange={(e) =>
+                      setNames({ ...names, [c.id]: e.target.value })
+                    }
+                  />
                   <button
                     type="button"
-                    className="modern-button is-quiet"
-                    onClick={() => setConfirming(c.id)}
+                    className="modern-button"
+                    onClick={() => rename(c.id)}
                   >
-                    削除
+                    名前を保存
                   </button>
-                )}
-                {confirming === c.id && (
-                  <small style={{ color: "var(--danger)", flexBasis: "100%" }}>
-                    この状態のタスクは「未設定」になります。
-                  </small>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-        <h2>状態を追加</h2>
-        <form className="modern-row" onSubmit={add}>
-          <input
-            className="modern-input"
-            aria-label="追加する状態の名前"
-            placeholder="例: レビュー待ち"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-          />
+                  {confirming === c.id ? (
+                    <>
+                      <button
+                        type="button"
+                        className="modern-button is-danger"
+                        onClick={() => remove(c.id)}
+                      >
+                        削除する
+                      </button>
+                      <button
+                        type="button"
+                        className="modern-button"
+                        onClick={() => setConfirming("")}
+                      >
+                        やめる
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="modern-button is-quiet"
+                      onClick={() => setConfirming(c.id)}
+                    >
+                      削除
+                    </button>
+                  )}
+                  {confirming === c.id && (
+                    <small
+                      style={{ color: "var(--danger)", flexBasis: "100%" }}
+                    >
+                      この状態のタスクは「未設定」になります。
+                    </small>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <form className="modern-panel" onSubmit={add}>
+          <h2>状態を追加</h2>
+          <label className="modern-field">
+            <span>状態の名前</span>
+            <input
+              className="modern-input"
+              placeholder="例: レビュー待ち"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+            />
+          </label>
           <button type="submit" className="modern-button is-primary">
             追加
           </button>
+          <p className="modern-note">
+            追加した状態は、ボードの右端にレーンとして並びます。
+          </p>
         </form>
       </div>
     </Shell>

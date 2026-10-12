@@ -265,8 +265,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 広い画面では、一覧の右に作成欄を置く */
-.modern-projects {
+/* 広い画面では、一覧の右に追加・作成の欄を置く */
+.modern-split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 24px;
@@ -287,8 +287,14 @@
   margin-top: 0;
 }
 
+.modern-note {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 @media (max-width: 900px) {
-  .modern-projects {
+  .modern-split {
     grid-template-columns: minmax(0, 1fr);
   }
 
