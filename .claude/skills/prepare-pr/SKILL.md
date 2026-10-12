@@ -22,7 +22,7 @@ description: 変更をレビュー可能な PR にまとめるときに使う。
 ## 提出する
 
 - コミットは Conventional Commits、英語。変更対象を確認してファイルごとに add する。
-- 提出前に base の更新を確認する。main への追従は `git merge origin/main`。生成コードの競合は再生成し、それ以外は人間に確認する。stack の追従は下記を参照する。
+- 提出前に base の更新を確認する。main への追従は `git fetch origin` の後に `git merge origin/main`。生成コードの競合は再生成し、それ以外は人間に確認する。stack の追従は下記を参照する。
 - AGENTS.md の許可範囲で作業ブランチを push する。許可がなければコミットまでで止め、push 待ちと報告する。
 - `.github/pull_request_template.md` と `docs/writing.md` に従って PR を作り、`ai-authored` を付ける。ラベルがなければ assignee に報告する。
 - 検証した内容と結果、未実行の理由、人間に判断してほしい点を記載する。必要な検証が未確認なら draft にする。
