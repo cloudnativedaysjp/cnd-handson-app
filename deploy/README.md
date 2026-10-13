@@ -61,6 +61,7 @@ helm install handson deploy/helm/handson -n handson --create-namespace -f deploy
 | `modern.example.com` | handson-modern だけ |
 
 - Gateway はホストの 80 番で待ち受けます。手元の hosts に、クラスタを動かすマシンの IP とこれらのホスト名を書きます。
+- `kanban.example.com` の重みは、既定では legacy が 100、modern が 0 です。modern にも振り分けるときは、`entry.gateway.weights` を変えます。
 - `app.example.com` は、章のサンプルアプリが使っています。
 
 ほかの章で入れたものと組み合わせるときは、次の値も指定します。
