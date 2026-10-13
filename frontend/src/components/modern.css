@@ -374,12 +374,27 @@
 }
 
 .modern-card {
-  display: block;
-  padding: 10px 12px;
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px 10px 6px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--surface);
+}
+
+.modern-card a {
+  flex: 1;
+  min-width: 0;
   text-decoration: none;
+}
+
+.modern-grip {
+  align-self: flex-start;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
   cursor: grab;
   touch-action: none;
 }

@@ -194,24 +194,36 @@ const Card: React.FC<{ task: Task; projectId: string }> = ({
   task,
   projectId,
 }) => {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id: task.id });
-  // dnd-kit は role="button" を付ける。リンクのままにして、Enter で詳細を開けるようにする。持ち上げるのは Space
-  const { role: _role, ...linkAttributes } = attributes;
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({ id: task.id });
+  // ドラッグはつまみだけで始める。リンクで始めると、dnd-kit が止めた click で <a> の既定の遷移が走る
   return (
-    <li>
-      <Link
-        ref={setNodeRef}
-        to={`/projects/${projectId}/tasks/${task.id}`}
-        className={`modern-card${isDragging ? " is-dragging" : ""}`}
-        style={
-          transform
-            ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
-            : undefined
-        }
+    <li
+      ref={setNodeRef}
+      className={`modern-card${isDragging ? " is-dragging" : ""}`}
+      style={
+        transform
+          ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
+          : undefined
+      }
+    >
+      <button
+        ref={setActivatorNodeRef}
+        type="button"
+        className="modern-grip"
+        aria-label={`${task.title} を移動`}
         {...listeners}
-        {...linkAttributes}
+        {...attributes}
       >
+        ⠿
+      </button>
+      <Link to={`/projects/${projectId}/tasks/${task.id}`}>
         <strong>{task.title}</strong>
         {task.description && <small>{task.description}</small>}
       </Link>
@@ -258,16 +270,9 @@ export const ModernBoard: React.FC = () => {
     useProjectData(id);
   const [title, setTitle] = useState("");
   const [query, setQuery] = useState("");
-  // クリックでカードを開けるよう、少し動かしてからドラッグを始める
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, {
-      keyboardCodes: {
-        start: ["Space"],
-        cancel: ["Escape"],
-        end: ["Space"],
-      },
-    }),
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor),
   );
 
   useEffect(() => {
@@ -313,7 +318,8 @@ export const ModernBoard: React.FC = () => {
     <Shell project={{ id, name: projectName }} current="board">
       <h1>{projectName || "ボード"}</h1>
       <p className="modern-lead">
-        カードをドラッグすると状態が変わります。カードを開くと詳細を編集できます。
+        カードの左の ⠿
+        をドラッグすると、状態が変わります。件名を押すと、詳細を編集できます。
       </p>
       <ErrorNote message={error} />
       <div className="modern-toolbar">
