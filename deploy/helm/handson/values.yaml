@@ -84,8 +84,10 @@ entry:
     create: true
     className: cilium
     parentRefs: []
-    # 空ならホスト名で絞らない
+    # 重みで振り分ける HTTPRoute のホスト名。空ならホスト名で絞らない
     hostnames: []
+    # 版ごとのホスト名。指定した版には、重みに関係なくその版だけに送る HTTPRoute も作る
+    hosts: {}
     weights:
       legacy: 100
       modern: 0
