@@ -1,0 +1,53 @@
+.live-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1000;
+  width: min(360px, calc(100vw - 32px));
+  padding: 8px 12px;
+  border: 1px solid #c8ccd2;
+  border-radius: 8px;
+  background: #fff;
+  color: #222;
+  font: 12px / 1.5 system-ui, sans-serif;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+}
+.live-panel summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+.live-panel p {
+  margin: 6px 0 0;
+  color: #666;
+}
+.live-panel ol {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.live-panel li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 2px 0;
+  font-variant-numeric: tabular-nums;
+}
+.live-panel code {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.live-panel .is-error {
+  color: #b00020;
+  font-weight: bold;
+}
+.live-version {
+  min-width: 72px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: hsl(var(--hue) 70% 88%);
+  color: hsl(var(--hue) 60% 25%);
+  text-align: center;
+}
