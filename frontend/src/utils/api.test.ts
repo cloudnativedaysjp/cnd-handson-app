@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { login } from "../features/sessions/slice";
 import { store } from "../store";
-import { ApiError, api } from "./api";
+import { ApiError, api, recentRequests } from "./api";
 
 describe("api", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -32,5 +32,26 @@ describe("api", () => {
 
     await expect(api("/api/projects")).rejects.toThrow("401");
     expect(store.getState().session.token).toBe("new");
+  });
+
+  test("records the version that responded", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("", {
+          status: 502,
+          headers: { "X-App-Version": "modern-v2" },
+        }),
+      ),
+    );
+
+    await expect(
+      api("/api/projects/p1/tasks", { method: "POST" }),
+    ).rejects.toThrow("502");
+    expect(recentRequests.get()[0]).toMatchObject({
+      method: "POST",
+      status: 502,
+      version: "modern-v2",
+    });
   });
 });
