@@ -1,85 +1,28 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import type { Project } from "../features/projects/types";
-import { api } from "../utils/api";
+import {
+  type Column,
+  type Project,
+  STANDARD_COLUMNS,
+  type Task,
+  createColumn,
+  createProject,
+  createStandardColumns,
+  createTask,
+  deleteColumn,
+  deleteTask,
+  formatDate,
+  getTask,
+  listProjects,
+  renameColumn,
+  updateTask,
+  useProjectData,
+  useProjectName,
+} from "../board";
 import "./legacy.css";
 
-// legacy 版（VARIANT=legacy）の画面。2000 年代の社内 Web 業務システムの作法で作る。データと API は modern と共通
-
-// 入口のイメージはビルド時の VARIANT で legacy / modern を切り替える。bff/Dockerfile が VITE_VARIANT に渡す
-export const legacy = import.meta.env.VITE_VARIANT === "legacy";
-
-type Task = {
-  id: string;
-  title: string;
-  description: string;
-  columnId: string;
-  startTime?: string;
-  endTime?: string;
-};
-type Column = { id: string; name: string };
-
-const STANDARD_COLUMNS = ["未着手", "作業中", "完了"];
-
-const formatDate = (iso?: string) =>
-  iso
-    ? new Date(iso).toLocaleString("ja-JP", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "";
-
-// パンくずとメニューに出すため、プロジェクト名を一覧から引く
-const useProjectName = (id: string) => {
-  const [name, setName] = useState("");
-  useEffect(() => {
-    api<{ projects: Project[] }>("/api/projects")
-      .then((r) => setName(r.projects.find((p) => p.id === id)?.name ?? ""))
-      .catch(() => {});
-  }, [id]);
-  return name;
-};
-
-const useProjectData = (id: string) => {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [columns, setColumns] = useState<Column[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState("");
-  useEffect(() => {
-    Promise.all([
-      api<{ tasks: Task[] }>(`/api/projects/${id}/tasks`),
-      api<{ columns: Column[] }>(`/api/projects/${id}/columns`),
-    ])
-      .then(([t, c]) => {
-        setTasks(t.tasks);
-        setColumns(c.columns);
-      })
-      .catch(() =>
-        setError("タスクと状態を読み込めませんでした。再読み込みしてください"),
-      )
-      .finally(() => setLoaded(true));
-  }, [id]);
-  return { tasks, setTasks, columns, setColumns, loaded, error, setError };
-};
-
-const createColumn = (projectId: string, name: string) =>
-  api<{ column: Column }>(`/api/projects/${projectId}/columns`, {
-    method: "POST",
-    body: JSON.stringify({ name }),
-  }).then((r) => r.column);
-
-// 作った順に並ぶので、1 つずつ順に作る
-const createStandardColumns = async (projectId: string) => {
-  const created: Column[] = [];
-  for (const name of STANDARD_COLUMNS) {
-    created.push(await createColumn(projectId, name));
-  }
-  return created;
-};
+// legacy 版（VARIANT=legacy）の画面。2000 年代の社内 Web 業務システムの作法で作る。データと API は src/board.ts で modern と共有する
 
 type Crumb = { label: string; to?: string };
 
@@ -177,8 +120,8 @@ export const LegacyProjectList: React.FC = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api<{ projects: Project[] }>("/api/projects")
-      .then((r) => setProjects(r.projects))
+    listProjects()
+      .then(setProjects)
       .catch(() =>
         setError("プロジェクトを読み込めませんでした。再読み込みしてください"),
       )
@@ -192,11 +135,8 @@ export const LegacyProjectList: React.FC = () => {
       return;
     }
     try {
-      const { project } = await api<{ project: Project }>("/api/projects", {
-        method: "POST",
-        body: JSON.stringify({ name, description }),
-      });
-      setProjects((ps) => [...ps, project]);
+      const project = await createProject(name, description);
+      setProjects((ps) => [project, ...ps]);
       setName("");
       setDescription("");
       setError("");
@@ -309,11 +249,8 @@ export const LegacyProject: React.FC = () => {
     e.preventDefault();
     if (!title.trim()) return;
     try {
-      const { task } = await api<{ task: Task }>(`/api/projects/${id}/tasks`, {
-        method: "POST",
-        // 件名だけで登録したタスクは、先頭の状態に入れる
-        body: JSON.stringify({ title, columnId: columns[0]?.id ?? "" }),
-      });
+      // 件名だけで登録したタスクは、先頭の状態に入れる
+      const task = await createTask(id, title, columns[0]?.id ?? "");
       setTasks((ts) => [...ts, task]);
       setTitle("");
       setError("");
@@ -324,10 +261,7 @@ export const LegacyProject: React.FC = () => {
 
   const move = async (taskId: string, columnId: string) => {
     try {
-      const { task } = await api<{ task: Task }>(`/api/tasks/${taskId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ columnId }),
-      });
+      const task = await updateTask(taskId, { columnId });
       setTasks((ts) => ts.map((t) => (t.id === taskId ? task : t)));
     } catch {
       setError("状態を変更できませんでした");
@@ -519,8 +453,8 @@ export const LegacyTask: React.FC = () => {
   const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
-    api<{ task: Task }>(`/api/tasks/${taskId}`)
-      .then(({ task }) => {
+    getTask(taskId)
+      .then((task) => {
         setTask(task);
         setForm({
           title: task.title,
@@ -538,10 +472,7 @@ export const LegacyTask: React.FC = () => {
       return;
     }
     try {
-      const { task } = await api<{ task: Task }>(`/api/tasks/${taskId}`, {
-        method: "PATCH",
-        body: JSON.stringify(form),
-      });
+      const task = await updateTask(taskId, form);
       setTask(task);
       setError("");
       setSaved(true);
@@ -552,7 +483,7 @@ export const LegacyTask: React.FC = () => {
 
   const remove = async () => {
     try {
-      await api(`/api/tasks/${taskId}`, { method: "DELETE" });
+      await deleteTask(taskId);
       navigate(`/projects/${id}`);
     } catch {
       setError("タスクを削除できませんでした");
@@ -708,10 +639,7 @@ export const LegacyColumns: React.FC = () => {
     const name = names[columnId]?.trim();
     if (!name) return;
     try {
-      const { column } = await api<{ column: Column }>(
-        `/api/columns/${columnId}`,
-        { method: "PATCH", body: JSON.stringify({ name }) },
-      );
+      const column = await renameColumn(columnId, name);
       setColumns((cs) => cs.map((c) => (c.id === columnId ? column : c)));
       setError("");
     } catch {
@@ -721,7 +649,7 @@ export const LegacyColumns: React.FC = () => {
 
   const remove = async (columnId: string) => {
     try {
-      await api(`/api/columns/${columnId}`, { method: "DELETE" });
+      await deleteColumn(columnId);
       setColumns((cs) => cs.filter((c) => c.id !== columnId));
       setConfirming("");
       setError("");
