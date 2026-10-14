@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { Navigate, Outlet } from "react-router-dom";
 import type { RootState } from "../store";
 import Header from "./Header";
+import LivePanel from "./LivePanel";
 import { legacy } from "./Legacy";
 
 const PrivateLayout: React.FC = () => {
@@ -17,6 +18,7 @@ const PrivateLayout: React.FC = () => {
       {/* legacy の画面は、それぞれが自分の枠（帯とメニュー）を持つ */}
       {!legacy && <Header />}
       <Outlet />
+      <LivePanel />
     </>
   );
 };
