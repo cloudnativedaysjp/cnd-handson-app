@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -49,6 +50,12 @@ func run() error {
 	if !ok {
 		return fmt.Errorf("VARIANT must be legacy or modern, got %q", variant)
 	}
+	// 同じビルドのイメージを、argo-rollouts 章でバージョン違いとして見分ける。既定は VARIANT
+	version := cmp.Or(os.Getenv("APP_VERSION"), variant)
+	errorRate, err := parseErrorRate(os.Getenv("ERROR_RATE"))
+	if err != nil {
+		return err
+	}
 	env, err := requireEnv("PROJECT_ADDR", "IDP_ADDR", "IDP_JWKS_URL", "IDP_ISS", "IDP_AUD")
 	if err != nil {
 		return err
@@ -81,7 +88,7 @@ func run() error {
 		return err
 	}
 	srv := &http.Server{
-		Handler: newHandler(slog.Default().With("variant", variant, "color", color), color, webDir,
+		Handler: newHandler(slog.Default().With("variant", variant, "color", color, "version", version), color, version, errorRate, webDir,
 			idppb.NewIdpServiceClient(idpConn), projectpb.NewProjectServiceClient(conn), taskpb.NewTaskServiceClient(taskConn), columnpb.NewColumnServiceClient(columnConn), newVerifier(env["IDP_JWKS_URL"], env["IDP_ISS"], env["IDP_AUD"])),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
@@ -106,6 +113,17 @@ func requireEnv(keys ...string) (map[string]string, error) {
 		return nil, fmt.Errorf("required env: %s", strings.Join(missing, ", "))
 	}
 	return env, nil
+}
+
+func parseErrorRate(s string) (float64, error) {
+	if s == "" {
+		return 0, nil
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil || f < 0 || f > 1 {
+		return 0, fmt.Errorf("ERROR_RATE must be between 0 and 1, got %q", s)
+	}
+	return f, nil
 }
 
 // scratch イメージには wget が無いため、compose の healthcheck は同じバイナリで /healthz を叩く
