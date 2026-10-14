@@ -44,6 +44,15 @@ jobs:
             context: .
             file: bff/Dockerfile
             variant: modern
+          # argo-rollouts 章で、タスクの追加がときどき失敗するリリースとして使う
+          - image: handson
+            context: .
+            file: bff/Dockerfile
+            variant: modern
+            tag: modern-v2
+            build-args: |
+              APP_VERSION=modern-v2
+              ERROR_RATE=0.5
     
     steps:
       - name: Checkout code
@@ -70,12 +79,14 @@ jobs:
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.file }}
-          build-args: VARIANT=${{ matrix.variant }}
+          build-args: |
+            VARIANT=${{ matrix.variant }}
+            ${{ matrix.build-args }}
           push: true
-          # フロントエンドのタグは <版> と <版>-sha-<sha>。ほかは latest と sha-<sha>
+          # フロントエンドのタグは <tag> と <tag>-sha-<sha>。tag の既定は版。ほかは latest と sha-<sha>
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.image }}:${{ matrix.variant || 'latest' }}
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.image }}:${{ matrix.variant && format('{0}-', matrix.variant) || '' }}sha-${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.image }}:${{ matrix.tag || matrix.variant || 'latest' }}
+            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ matrix.image }}:${{ matrix.variant && format('{0}-', matrix.tag || matrix.variant) || '' }}sha-${{ github.sha }}
           # 依存の一覧（SBOM）と、どこでどうビルドしたか（provenance）をイメージに付ける
           sbom: true
           provenance: mode=max

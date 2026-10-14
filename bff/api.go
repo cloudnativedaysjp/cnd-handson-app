@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"math/rand/v2"
 	"net/http"
 	"strings"
 
@@ -21,7 +22,7 @@ import (
 
 // registerAPI は frontend 向けの REST API。一覧は project 経由で取り、書き込みは task と column を直接呼ぶ。
 // task と column も、呼び出し元がプロジェクトの所有者かを確かめる
-func registerAPI(route func(string, http.HandlerFunc), idp idppb.IdpServiceClient, projects projectpb.ProjectServiceClient, tasks taskpb.TaskServiceClient, columns columnpb.ColumnServiceClient, verify verifyFunc) {
+func registerAPI(route func(string, http.HandlerFunc), errorRate float64, idp idppb.IdpServiceClient, projects projectpb.ProjectServiceClient, tasks taskpb.TaskServiceClient, columns columnpb.ColumnServiceClient, verify verifyFunc) {
 	// ブラウザは gRPC を呼べないので、入口が idp の Login を中継する。refresh token は使わないので返さない
 	route("POST /api/login", func(w http.ResponseWriter, r *http.Request) {
 		var body struct{ Email, Password string }
@@ -73,6 +74,10 @@ func registerAPI(route func(string, http.HandlerFunc), idp idppb.IdpServiceClien
 		return projects.ListProjectColumns(ctx, &projectpb.ListProjectColumnsRequest{ProjectId: r.PathValue("id")})
 	})
 	api("POST /api/projects/{id}/tasks", func(ctx context.Context, r *http.Request) (proto.Message, error) {
+		// argo-rollouts 章で、Canary のバージョンだけがときどき失敗するリリースを作る
+		if rand.Float64() < errorRate {
+			return nil, status.Error(codes.Internal, "injected by ERROR_RATE")
+		}
 		var body struct{ Title, ColumnID string }
 		if err := decode(r, &body); err != nil {
 			return nil, err

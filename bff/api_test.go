@@ -130,7 +130,7 @@ func TestAPI(t *testing.T) {
 	projects := &fakeProjects{}
 	tasks := &fakeTasks{}
 	columns := &fakeColumns{}
-	h := newHandler(telemetry.NewLogger(io.Discard), "blue", t.TempDir(), nil, projects, tasks, columns, newVerifier(jwksSrv.URL, "iss", "aud"))
+	h := newHandler(telemetry.NewLogger(io.Discard), "blue", "v1", 0, t.TempDir(), nil, projects, tasks, columns, newVerifier(jwksSrv.URL, "iss", "aud"))
 
 	for name, tc := range map[string]struct {
 		path, auth string
@@ -213,6 +213,15 @@ func TestAPI(t *testing.T) {
 	if rec := call(http.MethodPatch, "/api/tasks/t1", "not json"); rec.Code != http.StatusBadRequest {
 		t.Errorf("bad body: got %d", rec.Code)
 	}
+
+	// ERROR_RATE=1 ならタスクの追加だけが失敗し、一覧は返る
+	h = newHandler(telemetry.NewLogger(io.Discard), "green", "modern-v2", 1, t.TempDir(), nil, projects, tasks, columns, newVerifier(jwksSrv.URL, "iss", "aud"))
+	if rec := call(http.MethodPost, "/api/projects/p1/tasks", `{"title":"t"}`); rec.Code < 500 || rec.Header().Get("X-App-Version") != "modern-v2" {
+		t.Errorf("injected: %d %q", rec.Code, rec.Header().Get("X-App-Version"))
+	}
+	if rec := call(http.MethodGet, "/api/projects", ""); rec.Code != http.StatusOK {
+		t.Errorf("list with ERROR_RATE: %d", rec.Code)
+	}
 }
 
 type fakeIdp struct{ idppb.IdpServiceClient }
@@ -225,7 +234,7 @@ func (fakeIdp) Login(_ context.Context, req *idppb.LoginRequest, _ ...grpc.CallO
 }
 
 func TestLogin(t *testing.T) {
-	h := newHandler(telemetry.NewLogger(io.Discard), "blue", t.TempDir(), fakeIdp{}, nil, nil, nil, nil)
+	h := newHandler(telemetry.NewLogger(io.Discard), "blue", "v1", 0, t.TempDir(), fakeIdp{}, nil, nil, nil, nil)
 	for body, want := range map[string]struct {
 		code int
 		body string
