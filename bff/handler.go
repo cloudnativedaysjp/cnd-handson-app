@@ -15,11 +15,16 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-func newHandler(log *slog.Logger, color, webDir string, idp idppb.IdpServiceClient, projects projectpb.ProjectServiceClient, tasks taskpb.TaskServiceClient, columns columnpb.ColumnServiceClient, verify verifyFunc) http.Handler {
+func newHandler(log *slog.Logger, color, version string, errorRate float64, webDir string, idp idppb.IdpServiceClient, projects projectpb.ProjectServiceClient, tasks taskpb.TaskServiceClient, columns columnpb.ColumnServiceClient, verify verifyFunc) http.Handler {
 	mux := http.NewServeMux()
 	// パターン（"GET /color"）をそのままスパン名にする
 	route := func(pattern string, h http.HandlerFunc) {
-		mux.Handle(pattern, otelhttp.NewHandler(accessLog(log, h), pattern))
+		// 画面は API の応答ごとにこのヘッダーを読み、どのバージョンが応答したかを出す
+		versioned := func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("X-App-Version", version)
+			h(w, r)
+		}
+		mux.Handle(pattern, otelhttp.NewHandler(accessLog(log, http.HandlerFunc(versioned)), pattern))
 	}
 	web := http.FileServer(http.Dir(webDir))
 	route("GET /", func(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +44,7 @@ func newHandler(log *slog.Logger, color, webDir string, idp idppb.IdpServiceClie
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		_, _ = io.WriteString(w, color)
 	})
-	registerAPI(route, idp, projects, tasks, columns, verify)
+	registerAPI(route, errorRate, idp, projects, tasks, columns, verify)
 	// probe は数秒おきに来るため、スパンとログを出さない
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
