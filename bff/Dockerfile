@@ -6,8 +6,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY frontend/package.json ./frontend/
 RUN pnpm install --frozen-lockfile --filter app
 COPY frontend ./frontend
-ARG VARIANT
-RUN VITE_VARIANT=${VARIANT} pnpm --filter app build
+# Canary の途中では、HTML と JS が別のバージョンの Pod から返る。どちらのイメージにも両方の JS を入れる
+RUN for v in legacy modern; do VITE_VARIANT=$v pnpm --filter app build && mv frontend/dist /dist-$v; done
 
 FROM --platform=${BUILDPLATFORM} golang:1.25.14-alpine3.23 AS base
 WORKDIR /src
@@ -37,8 +37,11 @@ RUN --mount=from=lint-base,src=/usr/bin/golangci-lint,target=/usr/bin/golangci-l
 
 FROM scratch AS bin
 ARG VARIANT
-ENV VARIANT=${VARIANT}
+ARG APP_VERSION
+ARG ERROR_RATE
+ENV VARIANT=${VARIANT} APP_VERSION=${APP_VERSION} ERROR_RATE=${ERROR_RATE}
 COPY --from=build /out/handson-entry /
-COPY --from=web /src/frontend/dist /web
+COPY --from=web /dist-legacy/assets /dist-modern/assets /web/assets/
+COPY --from=web /dist-${VARIANT} /web
 USER 65532:65532
 ENTRYPOINT ["/handson-entry"]
