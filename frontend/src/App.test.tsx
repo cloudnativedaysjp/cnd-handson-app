@@ -28,24 +28,16 @@ vi.mock("./components/Logout", () => ({ default: () => <div>Logout</div> }));
 vi.mock("./components/PrivateLayout", () => ({
   default: () => <div>PrivateLayout</div>,
 }));
-vi.mock("./components/ProjectList", () => ({
-  default: () => <div>ProjectList</div>,
+vi.mock("./components/Legacy", () => ({
+  LegacyProjectList: () => <div>LegacyProjectList</div>,
+  LegacyProject: () => <div>LegacyProject</div>,
+  LegacyTask: () => <div>LegacyTask</div>,
+  LegacyColumns: () => <div>LegacyColumns</div>,
 }));
-vi.mock("./components/BoardList", () => ({
-  default: () => <div>BoardList</div>,
-}));
-vi.mock("./components/Borad", () => ({ default: () => <div>Board</div> }));
-vi.mock("./components/BoardForm", () => ({
-  default: () => <div>BoardForm</div>,
-}));
-vi.mock("./components/ProjectForm", () => ({
-  default: () => <div>ProjectForm</div>,
-}));
-vi.mock("./components/TaskEditPage", () => ({
-  default: () => <div>TaskEditPage</div>,
-}));
-vi.mock("./components/TaskNewPage", () => ({
-  default: () => <div>TaskNewPage</div>,
+vi.mock("./components/Modern", () => ({
+  ModernProjectList: () => <div>ModernProjectList</div>,
+  ModernBoard: () => <div>ModernBoard</div>,
+  ModernColumns: () => <div>ModernColumns</div>,
 }));
 
 // ストアをモック
