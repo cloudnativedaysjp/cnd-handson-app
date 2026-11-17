@@ -1,10 +1,10 @@
 package service
 
 import (
-	"strings"
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cloudnativedaysjp/cnd-handson-app/backend/project/internal/project/model"
