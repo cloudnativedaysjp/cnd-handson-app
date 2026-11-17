@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strings"
 	"context"
 	"errors"
 	"fmt"
@@ -53,7 +54,7 @@ func (s *ProjectService) Create(ctx context.Context, req *projectpb.CreateProjec
 	now := time.Now()
 	p := &model.Project{
 		ID:          uuid.New(),
-		Name:        req.GetName(),
+		Name:        strings.ToLower(req.GetName()),
 		Description: req.GetDescription(),
 		OwnerID:     ownerID,
 		CreatedAt:   now,
@@ -98,7 +99,7 @@ func (s *ProjectService) Update(ctx context.Context, req *projectpb.UpdateProjec
 		return nil, err
 	}
 	if req.GetName() != "" {
-		p.Name = req.GetName()
+		p.Name = strings.ToLower(req.GetName())
 	}
 	if req.GetDescription() != "" {
 		p.Description = req.GetDescription()
